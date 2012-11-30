@@ -2861,6 +2861,7 @@ PHP_FUNCTION(bartlby_get_service) {
 	int current_time;
 	int is_down;
 	int y;
+	int x;
 	
 	struct service * svcmap;
 	struct worker * wrkmap;
@@ -2868,7 +2869,12 @@ PHP_FUNCTION(bartlby_get_service) {
 	struct server * srvmap;
 	struct servicegroup * grp;
 	struct service * sv;
+	struct btl_event * evntmap;
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
+	
 	zval * groups;
+	zval * groupinfo;
 	
 	pval * bartlby_config;
 	pval * bartlby_service_id;
@@ -2894,6 +2900,9 @@ PHP_FUNCTION(bartlby_get_service) {
 		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
 		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
 		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
 			php_error(E_WARNING, "Service id out of bounds");	
@@ -3016,19 +3025,40 @@ PHP_FUNCTION(bartlby_get_service) {
 		if(is_down==0) {
 			add_assoc_long(return_value, "is_downtime", 0);	
 		}
-		/****
+		
 		//is member of following groups
 		ALLOC_INIT_ZVAL(groups);
 		array_init(groups);
+
+		
+	
+		
 		if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
-			for(y=0; y<	svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
+			for(y=0; y<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
 					
-					grp = svcmap[Z_LVAL_P(bartlby_service_id)].servicegroups[y];
-					add_assoc_long(groups, "group_name", grp.servicegroup_id);
+					
+					ALLOC_INIT_ZVAL(groupinfo);
+					array_init(groupinfo);
+					
+					x=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[y];
+					add_assoc_long(groupinfo,"servicegroup_place", y);
+					add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[x].servicegroup_name,1);
+					add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[x].servicegroup_members,1);
+					
+					add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[x].servicegroup_active);
+					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[x].servicegroup_notify);
+					
+					
+					
+					add_next_index_zval(groups, groupinfo);
+					
 			}		
+			
+			
+			
 			add_assoc_zval(return_value, "groups", groups);
 		}
-		***/
+	
 		
 		shmdt(bartlby_address);
 	/*	
