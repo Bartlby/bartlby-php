@@ -259,6 +259,7 @@ struct server {
 	
 	struct servergroup * servergroups[200];
 	long servergroup_counter;
+	long servergroup_place[200];
 } xxyz;
 
 
@@ -334,6 +335,7 @@ struct service {
 	
 	struct servicegroup * servicegroups[200];
 	long servicegroup_counter;
+	long servicegroup_place[200];
 };
 
 struct servicegroup {
