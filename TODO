@@ -1,0 +1,3 @@
+return service groups in bartlby_get_service / bartlby_service_map
+return server groups in bartlby_get_server / bartlby_server_map
+
