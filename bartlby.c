@@ -2724,15 +2724,24 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	void * SOHandle;
 	char * dlmsg;
 	struct shm_header * shm_hdr;
+		struct service * svcmap;
 	struct worker * wrkmap;
 	struct downtime * dtmap;
-	struct service * svcmap;
 	struct server * srvmap;
+	struct servicegroup * grp;
+	struct service * sv;
+	struct btl_event * evntmap;
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
 	void * bartlby_address;
 	int x;
-	
+	int z;
+	int y;
 	
 	int ret;
+	zval * groups;
+	zval * groupinfo;
+	
 	
 	int (*GetServerById)(int,struct server *, char *);
 	
@@ -2774,8 +2783,12 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 			shm_hdr=(struct shm_header *)(void *)bartlby_address;
 			svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
 			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-			dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount]+20;
-			srvmap=(struct server *)(void *)&dtmap[shm_hdr->dtcount]+20;
+			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+			
 			
 			for(x=0; x<shm_hdr->srvcount; x++) {
 				if(srvmap[x].server_id == Z_LVAL_P(server_id)) {
@@ -2785,11 +2798,47 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 					add_assoc_long(return_value, "last_notify_send",srvmap[x].last_notify_send);
 					add_assoc_long(return_value, "server_dead",srvmap[x].server_dead);
 					add_assoc_long(return_value, "server_shm_place",x);
+					
+					
+					ALLOC_INIT_ZVAL(groups);
+					array_init(groups);
+
+		
+	
+		
+						if(srvmap[x].servergroup_counter > 0) {
+							for(y=0; y<srvmap[x].servergroup_counter; y++){
+						
+						
+									ALLOC_INIT_ZVAL(groupinfo);
+									array_init(groupinfo);
+									
+									z=srvmap[x].servergroup_place[y];
+									add_assoc_long(groupinfo,"servergroup_place", y);
+									add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
+									add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+									
+									add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+									
+									
+									
+									add_next_index_zval(groups, groupinfo);
+						
+						}		
+				
+				
+				
+						add_assoc_zval(return_value, "groups", groups);
+					}
+					
+					
 					break;
 				}			
 			}
 			
-			
+		
+	
 			
 			shmdt(bartlby_address);
 			
@@ -3026,7 +3075,7 @@ PHP_FUNCTION(bartlby_get_service) {
 			add_assoc_long(return_value, "is_downtime", 0);	
 		}
 		
-		//is member of following groups
+		//is member of following groups #SERVICEGROUP
 		ALLOC_INIT_ZVAL(groups);
 		array_init(groups);
 
