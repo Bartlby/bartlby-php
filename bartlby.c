@@ -1561,10 +1561,19 @@ PHP_FUNCTION(bartlby_svc_map) {
 	struct worker * wrkmap;
 	struct downtime * dtmap;
 	struct server * srvmap;
+	struct btl_event * evntmap;
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
+	
 	
 	pval * bartlby_config;
 	pval * svc_right_array;
 	pval * server_right_array;
+	
+	zval * groups;
+	zval * groupinfo;
+	
+	int z;
 	
 	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &svc_right_array, &server_right_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -1578,12 +1587,17 @@ PHP_FUNCTION(bartlby_svc_map) {
 	
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		
+			shm_hdr=(struct shm_header *)(void *)bartlby_address;
+			svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+			
+			
+			
 		current_time=time(NULL);
 		for(x=0; x<shm_hdr->svccount; x++) {
 			if(btl_is_array(svc_right_array, svcmap[x].service_id) == -1 &&  btl_is_array(server_right_array, svcmap[x].server_id) == -1) {
@@ -1705,6 +1719,85 @@ PHP_FUNCTION(bartlby_svc_map) {
 			if(is_down==0) {
 				add_assoc_long(subarray, "is_downtime", 0);	
 			}
+			
+			
+					//Resolve ServerGroups
+			
+						ALLOC_INIT_ZVAL(groups);
+						array_init(groups);
+
+		
+	
+		
+						if(srvmap[svcmap[x].srv_place].servergroup_counter > 0) {
+							for(y=0; y<srvmap[svcmap[x].srv_place].servergroup_counter; y++){
+						
+						
+									ALLOC_INIT_ZVAL(groupinfo);
+									array_init(groupinfo);
+									
+									z=srvmap[svcmap[x].srv_place].servergroup_place[y];
+									add_assoc_long(groupinfo,"servergroup_place", y);
+									add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
+									add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+									
+									add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+									
+									
+									
+									add_next_index_zval(groups, groupinfo);
+						
+						}		
+				
+				
+				
+						add_assoc_zval(subarray, "servergroups", groups);
+					}
+					
+			
+			
+	
+			
+			
+			//Resolve Service Groups
+			
+			
+				//is member of following groups #SERVICEGROUP
+		ALLOC_INIT_ZVAL(groups);
+		array_init(groups);
+
+		
+	
+		
+		if(svcmap[x].servicegroup_counter > 0) {
+			for(y=0; y<svcmap[x].servicegroup_counter; y++){
+					
+					
+					ALLOC_INIT_ZVAL(groupinfo);
+					array_init(groupinfo);
+					
+					z=svcmap[x].servicegroup_place[y];
+					add_assoc_long(groupinfo,"servicegroup_place", y);
+					add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[z].servicegroup_name,1);
+					add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[z].servicegroup_members,1);
+					
+					add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[z].servicegroup_active);
+					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[z].servicegroup_notify);
+					
+					
+					
+					add_next_index_zval(groups, groupinfo);
+					
+			}		
+			
+			
+			
+			add_assoc_zval(subarray, "servicegroups", groups);
+		}
+		
+			
+			
 			//Push SVC to map
 			add_next_index_zval(return_value, subarray);
 			
