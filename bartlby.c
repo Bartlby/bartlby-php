@@ -1747,6 +1747,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 									
 									
 									add_next_index_zval(groups, groupinfo);
+									
 						
 						}		
 				
