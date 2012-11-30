@@ -78,9 +78,29 @@ function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_modify_downtime, NULL)
 	PHP_FE(bartlby_delete_downtime, NULL)
 	
+	
+	PHP_FE(bartlby_add_servergroup, NULL)
+	PHP_FE(bartlby_servergroup_map, NULL)
+	PHP_FE(bartlby_modify_servergroup, NULL)
+	PHP_FE(bartlby_delete_servergroup, NULL)
+	
+	
+	PHP_FE(bartlby_add_servicegroup, NULL)
+	PHP_FE(bartlby_servicegroup_map, NULL)
+	PHP_FE(bartlby_modify_servicegroup, NULL)
+	PHP_FE(bartlby_delete_servicegroup, NULL)
+	
+	
+	PHP_FE(bartlby_toggle_servicegroup_notify, NULL)
+	PHP_FE(bartlby_toggle_servergroup_notify, NULL)
+	PHP_FE(bartlby_toggle_servicegroup_active, NULL)
+	PHP_FE(bartlby_toggle_servergroup_active, NULL)
+	
+	
+	
+	
 	PHP_FE(bartlby_toggle_service_notify, NULL)
 	PHP_FE(bartlby_toggle_server_notify, NULL)
-	
 	PHP_FE(bartlby_toggle_service_active, NULL)
 	PHP_FE(bartlby_toggle_server_active, NULL)
 	
@@ -109,6 +129,9 @@ function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_set_worker_id, NULL)
 	PHP_FE(bartlby_set_worker_state, NULL)
 	PHP_FE(bartlby_set_downtime_id, NULL)
+	
+	PHP_FE(bartlby_set_servergroup_id, NULL)
+	PHP_FE(bartlby_set_servicegroup_id, NULL)
 	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
 };
@@ -3108,6 +3131,841 @@ PHP_FUNCTION(bartlby_get_worker) {
 	}
 	
 }
+
+
+
+PHP_FUNCTION(bartlby_add_servergroup) {
+	pval * bartlby_config;
+	pval * servergroup_name;
+	pval * servergroup_active;
+	pval * servergroup_notify;
+	pval * servergroup_members;
+	
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*AddServerGroup)(struct servergroup *,char *);
+	
+	struct servergroup svc;
+	
+	if (ZEND_NUM_ARGS() != 5 || getParameters(ht, 5, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	convert_to_string(servergroup_name);
+	convert_to_string(servergroup_members);
+	convert_to_long(servergroup_active);
+	convert_to_long(servergroup_notify);
+	
+		
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(AddServerGroup,SOHandle, "AddServerGroup");
+	
+	strcpy(svc.servergroup_name, Z_STRVAL_P(servergroup_name));
+	svc.servergroup_notify=Z_LVAL_P(servergroup_notify);
+	svc.servergroup_active=Z_LVAL_P(servergroup_active);
+	strcpy(svc.servergroup_members, Z_STRVAL_P(servergroup_members));
+	
+	ret=AddServerGroup(&svc, Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	RETURN_LONG(ret);	
+}
+
+PHP_FUNCTION(bartlby_servergroup_map) {
+	zval * subarray;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	
+	int x;
+	struct service * svcmap;
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct server * srvmap;	
+	struct servergroup * srvgrpmap;
+	
+	pval * bartlby_config;
+	
+	
+	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}	
+	
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		
+		for(x=0; x<shm_hdr->srvgroupcount; x++) {
+			
+			ALLOC_INIT_ZVAL(subarray);
+			array_init(subarray);
+			
+			add_assoc_long(subarray, "servergroup_id", srvgrpmap[x].servergroup_id);
+			add_assoc_string(subarray, "servergroup_name", srvgrpmap[x].servergroup_name,1);
+			add_assoc_long(subarray, "servergroup_active", srvgrpmap[x].servergroup_active);
+			add_assoc_long(subarray, "servergroup_notify", srvgrpmap[x].servergroup_notify);
+			add_assoc_string(subarray, "servergroup_members", srvgrpmap[x].servergroup_members, 1);
+			
+			add_assoc_long(subarray, "shm_place", x);
+			
+			//Push SVC to map
+			add_next_index_zval(return_value, subarray);
+			
+		}
+		
+		
+		
+		shmdt(bartlby_address);
+		
+
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}
+		
+	
+
+		
+}
+
+
+PHP_FUNCTION(bartlby_modify_servergroup) {
+	pval * bartlby_config;
+	pval * servergroup_name;
+	pval * servergroup_active;
+	pval * servergroup_notify;
+	pval * servergroup_members;
+	pval * servergroup_id;
+	
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*UpdateServerGroup)(struct servergroup *,char *);
+	
+	struct servergroup svc;
+	
+	if (ZEND_NUM_ARGS() != 6 || getParameters(ht, 6, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	convert_to_string(servergroup_members);
+	convert_to_string(servergroup_name);
+	convert_to_long(servergroup_active);
+	convert_to_long(servergroup_notify);
+	
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
+	
+	strcpy(svc.servergroup_name, Z_STRVAL_P(servergroup_name));
+	strcpy(svc.servergroup_members, Z_STRVAL_P(servergroup_members));
+	svc.servergroup_active=Z_LVAL_P(servergroup_active);
+	svc.servergroup_notify=Z_LVAL_P(servergroup_notify);
+	svc.servergroup_id=Z_LVAL_P(servergroup_id);
+	
+	
+	ret=UpdateServerGroup(&svc, Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	
+	RETURN_LONG(ret);		
+}
+
+
+PHP_FUNCTION(bartlby_delete_servergroup) {
+	pval * bartlby_config;
+	pval * servergroup_id;
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*DeleteServerGroup)(int, char*);
+	
+	struct service svc;
+	
+	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&servergroup_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	
+	convert_to_long(servergroup_id);
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(DeleteServerGroup,SOHandle, "DeleteServerGroup");
+	
+	
+	
+	ret=DeleteServerGroup(Z_LVAL_P(servergroup_id),Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	RETURN_LONG(ret);	
+}
+PHP_FUNCTION(bartlby_set_servergroup_id) {
+	pval * bartlby_config;
+	pval * from;
+	pval * to;
+	pval * mig;
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*ServerGroupChangeId)(int, int, char*);
+	
+	
+	
+	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	convert_to_long(from);
+	convert_to_long(to);
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(ServerGroupChangeId,SOHandle, "ServerGroupChangeId");
+	
+	
+	
+	ret=ServerGroupChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	RETURN_LONG(ret);	
+}
+
+
+PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
+	pval * bartlby_config;
+	pval * bartlby_servergroup_id;
+	pval * do_writeback;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	struct service * svcmap;
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct server * srvmap;	
+	struct servergroup * srvgrpmap;
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateServerGroup)(struct servergroup *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_long(bartlby_servergroup_id);
+	convert_to_long(do_writeback);
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		
+		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		
+		if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
+			php_error(E_WARNING, "service group id out of bounds");	
+			RETURN_FALSE;	
+		}
+		if(srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify == 1) {
+			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify = 0;
+			r=0;
+		} else {
+			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify = 1;
+			r=1;
+		}
+		if(Z_LVAL_P(do_writeback) == 1) {
+			LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
+			UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], Z_STRVAL_P(bartlby_config));
+			
+		}
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+}
+
+PHP_FUNCTION(bartlby_toggle_servergroup_active) {
+	pval * bartlby_config;
+	pval * bartlby_servergroup_id;
+	pval * do_writeback;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	struct service * svcmap;
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct server * srvmap;	
+	struct servergroup * srvgrpmap;
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateServerGroup)(struct servergroup *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_long(bartlby_servergroup_id);
+	convert_to_long(do_writeback);
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		
+		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		
+		if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
+			php_error(E_WARNING, "service group id out of bounds");	
+			RETURN_FALSE;	
+		}
+		if(srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active == 1) {
+			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active = 0;
+			r=0;
+		} else {
+			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active = 1;
+			r=1;
+		}
+		if(Z_LVAL_P(do_writeback) == 1) {
+			LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
+			UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], Z_STRVAL_P(bartlby_config));
+			
+		}
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+}
+
+PHP_FUNCTION(bartlby_add_servicegroup) {
+	pval * bartlby_config;
+	pval * servicegroup_name;
+	pval * servicegroup_active;
+	pval * servicegroup_notify;
+	pval * servicegroup_members;
+	
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*AddServiceGroup)(struct servicegroup *,char *);
+	
+	struct servicegroup svc;
+	
+	if (ZEND_NUM_ARGS() != 5 || getParameters(ht, 5, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	convert_to_string(servicegroup_name);
+	convert_to_string(servicegroup_members);
+	convert_to_long(servicegroup_active);
+	convert_to_long(servicegroup_notify);
+	
+		
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(AddServiceGroup,SOHandle, "AddServiceGroup");
+	
+	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
+	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
+	svc.servicegroup_active=Z_LVAL_P(servicegroup_active);
+	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
+	
+	ret=AddServiceGroup(&svc, Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	RETURN_LONG(ret);	
+}
+
+PHP_FUNCTION(bartlby_servicegroup_map) {
+	zval * subarray;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	
+	int x;
+	struct service * svcmap;
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct server * srvmap;	
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
+	
+	pval * bartlby_config;
+	
+	
+	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}	
+	
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		for(x=0; x<shm_hdr->svcgroupcount; x++) {
+			
+			ALLOC_INIT_ZVAL(subarray);
+			array_init(subarray);
+			
+			add_assoc_long(subarray, "servicegroup_id", svcgrpmap[x].servicegroup_id);
+			add_assoc_string(subarray, "servicegroup_name", svcgrpmap[x].servicegroup_name,1);
+			add_assoc_long(subarray, "servicegroup_active", svcgrpmap[x].servicegroup_active);
+			add_assoc_long(subarray, "servicegroup_notify", svcgrpmap[x].servicegroup_notify);
+			add_assoc_string(subarray, "servicegroup_members", svcgrpmap[x].servicegroup_members,1);
+			add_assoc_long(subarray, "shm_place", x);
+			
+			
+			//Push SVC to map
+			add_next_index_zval(return_value, subarray);
+			
+		}
+		
+		
+		
+		shmdt(bartlby_address);
+		
+
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}
+		
+	
+
+		
+}
+
+
+PHP_FUNCTION(bartlby_modify_servicegroup) {
+	pval * bartlby_config;
+	pval * servicegroup_name;
+	pval * servicegroup_active;
+	pval * servicegroup_notify;
+	pval * servicegroup_members;
+	pval * servicegroup_id;
+	
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*UpdateServiceGroup)(struct servicegroup *,char *);
+	
+	struct servicegroup svc;
+	
+	if (ZEND_NUM_ARGS() != 6 || getParameters(ht, 6, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	convert_to_string(servicegroup_members);
+	convert_to_string(servicegroup_name);
+	convert_to_long(servicegroup_active);
+	convert_to_long(servicegroup_notify);
+	
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
+	
+	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
+	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
+	svc.servicegroup_active=Z_LVAL_P(servicegroup_active);
+	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
+	svc.servicegroup_id=Z_LVAL_P(servicegroup_id);
+	
+	
+	ret=UpdateServiceGroup(&svc, Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	
+	RETURN_LONG(ret);		
+}
+
+
+PHP_FUNCTION(bartlby_delete_servicegroup) {
+	pval * bartlby_config;
+	pval * servicegroup_id;
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*DeleteServiceGroup)(int, char*);
+	
+	struct service svc;
+	
+	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&servicegroup_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	
+	convert_to_long(servicegroup_id);
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(DeleteServiceGroup,SOHandle, "DeleteServiceGroup");
+	
+	
+	
+	ret=DeleteServiceGroup(Z_LVAL_P(servicegroup_id),Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	RETURN_LONG(ret);	
+}
+PHP_FUNCTION(bartlby_set_servicegroup_id) {
+	pval * bartlby_config;
+	pval * from;
+	pval * to;
+	pval * mig;
+	
+	void * SOHandle;
+	char * dlmsg;
+	
+	int ret;
+	
+	int (*ServiceGroupChangeId)(int, int, char*);
+	
+	
+	
+	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(bartlby_config);
+	convert_to_long(from);
+	convert_to_long(to);
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	
+	LOAD_SYMBOL(ServiceGroupChangeId,SOHandle, "ServiceGroupChangeId");
+	
+	
+	
+	ret=ServiceGroupChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
+	
+	dlclose(SOHandle);
+	RETURN_LONG(ret);	
+}
+
+
+PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
+	pval * bartlby_config;
+	pval * bartlby_servicegroup_id;
+	pval * do_writeback;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	struct service * svcmap;
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct server * srvmap;	
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateServiceGroup)(struct servicegroup *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_long(bartlby_servicegroup_id);
+	convert_to_long(do_writeback);
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		
+		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->srvgroupcount-1) {
+			php_error(E_WARNING, "service group id out of bounds");	
+			RETURN_FALSE;	
+		}
+		if(svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify == 1) {
+			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify = 0;
+			r=0;
+		} else {
+			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify = 1;
+			r=1;
+		}
+		if(Z_LVAL_P(do_writeback) == 1) {
+			LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
+			UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)], Z_STRVAL_P(bartlby_config));
+			
+		}
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+}
+
+PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
+	pval * bartlby_config;
+	pval * bartlby_servicegroup_id;
+	pval * do_writeback;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	struct service * svcmap;
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct server * srvmap;	
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateServiceGroup)(struct servicegroup *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_long(bartlby_servicegroup_id);
+	convert_to_long(do_writeback);
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		
+		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		
+		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
+			php_error(E_WARNING, "service group id out of bounds");	
+			RETURN_FALSE;	
+		}
+		if(svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active == 1) {
+			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active = 0;
+			r=0;
+		} else {
+			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active = 1;
+			r=1;
+		}
+		if(Z_LVAL_P(do_writeback) == 1) {
+			LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
+			UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)], Z_STRVAL_P(bartlby_config));
+			
+		}
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+}
+
 
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and 

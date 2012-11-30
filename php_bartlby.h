@@ -103,6 +103,24 @@ PHP_FUNCTION(bartlby_svc_map);
 PHP_FUNCTION(bartlby_shm_destroy);
 
 
+PHP_FUNCTION(bartlby_add_servergroup);
+PHP_FUNCTION(bartlby_servergroup_map);
+PHP_FUNCTION(bartlby_modify_servergroup);
+PHP_FUNCTION(bartlby_delete_servergroup);
+PHP_FUNCTION(bartlby_add_servicegroup);
+PHP_FUNCTION(bartlby_servicegroup_map);
+PHP_FUNCTION(bartlby_modify_servicegroup);
+PHP_FUNCTION(bartlby_delete_servicegroup);
+PHP_FUNCTION(bartlby_toggle_servicegroup_notify);
+PHP_FUNCTION(bartlby_toggle_servergroup_notify);
+PHP_FUNCTION(bartlby_toggle_servicegroup_active);
+PHP_FUNCTION(bartlby_toggle_servergroup_active);
+	
+PHP_FUNCTION(bartlby_set_servergroup_id);
+PHP_FUNCTION(bartlby_set_servicegroup_id);
+	
+
+
 PHP_FUNCTION(bartlby_toggle_service_notify);
 PHP_FUNCTION(bartlby_toggle_server_notify);
 PHP_FUNCTION(bartlby_toggle_service_active);
