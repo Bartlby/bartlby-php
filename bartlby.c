@@ -2866,6 +2866,9 @@ PHP_FUNCTION(bartlby_get_service) {
 	struct worker * wrkmap;
 	struct downtime * dtmap;
 	struct server * srvmap;
+	struct servicegroup * grp;
+	struct service * sv;
+	zval * groups;
 	
 	pval * bartlby_config;
 	pval * bartlby_service_id;
@@ -3013,8 +3016,19 @@ PHP_FUNCTION(bartlby_get_service) {
 		if(is_down==0) {
 			add_assoc_long(return_value, "is_downtime", 0);	
 		}
-		
-		
+		/****
+		//is member of following groups
+		ALLOC_INIT_ZVAL(groups);
+		array_init(groups);
+		if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
+			for(y=0; y<	svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
+					
+					grp = svcmap[Z_LVAL_P(bartlby_service_id)].servicegroups[y];
+					add_assoc_long(groups, "group_name", grp.servicegroup_id);
+			}		
+			add_assoc_zval(return_value, "groups", groups);
+		}
+		***/
 		
 		shmdt(bartlby_address);
 	/*	
