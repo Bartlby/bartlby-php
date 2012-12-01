@@ -1743,6 +1743,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 									
 									add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
 									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+									add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 									
 									
 									
@@ -1785,7 +1786,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 					
 					add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[z].servicegroup_active);
 					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[z].servicegroup_notify);
-					
+					add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[z].servicegroup_id);
 					
 					
 					add_next_index_zval(groups, groupinfo);
@@ -2914,7 +2915,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 									
 									add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
 									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
-									
+									add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 									
 									
 									add_next_index_zval(groups, groupinfo);
@@ -3190,7 +3191,7 @@ PHP_FUNCTION(bartlby_get_service) {
 					
 					add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[x].servicegroup_active);
 					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[x].servicegroup_notify);
-					
+					add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[x].servicegroup_id);
 					
 					
 					add_next_index_zval(groups, groupinfo);
