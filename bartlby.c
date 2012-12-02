@@ -4040,7 +4040,7 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
 		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
 		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
 		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
-		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->srvgroupcount-1) {
+		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
 			php_error(E_WARNING, "service group id out of bounds");	
 			RETURN_FALSE;	
 		}
