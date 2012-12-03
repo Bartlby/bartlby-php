@@ -2895,13 +2895,14 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 					add_assoc_long(return_value, "server_shm_place",x);
 					
 					
-					ALLOC_INIT_ZVAL(groups);
-					array_init(groups);
+					
 
 		
 	
 		
 						if(srvmap[x].servergroup_counter > 0) {
+							ALLOC_INIT_ZVAL(groups);
+							array_init(groups);
 							for(y=0; y<srvmap[x].servergroup_counter; y++){
 						
 						
@@ -3171,13 +3172,14 @@ PHP_FUNCTION(bartlby_get_service) {
 		}
 		
 		//is member of following groups #SERVICEGROUP
-		ALLOC_INIT_ZVAL(groups);
-		array_init(groups);
+
 
 		
 	
 		
 		if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
+			ALLOC_INIT_ZVAL(groups);
+			array_init(groups);
 			for(y=0; y<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
 					
 					
