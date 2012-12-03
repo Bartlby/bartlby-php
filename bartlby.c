@@ -1720,16 +1720,16 @@ PHP_FUNCTION(bartlby_svc_map) {
 				add_assoc_long(subarray, "is_downtime", 0);	
 			}
 			
-			
 					//Resolve ServerGroups
 			
-						ALLOC_INIT_ZVAL(groups);
-						array_init(groups);
+			
 
 		
 	
 		
 						if(srvmap[svcmap[x].srv_place].servergroup_counter > 0) {
+							ALLOC_INIT_ZVAL(groups);
+							array_init(groups);
 							for(y=0; y<srvmap[svcmap[x].srv_place].servergroup_counter; y++){
 						
 						
@@ -1766,13 +1766,14 @@ PHP_FUNCTION(bartlby_svc_map) {
 			
 			
 				//is member of following groups #SERVICEGROUP
-		ALLOC_INIT_ZVAL(groups);
-		array_init(groups);
+
 
 		
 	
 		
 		if(svcmap[x].servicegroup_counter > 0) {
+			ALLOC_INIT_ZVAL(groups);
+			array_init(groups);
 			for(y=0; y<svcmap[x].servicegroup_counter; y++){
 					
 					
@@ -1797,7 +1798,6 @@ PHP_FUNCTION(bartlby_svc_map) {
 			
 			add_assoc_zval(subarray, "servicegroups", groups);
 		}
-		
 			
 			
 			//Push SVC to map
