@@ -1,5 +1,5 @@
 <?
-//testing
+//testing 12
 $cfg = "/storage/SF.NET/BARTLBY/GIT/bartlby-core/bartlby.cfg";
 $map = bartlby_svc_map($cfg, null, null);
 
