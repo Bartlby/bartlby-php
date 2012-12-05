@@ -2246,6 +2246,8 @@ PHP_FUNCTION(bartlby_get_info) {
 		add_assoc_long(return_value, "servers", shm_hdr->srvcount);
 		add_assoc_long(return_value, "round_time_sum", shm_hdr->pstat.sum);
 		add_assoc_long(return_value, "round_time_count", shm_hdr->pstat.counter);
+		add_assoc_long(return_value, "servicegroups", shm_hdr->svcgroupcount);
+		add_assoc_long(return_value, "servergroups", shm_hdr->srvgroupcount);
 		
 		shmdt(bartlby_address);
 	

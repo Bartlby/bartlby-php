@@ -2,7 +2,10 @@
 //testing 1231
 $cfg = "/storage/SF.NET/BARTLBY/GIT/bartlby-core/bartlby.cfg";
 $map = bartlby_svc_map($cfg, null, null);
+$info = bartlby_get_info($cfg);
+var_dump($info);
+var_dump($map);
 
-bartlby_modify_servergroup($cfg, "asdf", 1,1,"asd", 3);
 
+echo "mem: " . memory_get_usage(true) . "\n";
 ?>
