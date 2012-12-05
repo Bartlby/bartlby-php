@@ -1710,50 +1710,30 @@ PHP_FUNCTION(bartlby_svc_map) {
 						break;	
 						case DT_SERVERGROUP:
 							
-							group_has_server = malloc(sizeof(char)*8);
-							is_member=0;
-							for(u=0; u<shm_hdr->srvgroupcount; u++) {
-		
-		
-								sprintf(group_has_server, "|%ld|", srvmap[svcmap[x].srv_place].server_id);
-								if(strstr(srvgrpmap[u].servergroup_members, group_has_server) != NULL) {
-									if(srvgrpmap[u].servergroup_id == dtmap[y].service_id) {
-										is_member=1;
-										break;		
+							if(srvmap[svcmap[x].srv_place].servergroup_counter > 0) {
+								for(u=0; u<srvmap[svcmap[x].srv_place].servergroup_counter; u++){
+									z=srvmap[svcmap[x].srv_place].servergroup_place[u];
+									if(srvgrpmap[z].servergroup_id == dtmap[y].service_id) {
+											is_down=3;
+											break;
 									}
-			
-			
+										
 								}
-		
 							}
-							free(group_has_server);
 							
-							if(is_member == 1) {							
-								is_down=3;
-							}
 						break;		
 						case DT_SERVICEGROUP:
-							group_has_server = malloc(sizeof(char)*8);
-							is_member=0;
-							for(u=0; u<shm_hdr->svcgroupcount; u++) {
-		
-		
-								sprintf(group_has_server, "|%ld|", svcmap[x].service_id);
-								if(strstr(svcgrpmap[u].servicegroup_members, group_has_server) != NULL) {
-									if(svcgrpmap[u].servicegroup_id == dtmap[y].service_id) {
-										is_member=1;
-										break;		
-									}
-			
-			
+							if(svcmap[x].servicegroup_counter > 0) {
+								for(u=0; u<svcmap[x].servicegroup_counter; u++){
+										z=svcmap[x].servicegroup_place[u];
+										if(svcgrpmap[z].servicegroup_id == dtmap[y].service_id) {
+											is_down=4;
+											break;
+										}
 								}
-		
 							}
-							free(group_has_server);
-							
-							if(is_member == 1) {							
-								is_down=4;
-							}
+					
+						
 						break;	
 					}
 					if(is_down > 0) {
@@ -3077,6 +3057,7 @@ PHP_FUNCTION(bartlby_get_service) {
 	int u;
 	char * group_has_server;
 	int is_member;
+	int z;
 	
 	pval * bartlby_config;
 	pval * bartlby_service_id;
@@ -3214,51 +3195,31 @@ PHP_FUNCTION(bartlby_get_service) {
 						break;	
 						case DT_SERVERGROUP:
 							
-							group_has_server = malloc(sizeof(char)*8);
-							is_member=0;
-							for(u=0; u<shm_hdr->srvgroupcount; u++) {
-		
-		
-								sprintf(group_has_server, "|%ld|", srvmap[svcmap[x].srv_place].server_id);
-								if(strstr(srvgrpmap[u].servergroup_members, group_has_server) != NULL) {
-									if(srvgrpmap[u].servergroup_id == dtmap[y].service_id) {
-										is_member=1;
-										break;		
+							if(srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter > 0) {
+								for(u=0; u<srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter; u++){
+									z=srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_place[u];
+									if(srvgrpmap[z].servergroup_id == dtmap[y].service_id) {
+											is_down=3;
+											break;
 									}
-			
-			
+										
 								}
-		
 							}
-							free(group_has_server);
 							
-							if(is_member == 1) {							
-								is_down=3;
-							}
 						break;		
 						case DT_SERVICEGROUP:
-							group_has_server = malloc(sizeof(char)*8);
-							is_member=0;
-							for(u=0; u<shm_hdr->svcgroupcount; u++) {
-		
-		
-								sprintf(group_has_server, "|%ld|", svcmap[x].service_id);
-								if(strstr(svcgrpmap[u].servicegroup_members, group_has_server) != NULL) {
-									if(svcgrpmap[u].servicegroup_id == dtmap[y].service_id) {
-										is_member=1;
-										break;		
-									}
-			
-			
+							if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
+								for(u=0; u<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; u++){
+										z=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[u];
+										if(svcgrpmap[z].servicegroup_id == dtmap[y].service_id) {
+											is_down=4;
+											break;
+										}
 								}
-		
 							}
-							free(group_has_server);
-							
-							if(is_member == 1) {							
-								is_down=4;
-							}
-						break;	
+					
+						
+						break;
 						
 									
 					}
