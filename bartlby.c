@@ -1573,6 +1573,10 @@ PHP_FUNCTION(bartlby_svc_map) {
 	zval * groups;
 	zval * groupinfo;
 	
+	char * group_has_server;
+	int is_member;
+	int u;
+	
 	int z;
 	
 	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &svc_right_array, &server_right_array)==FAILURE) {
@@ -1703,7 +1707,54 @@ PHP_FUNCTION(bartlby_svc_map) {
 							if(dtmap[y].service_id == svcmap[x].server_id) {
 								is_down=2;	
 							}
-						break;				
+						break;	
+						case DT_SERVERGROUP:
+							
+							group_has_server = malloc(sizeof(char)*8);
+							is_member=0;
+							for(u=0; u<shm_hdr->srvgroupcount; u++) {
+		
+		
+								sprintf(group_has_server, "|%ld|", srvmap[svcmap[x].srv_place].server_id);
+								if(strstr(srvgrpmap[u].servergroup_members, group_has_server) != NULL) {
+									if(srvgrpmap[u].servergroup_id == dtmap[y].service_id) {
+										is_member=1;
+										break;		
+									}
+			
+			
+								}
+		
+							}
+							free(group_has_server);
+							
+							if(is_member == 1) {							
+								is_down=3;
+							}
+						break;		
+						case DT_SERVICEGROUP:
+							group_has_server = malloc(sizeof(char)*8);
+							is_member=0;
+							for(u=0; u<shm_hdr->svcgroupcount; u++) {
+		
+		
+								sprintf(group_has_server, "|%ld|", svcmap[x].service_id);
+								if(strstr(svcgrpmap[u].servicegroup_members, group_has_server) != NULL) {
+									if(svcgrpmap[u].servicegroup_id == dtmap[y].service_id) {
+										is_member=1;
+										break;		
+									}
+			
+			
+								}
+		
+							}
+							free(group_has_server);
+							
+							if(is_member == 1) {							
+								is_down=4;
+							}
+						break;	
 					}
 					if(is_down > 0) {
 						add_assoc_long(subarray, "is_downtime", 1);
@@ -3023,6 +3074,10 @@ PHP_FUNCTION(bartlby_get_service) {
 	zval * groups;
 	zval * groupinfo;
 	
+	int u;
+	char * group_has_server;
+	int is_member;
+	
 	pval * bartlby_config;
 	pval * bartlby_service_id;
 	
@@ -3156,7 +3211,56 @@ PHP_FUNCTION(bartlby_get_service) {
 							if(dtmap[y].service_id == svcmap[Z_LVAL_P(bartlby_service_id)].server_id) {
 								is_down=2;	
 							}
-						break;				
+						break;	
+						case DT_SERVERGROUP:
+							
+							group_has_server = malloc(sizeof(char)*8);
+							is_member=0;
+							for(u=0; u<shm_hdr->srvgroupcount; u++) {
+		
+		
+								sprintf(group_has_server, "|%ld|", srvmap[svcmap[x].srv_place].server_id);
+								if(strstr(srvgrpmap[u].servergroup_members, group_has_server) != NULL) {
+									if(srvgrpmap[u].servergroup_id == dtmap[y].service_id) {
+										is_member=1;
+										break;		
+									}
+			
+			
+								}
+		
+							}
+							free(group_has_server);
+							
+							if(is_member == 1) {							
+								is_down=3;
+							}
+						break;		
+						case DT_SERVICEGROUP:
+							group_has_server = malloc(sizeof(char)*8);
+							is_member=0;
+							for(u=0; u<shm_hdr->svcgroupcount; u++) {
+		
+		
+								sprintf(group_has_server, "|%ld|", svcmap[x].service_id);
+								if(strstr(svcgrpmap[u].servicegroup_members, group_has_server) != NULL) {
+									if(svcgrpmap[u].servicegroup_id == dtmap[y].service_id) {
+										is_member=1;
+										break;		
+									}
+			
+			
+								}
+		
+							}
+							free(group_has_server);
+							
+							if(is_member == 1) {							
+								is_down=4;
+							}
+						break;	
+						
+									
 					}
 					if(is_down > 0) {
 						add_assoc_long(return_value, "is_downtime", 1);

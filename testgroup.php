@@ -7,5 +7,9 @@ var_dump($info);
 var_dump($map);
 
 
+<<<<<<< HEAD
 echo "mem: " . memory_get_usage(true) . "\n";
+=======
+var_dump($map);
+>>>>>>> downtime
 ?>
