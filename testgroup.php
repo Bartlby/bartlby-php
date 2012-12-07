@@ -13,5 +13,5 @@ echo "mem: " . memory_get_usage(true) . "\n";
 //var_dump(bartlby_get_service($cfg, 4));
 
 
-var_dump(bartlby_servicegroup_map($cfg));
+var_dump(bartlby_get_server_by_id($cfg, 11));
 ?>
