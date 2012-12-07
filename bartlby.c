@@ -2865,11 +2865,13 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	int x;
 	int z;
 	int y;
-	
+	int current_time;
+	int is_down;
 	int ret;
 	zval * groups;
 	zval * groupinfo;
-	
+	int u;
+	int dtmapindex;
 	
 	int (*GetServerById)(int,struct server *, char *);
 	
@@ -2917,6 +2919,8 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
 			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
 			
+			current_time=time(NULL);
+			is_down=0;
 			
 			for(x=0; x<shm_hdr->srvcount; x++) {
 				if(srvmap[x].server_id == Z_LVAL_P(server_id)) {
@@ -2928,6 +2932,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 					add_assoc_long(return_value, "server_shm_place",x);
 					
 					
+						
 					
 
 		
@@ -2952,6 +2957,20 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 									add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 									
 									
+									for(u=0; u<shm_hdr->dtcount; u++) {
+						
+										if(current_time >= dtmap[u].downtime_from && current_time <= dtmap[u].downtime_to) {
+											
+												if(dtmap[u].downtime_type ==  DT_SERVERGROUP) {
+													if(srvgrpmap[z].servergroup_id == dtmap[u].service_id) {
+																	is_down=3;
+																	dtmapindex=u;
+																	break;
+													}
+												}
+											}
+									}	
+									
 									add_next_index_zval(groups, groupinfo);
 						
 						}		
@@ -2960,6 +2979,42 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 				
 						add_assoc_zval(return_value, "groups", groups);
 					}
+					
+					
+					
+					
+					
+					
+					for(y=0; y<shm_hdr->dtcount; y++) {
+						
+						if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+							
+								if(dtmap[y].downtime_type ==  DT_SERVER) {
+									if(Z_LVAL_P(server_id) == dtmap[y].service_id) {
+													is_down=2;
+													dtmapindex=y;
+													break;
+									}
+								}
+							}
+						}	
+					
+					
+						if(is_down > 0) {
+								add_assoc_long(return_value, "is_downtime", 1);
+								add_assoc_long(return_value, "downtime_from", dtmap[dtmapindex].downtime_from);
+								add_assoc_long(return_value, "downtime_to", dtmap[dtmapindex].downtime_to);
+								add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice, 1);
+								add_assoc_long(return_value, "downtime_service", dtmap[dtmapindex].service_id);
+								add_assoc_long(return_value, "downtime_type", dtmap[dtmapindex].downtime_type);
+								
+						} else {
+							add_assoc_long(return_value, "is_downtime", 0);
+						}		
+					
+					
+					
+					
 					
 					
 					break;
