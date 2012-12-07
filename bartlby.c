@@ -3455,7 +3455,9 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 	struct servergroup * srvgrpmap;
 	
 	pval * bartlby_config;
-	
+	int is_down;
+	int current_time;
+	int y;
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -3489,6 +3491,35 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 			add_assoc_string(subarray, "servergroup_members", srvgrpmap[x].servergroup_members, 1);
 			
 			add_assoc_long(subarray, "shm_place", x);
+			
+			current_time=time(NULL);
+			is_down=0;
+			for(y=0; y<shm_hdr->dtcount; y++) {
+				
+				if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+					
+						if(dtmap[y].downtime_type ==  DT_SERVERGROUP) {
+							if(srvgrpmap[x].servergroup_id == dtmap[y].service_id) {
+											is_down=3;
+											break;
+							}
+						}
+					}
+				}	
+			
+			
+				if(is_down > 0) {
+						add_assoc_long(subarray, "is_downtime", 1);
+						add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
+						add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
+						add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
+						add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
+						add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
+						
+				} else {
+					add_assoc_long(subarray, "is_downtime", 0);
+				}			
+			
 			
 			//Push SVC to map
 			add_next_index_zval(return_value, subarray);
@@ -3870,7 +3901,9 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 	struct servicegroup * svcgrpmap;
 	
 	pval * bartlby_config;
-	
+	int current_time;
+	int y;
+	int is_down;
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -3903,6 +3936,36 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 			add_assoc_long(subarray, "servicegroup_notify", svcgrpmap[x].servicegroup_notify);
 			add_assoc_string(subarray, "servicegroup_members", svcgrpmap[x].servicegroup_members,1);
 			add_assoc_long(subarray, "shm_place", x);
+			
+			
+			
+			current_time=time(NULL);
+			is_down=0;
+			for(y=0; y<shm_hdr->dtcount; y++) {
+				
+				if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+					
+						if(dtmap[y].downtime_type ==  DT_SERVICEGROUP) {
+							if(svcgrpmap[x].servicegroup_id == dtmap[y].service_id) {
+											is_down=4;
+											break;
+							}
+						}
+					}
+				}	
+			
+			
+				if(is_down > 0) {
+						add_assoc_long(subarray, "is_downtime", 1);
+						add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
+						add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
+						add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
+						add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
+						add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
+						
+				} else {
+					add_assoc_long(subarray, "is_downtime", 0);
+				}			
 			
 			
 			//Push SVC to map
