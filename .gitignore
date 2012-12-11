@@ -1,3 +1,5 @@
+*.deb
+*.tgz
 Makefile.global
 core
 acinclude.m4
