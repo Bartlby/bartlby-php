@@ -909,7 +909,7 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime);
+		my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup);
 		if(my_size != shm_hdr->size_of_structs) {	
 			shmdt(bartlby_address);
 			RETURN_FALSE;
