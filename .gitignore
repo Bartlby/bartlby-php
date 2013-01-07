@@ -1,3 +1,4 @@
+config.h.in~
 *.deb
 *.tgz
 Makefile.global
