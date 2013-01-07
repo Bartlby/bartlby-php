@@ -1,4 +1,5 @@
 config.h.in~
+co
 *.deb
 *.tgz
 Makefile.global
