@@ -339,6 +339,8 @@ struct service {
 	struct servicegroup * servicegroups[200];
 	long servicegroup_counter;
 	long servicegroup_place[200];
+	
+	long fires_events;
 };
 
 struct servicegroup {

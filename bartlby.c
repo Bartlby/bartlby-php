@@ -1686,6 +1686,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 			//svc.renotify_interval, svc.escalate_divisor
 			add_assoc_long(subarray, "renotify_interval",svcmap[x].renotify_interval);
 			add_assoc_long(subarray, "escalate_divisor",svcmap[x].escalate_divisor);
+			add_assoc_long(subarray, "fires_events",svcmap[x].fires_events);
 			
 			add_assoc_long(subarray, "server_gone",srvmap[svcmap[x].srv_place].is_gone);
 			
@@ -2422,6 +2423,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		//svc.renotify_interval, svc.escalate_divisor
 		add_assoc_long(return_value, "renotify_interval",svc.renotify_interval);
 		add_assoc_long(return_value, "escalate_divisor",svc.escalate_divisor);
+		add_assoc_long(return_value, "fires_events",svc.fires_events);
 		
 		
 		
@@ -2488,6 +2490,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	pval * flap_seconds;
 	pval * renotify_interval;
 	pval * escalate_divisor;
+	pval * fires_events;
 	
 	
 	/*
@@ -2507,7 +2510,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	svc->service_passive_timeout
 	*/
 	
-	if(ZEND_NUM_ARGS() != 25 || getParameters(ht, 25, &bartlby_config,&service_id,  &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout,&service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 26 || getParameters(ht, 26, &bartlby_config,&service_id,  &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout,&service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	convert_to_string(bartlby_config);
@@ -2540,6 +2543,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	convert_to_long(renotify_interval);
 	convert_to_long(escalate_divisor);
+	convert_to_long(fires_events);
 	
 	convert_to_string(exec_plan);
 	
@@ -2576,6 +2580,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	svc.renotify_interval=Z_LVAL_P(renotify_interval);
 	svc.escalate_divisor=Z_LVAL_P(escalate_divisor);
+	svc.fires_events=Z_LVAL_P(fires_events);
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
 	if(SOHandle == NULL) {
@@ -2616,6 +2621,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	pval * flap_seconds;
 	pval * renotify_interval;
 	pval * escalate_divisor;
+	pval * fires_events;
 	
 	
 	
@@ -2635,7 +2641,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc->service_ack
 	*/
 	
-	if(ZEND_NUM_ARGS() != 24 || getParameters(ht, 24, &bartlby_config, &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout, &service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 25 || getParameters(ht, 25, &bartlby_config, &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout, &service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	convert_to_string(bartlby_config);
@@ -2659,6 +2665,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	
 	convert_to_long(escalate_divisor);
 	convert_to_long(renotify_interval);
+	convert_to_long(fires_events);
 	
 	convert_to_string(snmp_community);
 	convert_to_string(snmp_objid);
@@ -2683,7 +2690,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	
 	svc.escalate_divisor=Z_LVAL_P(escalate_divisor);
 	svc.renotify_interval=Z_LVAL_P(renotify_interval);
-	
+	svc.fires_events=Z_LVAL_P(fires_events);
 	
 	svc.service_check_timeout=Z_LVAL_P(service_check_timeout);
 	
@@ -3227,6 +3234,7 @@ PHP_FUNCTION(bartlby_get_service) {
 			
 		add_assoc_long(return_value, "renotify_interval",svcmap[Z_LVAL_P(bartlby_service_id)].renotify_interval);
 		add_assoc_long(return_value, "escalate_divisor",svcmap[Z_LVAL_P(bartlby_service_id)].escalate_divisor);
+		add_assoc_long(return_value, "fires_events",svcmap[Z_LVAL_P(bartlby_service_id)].fires_events);
 		add_assoc_long(return_value, "is_gone",svcmap[Z_LVAL_P(bartlby_service_id)].is_gone);
 			
 		
