@@ -263,6 +263,10 @@ struct server {
 	struct servergroup * servergroups[200];
 	long servergroup_counter;
 	long servergroup_place[200];
+	
+	char server_ssh_keyfile[512];
+  char server_ssh_passphrase[512];
+  char server_ssh_username[512];
 } xxyz;
 
 

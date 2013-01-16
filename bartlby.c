@@ -1628,6 +1628,9 @@ PHP_FUNCTION(bartlby_svc_map) {
 			add_assoc_string(subarray, "service_name", svcmap[x].service_name, 1);
 			add_assoc_string(subarray, "server_name", srvmap[svcmap[x].srv_place].server_name, 1);
 			add_assoc_string(subarray, "client_ip", srvmap[svcmap[x].srv_place].client_ip, 1);
+			add_assoc_string(subarray, "server_ssh_keyfile", srvmap[svcmap[x].srv_place].server_ssh_keyfile, 1);
+			add_assoc_string(subarray, "server_ssh_passphrase", srvmap[svcmap[x].srv_place].server_ssh_passphrase, 1);
+			add_assoc_string(subarray, "server_ssh_username", srvmap[svcmap[x].srv_place].server_ssh_username, 1);
 			add_assoc_string(subarray, "plugin", svcmap[x].plugin, 1);
 			add_assoc_string(subarray, "plugin_arguments", svcmap[x].plugin_arguments, 1);
 			
@@ -2389,6 +2392,9 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		
 		add_assoc_string(return_value, "server_name", svc.srv->server_name, 1);
 		add_assoc_string(return_value, "client_ip", svc.srv->client_ip, 1);
+		add_assoc_string(return_value, "server_ssh_keyfile", svc.srv->server_ssh_keyfile, 1);
+		add_assoc_string(return_value, "server_ssh_passphrase", svc.srv->server_ssh_passphrase, 1);
+		add_assoc_string(return_value, "server_ssh_username", svc.srv->server_ssh_username, 1);
 		add_assoc_string(return_value, "server_icon", svc.srv->server_icon, 1);
 		add_assoc_long(return_value, "client_port", svc.srv->client_port);
 		
@@ -2739,6 +2745,10 @@ PHP_FUNCTION(bartlby_add_server) {
 	pval * server_notify;
 	pval * server_dead;
 	
+	pval * server_ssh_keyfile;
+	pval * server_ssh_passphrase;
+	pval * server_ssh_username;
+	
 	void * SOHandle;
 	char * dlmsg;
 	
@@ -2748,7 +2758,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	struct server srv;
 	
-	if (ZEND_NUM_ARGS() != 9 || getParameters(ht, 9, &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 12 || getParameters(ht, 12, &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2760,6 +2770,10 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_long(server_flap_seconds);
 	convert_to_long(server_notify);
 	convert_to_long(server_dead);
+	
+	convert_to_string(server_ssh_keyfile);
+	convert_to_string(server_ssh_passphrase);
+	convert_to_string(server_ssh_username);
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
 	if(SOHandle == NULL) {
@@ -2779,6 +2793,10 @@ PHP_FUNCTION(bartlby_add_server) {
 	srv.server_notify=Z_LVAL_P(server_notify);
 	srv.server_dead=Z_LVAL_P(server_dead);
 	
+	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
+	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
+	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
+	
 	ret=AddServer(&srv, Z_STRVAL_P(bartlby_config));
 	
 	dlclose(SOHandle);
@@ -2797,6 +2815,9 @@ PHP_FUNCTION(bartlby_modify_server) {
 	pval * server_flap_seconds;
 	pval * server_notify;
 	pval * server_dead;
+	pval * server_ssh_keyfile;
+	pval * server_ssh_passphrase;
+	pval * server_ssh_username;
 	
 	
 	void * SOHandle;
@@ -2808,7 +2829,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	struct server srv;
 	
-	if (ZEND_NUM_ARGS() != 10 || getParameters(ht, 10, &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 13 || getParameters(ht, 13, &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2821,6 +2842,10 @@ PHP_FUNCTION(bartlby_modify_server) {
 	convert_to_long(server_flap_seconds);
 	convert_to_long(server_notify);
 	convert_to_long(server_dead);
+	
+	convert_to_string(server_ssh_keyfile);
+	convert_to_string(server_ssh_passphrase);
+	convert_to_string(server_ssh_username);
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
 	if(SOHandle == NULL) {
@@ -2843,6 +2868,9 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	srv.server_dead=Z_LVAL_P(server_dead);
 	
+	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
+	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
+	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
 	
 	ret=ModifyServer(&srv, Z_STRVAL_P(bartlby_config));
 	
@@ -2912,6 +2940,11 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		}
 		add_assoc_string(return_value, "server_name", svc.server_name, 1);
 		add_assoc_string(return_value, "server_ip", svc.client_ip, 1);
+		
+		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile, 1);
+		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase, 1);
+		add_assoc_string(return_value, "server_ssh_username", svc.server_ssh_username, 1);
+		
 		add_assoc_string(return_value, "server_icon", svc.server_icon, 1);
 		add_assoc_long(return_value, "server_port",svc.client_port);
 		add_assoc_long(return_value, "server_id",Z_LVAL_P(server_id));
@@ -3175,6 +3208,11 @@ PHP_FUNCTION(bartlby_get_service) {
 		add_assoc_string(return_value, "service_name", svcmap[Z_LVAL_P(bartlby_service_id)].service_name, 1);
 		add_assoc_string(return_value, "server_name", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_name, 1);
 		add_assoc_string(return_value, "client_ip", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_ip, 1);
+		
+		add_assoc_string(return_value, "server_ssh_keyfile", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_keyfile, 1);
+		add_assoc_string(return_value, "server_ssh_passphrase", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_passphrase, 1);
+		add_assoc_string(return_value, "server_ssh_username", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_username, 1);
+		
 		add_assoc_string(return_value, "plugin", svcmap[Z_LVAL_P(bartlby_service_id)].plugin, 1);
 		add_assoc_string(return_value, "plugin_arguments", svcmap[Z_LVAL_P(bartlby_service_id)].plugin_arguments, 1);
 		
