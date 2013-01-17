@@ -1631,6 +1631,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 			add_assoc_string(subarray, "server_ssh_keyfile", srvmap[svcmap[x].srv_place].server_ssh_keyfile, 1);
 			add_assoc_string(subarray, "server_ssh_passphrase", srvmap[svcmap[x].srv_place].server_ssh_passphrase, 1);
 			add_assoc_string(subarray, "server_ssh_username", srvmap[svcmap[x].srv_place].server_ssh_username, 1);
+			add_assoc_string(subarray, "server_enabled_triggers", srvmap[svcmap[x].srv_place].enabled_triggers, 1);
 			add_assoc_string(subarray, "plugin", svcmap[x].plugin, 1);
 			add_assoc_string(subarray, "plugin_arguments", svcmap[x].plugin_arguments, 1);
 			
@@ -1782,6 +1783,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
 									add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 									add_assoc_long(groupinfo,"servergroup_dead", srvgrpmap[z].servergroup_dead);
+									add_assoc_string(groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers,1);
 									
 									
 									
@@ -1827,7 +1829,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[z].servicegroup_notify);
 					add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[z].servicegroup_id);
 					add_assoc_long(groupinfo,"servicegroup_dead", svcgrpmap[z].servicegroup_dead);
-					
+					add_assoc_string(groupinfo,"enabled_triggers", svcgrpmap[z].enabled_triggers,1);
 					
 					add_next_index_zval(groups, groupinfo);
 					
@@ -2397,6 +2399,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_string(return_value, "server_ssh_keyfile", svc.srv->server_ssh_keyfile, 1);
 		add_assoc_string(return_value, "server_ssh_passphrase", svc.srv->server_ssh_passphrase, 1);
 		add_assoc_string(return_value, "server_ssh_username", svc.srv->server_ssh_username, 1);
+		add_assoc_string(return_value, "server_enabled_triggers", svc.srv->enabled_triggers, 1);
 		add_assoc_string(return_value, "server_icon", svc.srv->server_icon, 1);
 		add_assoc_long(return_value, "client_port", svc.srv->client_port);
 		
@@ -2756,6 +2759,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	pval * server_ssh_keyfile;
 	pval * server_ssh_passphrase;
 	pval * server_ssh_username;
+	pval * enabled_triggers;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2766,7 +2770,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	struct server srv;
 	
-	if (ZEND_NUM_ARGS() != 12 || getParameters(ht, 12, &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 13 || getParameters(ht, 13, &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2778,6 +2782,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_long(server_flap_seconds);
 	convert_to_long(server_notify);
 	convert_to_long(server_dead);
+	convert_to_string(enabled_triggers);
 	
 	convert_to_string(server_ssh_keyfile);
 	convert_to_string(server_ssh_passphrase);
@@ -2792,6 +2797,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	LOAD_SYMBOL(AddServer,SOHandle, "AddServer");
 	
+	strcpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	strcpy(srv.server_name, Z_STRVAL_P(server_name));
 	srv.client_port=Z_LVAL_P(server_port);
 	strcpy(srv.client_ip, Z_STRVAL_P(server_ip));
@@ -2826,6 +2832,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	pval * server_ssh_keyfile;
 	pval * server_ssh_passphrase;
 	pval * server_ssh_username;
+	pval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -2837,10 +2844,11 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	struct server srv;
 	
-	if (ZEND_NUM_ARGS() != 13 || getParameters(ht, 13, &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 14 || getParameters(ht, 14, &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
+	convert_to_string(enabled_triggers);
 	convert_to_string(server_name);
 	convert_to_string(server_ip);
 	convert_to_long(server_port);
@@ -2864,6 +2872,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	LOAD_SYMBOL(ModifyServer,SOHandle, "ModifyServer");
 	
+	strcpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	strcpy(srv.server_name, Z_STRVAL_P(server_name));
 	srv.client_port=Z_LVAL_P(server_port);
 	srv.server_id=Z_LVAL_P(server_id);
@@ -2952,6 +2961,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile, 1);
 		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase, 1);
 		add_assoc_string(return_value, "server_ssh_username", svc.server_ssh_username, 1);
+		add_assoc_string(return_value, "server_enabled_triggers", svc.enabled_triggers, 1);
 		
 		add_assoc_string(return_value, "server_icon", svc.server_icon, 1);
 		add_assoc_long(return_value, "server_port",svc.client_port);
@@ -3220,6 +3230,8 @@ PHP_FUNCTION(bartlby_get_service) {
 		add_assoc_string(return_value, "server_ssh_keyfile", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_keyfile, 1);
 		add_assoc_string(return_value, "server_ssh_passphrase", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_passphrase, 1);
 		add_assoc_string(return_value, "server_ssh_username", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_username, 1);
+		
+		add_assoc_string(return_value, "server_enabled_triggers", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].enabled_triggers, 1);
 		
 		add_assoc_string(return_value, "plugin", svcmap[Z_LVAL_P(bartlby_service_id)].plugin, 1);
 		add_assoc_string(return_value, "plugin_arguments", svcmap[Z_LVAL_P(bartlby_service_id)].plugin_arguments, 1);
@@ -3509,6 +3521,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	pval * servergroup_notify;
 	pval * servergroup_members;
 	pval * servergroup_dead;
+	pval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -3520,11 +3533,12 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	
 	struct servergroup svc;
 	
-	if (ZEND_NUM_ARGS() != 6 || getParameters(ht, 6, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
 	convert_to_string(servergroup_name);
+	convert_to_string(enabled_triggers);
 	convert_to_string(servergroup_members);
 	convert_to_long(servergroup_active);
 	convert_to_long(servergroup_notify);
@@ -3544,6 +3558,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	svc.servergroup_notify=Z_LVAL_P(servergroup_notify);
 	svc.servergroup_active=Z_LVAL_P(servergroup_active);
 	strcpy(svc.servergroup_members, Z_STRVAL_P(servergroup_members));
+	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	
 	svc.servergroup_dead=Z_LVAL_P(servergroup_dead);
 	
@@ -3604,6 +3619,8 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 			add_assoc_long(subarray, "servergroup_notify", srvgrpmap[x].servergroup_notify);
 			add_assoc_string(subarray, "servergroup_members", srvgrpmap[x].servergroup_members, 1);
 			add_assoc_long(subarray, "servergroup_dead", srvgrpmap[x].servergroup_dead);
+			add_assoc_string(subarray, "enabled_triggers", srvgrpmap[x].enabled_triggers,1);
+			
 			
 			add_assoc_long(subarray, "shm_place", x);
 			
@@ -3667,6 +3684,7 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	pval * servergroup_members;
 	pval * servergroup_id;
 	pval * servergroup_dead;
+	pval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -3678,11 +3696,12 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	
 	struct servergroup svc;
 	
-	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead, &servergroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 8 || getParameters(ht, 8, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead,&enabled_triggers, &servergroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
 	convert_to_string(servergroup_members);
+	convert_to_string(enabled_triggers);
 	convert_to_string(servergroup_name);
 	convert_to_long(servergroup_active);
 	convert_to_long(servergroup_notify);
@@ -3697,6 +3716,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	
 	
 	LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
+	
+	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	
 	strcpy(svc.servergroup_name, Z_STRVAL_P(servergroup_name));
 	strcpy(svc.servergroup_members, Z_STRVAL_P(servergroup_members));
@@ -3961,6 +3982,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	pval * servicegroup_notify;
 	pval * servicegroup_members;
 	pval * servicegroup_dead;
+	pval * enabled_triggers;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -3971,7 +3993,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	
 	struct servicegroup svc;
 	
-	if (ZEND_NUM_ARGS() != 6 || getParameters(ht, 6, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -3980,7 +4002,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	convert_to_long(servicegroup_active);
 	convert_to_long(servicegroup_notify);
 	convert_to_long(servicegroup_dead);
-		
+	convert_to_string(enabled_triggers);
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
 	if(SOHandle == NULL) {
@@ -3995,6 +4017,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
 	svc.servicegroup_active=Z_LVAL_P(servicegroup_active);
 	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
+	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
 	
 	ret=AddServiceGroup(&svc, Z_STRVAL_P(bartlby_config));
@@ -4055,6 +4078,7 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 			add_assoc_long(subarray, "servicegroup_notify", svcgrpmap[x].servicegroup_notify);
 			add_assoc_string(subarray, "servicegroup_members", svcgrpmap[x].servicegroup_members,1);
 			add_assoc_long(subarray, "servicegroup_dead", svcgrpmap[x].servicegroup_dead);
+			add_assoc_string(subarray, "enabled_triggers", svcgrpmap[x].enabled_triggers,1);
 			add_assoc_long(subarray, "shm_place", x);
 			
 			
@@ -4119,6 +4143,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	pval * servicegroup_members;
 	pval * servicegroup_id;
 	pval * servicegroup_dead;
+	pval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -4130,10 +4155,11 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	
 	struct servicegroup svc;
 	
-	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead,  &servicegroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 8 || getParameters(ht, 8, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead,&enabled_triggers,  &servicegroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
+	convert_to_string(enabled_triggers);
 	convert_to_string(servicegroup_members);
 	convert_to_string(servicegroup_name);
 	convert_to_long(servicegroup_active);
@@ -4150,6 +4176,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	
 	LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
 	
+	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
 	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
 	svc.servicegroup_active=Z_LVAL_P(servicegroup_active);

@@ -267,6 +267,7 @@ struct server {
 	char server_ssh_keyfile[512];
   char server_ssh_passphrase[512];
   char server_ssh_username[512];
+  char enabled_triggers[512];
 } xxyz;
 
 
@@ -356,6 +357,7 @@ struct servicegroup {
 	char servicegroup_members[1024];
 	int servicegroup_dead;
 	struct service * dead_marker;
+	char enabled_triggers[512];
 	
 };
 
@@ -367,6 +369,8 @@ struct servergroup {
 	char servergroup_members[1024];
 	int servergroup_dead;
 	struct service * dead_marker;
+	
+	char enabled_triggers[512];
 	
 };
 
