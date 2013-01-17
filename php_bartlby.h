@@ -345,6 +345,7 @@ struct service {
 	long servicegroup_place[200];
 	
 	long fires_events;
+	char enabled_triggers[512];
 };
 
 struct servicegroup {
