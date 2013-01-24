@@ -208,6 +208,7 @@ struct snmpi {
 	long warn;
 	long crit;
 	long type;
+	char textmatch[1024];
 };
 struct sprocess {
 	int start_time;

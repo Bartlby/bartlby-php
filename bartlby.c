@@ -1671,12 +1671,14 @@ PHP_FUNCTION(bartlby_svc_map) {
 			//bartlby_get_service_by_id
 			
 			add_assoc_string(subarray, "service_snmp_community", svcmap[x].snmp_info.community, 1);
+			add_assoc_string(subarray, "service_snmp_textmatch", svcmap[x].snmp_info.textmatch, 1);
 			add_assoc_string(subarray, "service_snmp_objid", svcmap[x].snmp_info.objid, 1);
 			
 			add_assoc_long(subarray, "service_snmp_warning",svcmap[x].snmp_info.warn);
 			add_assoc_long(subarray, "service_snmp_critical",svcmap[x].snmp_info.crit);
 			add_assoc_long(subarray, "service_snmp_version",svcmap[x].snmp_info.version);
 			add_assoc_long(subarray, "service_snmp_type",svcmap[x].snmp_info.type);
+			
 			
 			add_assoc_long(subarray, "flap_seconds",svcmap[x].flap_seconds);
 			
@@ -2421,6 +2423,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 
 		
 		add_assoc_string(return_value, "service_snmp_community", svc.snmp_info.community, 1);
+		add_assoc_string(return_value, "service_snmp_textmatch", svc.snmp_info.textmatch, 1);
 		add_assoc_string(return_value, "service_snmp_objid", svc.snmp_info.objid, 1);
 		
 		add_assoc_long(return_value, "service_snmp_warning",svc.snmp_info.warn);
@@ -2497,6 +2500,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	pval *service_id, * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, *service_check_timeout, * service_ack, * service_retain;
 	pval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
+	pval * snmp_textmatch;
 	pval * service_active;
 	pval * flap_seconds;
 	pval * renotify_interval;
@@ -2522,7 +2526,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	svc->service_passive_timeout
 	*/
 	
-	if(ZEND_NUM_ARGS() != 27 || getParameters(ht, 27, &bartlby_config,&service_id,  &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout,&service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 28 || getParameters(ht, 28, &bartlby_config,&service_id,  &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout,&service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &snmp_textmatch, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	convert_to_string(bartlby_config);
@@ -2545,6 +2549,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	
 	convert_to_string(snmp_community);
+	convert_to_string(snmp_textmatch);
 	convert_to_string(snmp_objid);
 	convert_to_long(snmp_version);
 	convert_to_long(snmp_warning);
@@ -2582,6 +2587,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	sprintf(svc.service_var, "%s", Z_STRVAL_P(service_var));
 	
 	sprintf(svc.snmp_info.community, "%s", Z_STRVAL_P(snmp_community));
+	sprintf(svc.snmp_info.textmatch, "%s", Z_STRVAL_P(snmp_textmatch));
 	sprintf(svc.snmp_info.objid, "%s", Z_STRVAL_P(snmp_objid));
 	svc.snmp_info.version=Z_LVAL_P(snmp_version);
 	svc.snmp_info.warn=Z_LVAL_P(snmp_warning);
@@ -2632,6 +2638,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	
 	pval * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, * service_check_timeout, * service_ack, * service_retain;
 	pval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
+	pval * snmp_textmatch;
 	pval * service_active;
 	pval * flap_seconds;
 	pval * renotify_interval;
@@ -2656,7 +2663,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc->service_ack
 	*/
 	
-	if(ZEND_NUM_ARGS() != 26 || getParameters(ht, 26, &bartlby_config, &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout, &service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 27 || getParameters(ht, 27, &bartlby_config, &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout, &service_check_timeout, &service_ack, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &snmp_textmatch, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	convert_to_string(bartlby_config);
@@ -2684,6 +2691,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	convert_to_string(enabled_triggers);
 	
 	convert_to_string(snmp_community);
+	convert_to_string(snmp_textmatch);
 	convert_to_string(snmp_objid);
 	convert_to_long(snmp_version);
 	convert_to_long(snmp_warning);
@@ -2716,6 +2724,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	sprintf(svc.service_var, "%s", Z_STRVAL_P(service_var));
 	
 	sprintf(svc.snmp_info.community, "%s", Z_STRVAL_P(snmp_community));
+	sprintf(svc.snmp_info.textmatch, "%s", Z_STRVAL_P(snmp_textmatch));
 	sprintf(svc.snmp_info.objid, "%s", Z_STRVAL_P(snmp_objid));
 	svc.snmp_info.version=Z_LVAL_P(snmp_version);
 	svc.snmp_info.warn=Z_LVAL_P(snmp_warning);
@@ -3275,6 +3284,7 @@ PHP_FUNCTION(bartlby_get_service) {
 		add_assoc_string(return_value, "server_icon",  srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_icon, 1);
 		
 		add_assoc_string(return_value, "service_snmp_community",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.community, 1);
+		add_assoc_string(return_value, "service_snmp_textmatch",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.textmatch, 1);
 		add_assoc_string(return_value, "service_snmp_objid",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.objid, 1);
 		
 		add_assoc_long(return_value, "service_snmp_warning", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.warn);
