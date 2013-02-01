@@ -3215,6 +3215,10 @@ PHP_FUNCTION(bartlby_get_service) {
 			php_error(E_WARNING, "Service id out of bounds");	
 			RETURN_FALSE;	
 		}
+		if(Z_LVAL_P(bartlby_service_id) < 0) {
+			php_error(E_WARNING, "Service id below zero");	
+			RETURN_FALSE;	
+		}
 		add_assoc_long(return_value, "service_id", svcmap[Z_LVAL_P(bartlby_service_id)].service_id);
 		add_assoc_long(return_value, "server_id", svcmap[Z_LVAL_P(bartlby_service_id)].server_id);
 		add_assoc_long(return_value, "last_state", svcmap[Z_LVAL_P(bartlby_service_id)].last_state);
