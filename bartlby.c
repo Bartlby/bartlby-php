@@ -301,10 +301,10 @@ void bartlby_mark_object_gone(char * cfg, long id, int type, int msg) {
 	if(bartlby_address != NULL) {
 	
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
 	} else {
 		return; //SHM ERROR
 	}
@@ -693,9 +693,9 @@ PHP_FUNCTION(bartlby_downtime_map) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
 		
 		for(x=0; x<shm_hdr->dtcount; x++) {
 			
@@ -859,11 +859,11 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
 		
 		if(Z_LVAL_P(event_index) < EVENT_QUEUE_MAX) {
 			add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message, 1);
@@ -955,7 +955,7 @@ PHP_FUNCTION(bartlby_toggle_sirene) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 			
 		if(shm_hdr->sirene_mode== 1) {
 			shm_hdr->sirene_mode = 0;
@@ -1010,7 +1010,7 @@ PHP_FUNCTION(bartlby_set_passive) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1066,7 +1066,7 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1127,7 +1127,7 @@ PHP_FUNCTION(bartlby_toggle_service_active) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1203,10 +1203,10 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
@@ -1282,10 +1282,10 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
@@ -1357,8 +1357,8 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
 		
 		
 		
@@ -1427,7 +1427,7 @@ PHP_FUNCTION(bartlby_toggle_service_notify) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1489,7 +1489,7 @@ PHP_FUNCTION(bartlby_check_force) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 		
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1592,13 +1592,13 @@ PHP_FUNCTION(bartlby_svc_map) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 	if(bartlby_address != NULL) {
 			shm_hdr=(struct shm_header *)(void *)bartlby_address;
-			svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
-			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+			svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 			
 			
 			
@@ -2980,13 +2980,13 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 		if(bartlby_address != NULL) {
 			shm_hdr=(struct shm_header *)(void *)bartlby_address;
-			svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
-			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+			svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 			
 			current_time=time(NULL);
 			is_down=0;
@@ -3203,13 +3203,13 @@ PHP_FUNCTION(bartlby_get_service) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 		
 		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
 			php_error(E_WARNING, "Service id out of bounds");	
@@ -3473,8 +3473,8 @@ PHP_FUNCTION(bartlby_get_worker) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
 		
 		if(Z_LVAL_P(bartlby_worker_id) > shm_hdr->wrkcount-1) {
 			php_error(E_WARNING, "Worker id out of bounds");	
@@ -3611,12 +3611,12 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
 		
 		for(x=0; x<shm_hdr->srvgroupcount; x++) {
 			
@@ -3866,12 +3866,12 @@ PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
 		
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
 		
 		if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
 			php_error(E_WARNING, "service group id out of bounds");	
@@ -3948,12 +3948,12 @@ PHP_FUNCTION(bartlby_toggle_servergroup_active) {
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
 		
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
 		
 		if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
 			php_error(E_WARNING, "service group id out of bounds");	
@@ -4070,13 +4070,13 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 		for(x=0; x<shm_hdr->svcgroupcount; x++) {
 			
 			ALLOC_INIT_ZVAL(subarray);
@@ -4325,13 +4325,13 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
 		
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
 			php_error(E_WARNING, "service group id out of bounds");	
 			RETURN_FALSE;	
@@ -4408,13 +4408,13 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
 	if(bartlby_address != NULL) {
 		shm_hdr=(struct shm_header *)(void *)bartlby_address;
 		
-		svcmap=(struct service *)(void *)bartlby_address+sizeof(struct shm_header);
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount]+20;
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount]+20;
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount]+20;
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount]+20;
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX]+20;
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount]+20;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 		
 		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
 			php_error(E_WARNING, "service group id out of bounds");	
