@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "extension=bartlby.so" > /etc/php5/apache2/conf.d/bartlby.ini
