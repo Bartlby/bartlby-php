@@ -1643,6 +1643,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 			
 			add_assoc_long(subarray, "notify_enabled", svcmap[x].notify_enabled);
 			add_assoc_long(subarray, "last_notify_send", svcmap[x].last_notify_send);
+			add_assoc_long(subarray, "last_state_change", svcmap[x].last_state_change);
 			add_assoc_long(subarray, "flap_count", svcmap[x].flap_count);
 			
 			
@@ -2409,6 +2410,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		
 		add_assoc_long(return_value, "notify_enabled", svc.notify_enabled);
 		add_assoc_long(return_value, "last_notify_send", svc.last_notify_send);
+		add_assoc_long(return_value, "last_state_change", svc.last_state_change);
 		add_assoc_long(return_value, "flap_count", svc.flap_count);
 		
 		add_assoc_long(return_value, "service_active", svc.service_active);
@@ -3258,6 +3260,7 @@ PHP_FUNCTION(bartlby_get_service) {
 		
 		add_assoc_long(return_value, "notify_enabled", svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled);
 		add_assoc_long(return_value, "last_notify_send", svcmap[Z_LVAL_P(bartlby_service_id)].last_notify_send);
+		add_assoc_long(return_value, "last_state_change", svcmap[Z_LVAL_P(bartlby_service_id)].last_state_change);
 		add_assoc_long(return_value, "flap_count", svcmap[Z_LVAL_P(bartlby_service_id)].flap_count);
 		
 		

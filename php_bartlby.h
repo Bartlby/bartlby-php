@@ -18,7 +18,7 @@
 
   $Id: php_bartlby.h,v 1.48 2008/03/14 01:11:19 hjanuschka Exp $ 
 */
-#define BARTLBY_VERSION "1.4.5"
+#define BARTLBY_VERSION "1.4.6"
 
 #define BARTLBY_SERVICE_GONE 1
 #define BARTLBY_SERVER_GONE 2
@@ -296,6 +296,7 @@ struct service {
 	/*Notify things*/
 	int notify_enabled;
 	int last_notify_send;
+	int last_state_change;
 	long flap_count;
 	
 	int service_active;
