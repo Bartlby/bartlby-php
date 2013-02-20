@@ -306,7 +306,7 @@ struct service {
 	long service_passive_timeout;
 	
 	int notify_last_state;
-	int notify_last_time;
+
 	long service_check_timeout;
 	
 	
