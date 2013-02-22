@@ -311,7 +311,8 @@ struct service {
 	
 	
 	
-	int service_ack;
+	int service_ack_enabled;
+	int service_ack_current;
 	
 	long service_retain;
 	long service_retain_current;
