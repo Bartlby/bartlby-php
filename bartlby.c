@@ -884,7 +884,7 @@ PHP_FUNCTION(bartlby_event_fetch) {
 
 PHP_FUNCTION(bartlby_check_shm_size) {
 	zval * bartlby_config;
-	zval * bartlby_service_id;
+	zval * bartlby_service_id; 
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -3187,13 +3187,8 @@ PHP_FUNCTION(bartlby_get_service) {
 	int is_member;
 	int z;
 	
-<<<<<<< HEAD
 	zval * bartlby_config;
-	zval * bartlby_service_id;
-=======
-	pval * bartlby_config;
-	pval * bartlby_service_id; 
->>>>>>> development/stage
+	zval * bartlby_service_id; 
 	
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
