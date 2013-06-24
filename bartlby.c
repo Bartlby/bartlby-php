@@ -437,7 +437,7 @@ PHP_FUNCTION(bartlby_set_downtime_id) {
 	
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -475,7 +475,7 @@ PHP_FUNCTION(bartlby_set_worker_id) {
 	
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -513,7 +513,7 @@ PHP_FUNCTION(bartlby_set_service_id) {
 	
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -551,7 +551,7 @@ PHP_FUNCTION(bartlby_set_server_id) {
 	
 	
 	
-	if (ZEND_NUM_ARGS() != 4 || getParameters(ht, 4, &bartlby_config,&from, &to, &mig)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config,&from, &to, &mig)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -589,7 +589,7 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 	
 	struct service svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&downtime_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&downtime_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -630,7 +630,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	
 	struct downtime svc;
 	
-	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&dfrom, &dto, &dtype, &dnotice, &dservice, &mid)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzz", &bartlby_config,&dfrom, &dto, &dtype, &dnotice, &dservice, &mid)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -680,7 +680,7 @@ PHP_FUNCTION(bartlby_downtime_map) {
 	zval * bartlby_config;
 	
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -753,7 +753,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	
 	struct downtime svc;
 	
-	if (ZEND_NUM_ARGS() != 6 || getParameters(ht, 6, &bartlby_config,&dfrom, &dto, &dtype, &dnotice, &dservice)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 6 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzz", &bartlby_config,&dfrom, &dto, &dtype, &dnotice, &dservice)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -802,7 +802,7 @@ PHP_FUNCTION(bartlby_event_tick) {
 	int idx;
 		
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -842,7 +842,7 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	struct btl_event * evntmap;
 	struct server * srvmap;	
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &event_index)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &event_index)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -893,7 +893,7 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 	
 	struct service * svcmap;	
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -939,7 +939,7 @@ PHP_FUNCTION(bartlby_toggle_sirene) {
 	
 	struct service * svcmap;	
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -990,7 +990,7 @@ PHP_FUNCTION(bartlby_set_passive) {
 	
 	struct service * svcmap;	
 	
-	if (ZEND_NUM_ARGS() != 4 || getParameters(ht, 4, &bartlby_config, &bartlby_service_id, &bartlby_new_state, &bartlby_new_output)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_id, &bartlby_new_state, &bartlby_new_output)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1049,7 +1049,7 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	
 	struct service * svcmap;	
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_service_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1105,7 +1105,7 @@ PHP_FUNCTION(bartlby_toggle_service_active) {
 	struct service * svcmap;	
 	int (*UpdateService)(struct service *, char *);
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1181,7 +1181,7 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 		
 	int (*ModifyServer)(struct server *, char *);
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1260,7 +1260,7 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 		
 	int (*ModifyServer)(struct server *, char *);
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1334,7 +1334,7 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	int (*UpdateWorker)(struct worker *, char *);
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_worker_id, &new_state)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_worker_id, &new_state)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_worker_id);
@@ -1404,7 +1404,7 @@ PHP_FUNCTION(bartlby_toggle_service_notify) {
 	int (*UpdateService)(struct service *, char *);
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1472,7 +1472,7 @@ PHP_FUNCTION(bartlby_check_force) {
 	int r;
 	struct service * svcmap; 
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_service_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
@@ -1579,7 +1579,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 	
 	int z;
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &svc_right_array, &server_right_array)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &svc_right_array, &server_right_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -1883,7 +1883,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 PHP_FUNCTION(bartlby_encode) {
 	zval * instr;
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &instr)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &instr)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(instr);
@@ -1897,7 +1897,7 @@ PHP_FUNCTION(bartlby_encode) {
 PHP_FUNCTION(bartlby_decode) {
 	zval * instr;
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &instr)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &instr)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(instr);
@@ -1916,7 +1916,7 @@ PHP_FUNCTION(bartlby_shm_destroy) {
 	zval * bartlby_config;
 	
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -1952,7 +1952,7 @@ PHP_FUNCTION(bartlby_reload) {
 	zval * bartlby_config;
 	
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -2007,7 +2007,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	
 	struct worker svc;
 	
-	if (ZEND_NUM_ARGS() != 12 || getParameters(ht, 12, &bartlby_config,&mail, &icq, &services, &notify_levels, &active, &name, &password, &enabled_triggers, &escalation_limit, &escalation_minutes, &notify_plan)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 12 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzz", &bartlby_config,&mail, &icq, &services, &notify_levels, &active, &name, &password, &enabled_triggers, &escalation_limit, &escalation_minutes, &notify_plan)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(enabled_triggers);
@@ -2066,7 +2066,7 @@ PHP_FUNCTION(bartlby_delete_worker) {
 	
 	struct service svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&worker_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2117,7 +2117,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	
 	struct worker svc;
 	
-	if (ZEND_NUM_ARGS() != 13 || getParameters(ht, 13, &bartlby_config,&worker_id, &mail, &icq, &services, &notify_levels, &active, &name, &password, &enabled_triggers, &escalation_limit, &escalation_minutes, &notify_plan)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 13 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzz", &bartlby_config,&worker_id, &mail, &icq, &services, &notify_levels, &active, &name, &password, &enabled_triggers, &escalation_limit, &escalation_minutes, &notify_plan)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(enabled_triggers);
@@ -2182,7 +2182,7 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 	
 	struct worker  svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&worker_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2232,7 +2232,7 @@ PHP_FUNCTION(bartlby_config) {
 	zval * bartlby_config;
 	zval * bartlby_key;
 	char * k;
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_key)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_key)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -2263,7 +2263,7 @@ PHP_FUNCTION(bartlby_get_info) {
 	zval * bartlby_config;
 	zval * bartlby_service_id;
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -2319,7 +2319,7 @@ PHP_FUNCTION(bartlby_delete_server) {
 	
 	struct service svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&server_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&server_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2358,7 +2358,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 	
 	struct service  svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&service_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2464,7 +2464,7 @@ PHP_FUNCTION(bartlby_delete_service) {
 	
 	struct service svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &service_id) ==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &service_id) ==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2530,7 +2530,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	svc->service_passive_timeout
 	*/
 	
-	if(ZEND_NUM_ARGS() != 28 || getParameters(ht, 28, &bartlby_config,&service_id,  &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout,&service_check_timeout, &service_ack_enabled, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &snmp_textmatch, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 28 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzzzzzzzzzzzzzzzzz", &bartlby_config,&service_id,  &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout,&service_check_timeout, &service_ack_enabled, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &snmp_textmatch, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	convert_to_string(bartlby_config);
@@ -2667,7 +2667,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc->service_ack
 	*/
 	
-	if(ZEND_NUM_ARGS() != 27 || getParameters(ht, 27, &bartlby_config, &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout, &service_check_timeout, &service_ack_enabled, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &snmp_textmatch, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 27 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzzzzzzzzzzzzzzzz", &bartlby_config, &server_id, &plugin,&service_name,&plugin_arguments,&notify_enabled,&exec_plan,&check_interval, &service_type,&service_var,&service_passive_timeout, &service_check_timeout, &service_ack_enabled, &service_retain, &snmp_community, &snmp_objid, &snmp_version, &snmp_warning, &snmp_critical, &snmp_type, &snmp_textmatch, &service_active, &flap_seconds, &renotify_interval, &escalate_divisor, &fires_events, &enabled_triggers) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	convert_to_string(bartlby_config);
@@ -2783,7 +2783,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	struct server srv;
 	
-	if (ZEND_NUM_ARGS() != 13 || getParameters(ht, 13, &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 13 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzz", &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2857,7 +2857,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	struct server srv;
 	
-	if (ZEND_NUM_ARGS() != 14 || getParameters(ht, 14, &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 14 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzzz", &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -2944,7 +2944,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	
 	struct server  svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&server_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&server_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -3126,7 +3126,7 @@ PHP_FUNCTION(bartlby_lib_info) {
 	char * GetVersionStr;
 	char * GetNameStr;
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_string(bartlby_config);
@@ -3187,10 +3187,15 @@ PHP_FUNCTION(bartlby_get_service) {
 	int is_member;
 	int z;
 	
+<<<<<<< HEAD
 	zval * bartlby_config;
 	zval * bartlby_service_id;
+=======
+	pval * bartlby_config;
+	pval * bartlby_service_id; 
+>>>>>>> development/stage
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_service_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_service_id);
@@ -3470,7 +3475,7 @@ PHP_FUNCTION(bartlby_get_worker) {
 	zval * bartlby_config;
 	zval * bartlby_worker_id;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_worker_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_worker_id);
@@ -3553,7 +3558,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	
 	struct servergroup svc;
 	
-	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead, &enabled_triggers)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzz", &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -3608,7 +3613,7 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 	int current_time;
 	int y;
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -3716,7 +3721,7 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	
 	struct servergroup svc;
 	
-	if (ZEND_NUM_ARGS() != 8 || getParameters(ht, 8, &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead,&enabled_triggers, &servergroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 8 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzz", &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead,&enabled_triggers, &servergroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -3768,7 +3773,7 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	
 	struct service svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&servergroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&servergroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -3806,7 +3811,7 @@ PHP_FUNCTION(bartlby_set_servergroup_id) {
 	
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -3852,7 +3857,7 @@ PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
 	int (*UpdateServerGroup)(struct servergroup *, char *);
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servergroup_id);
@@ -3934,7 +3939,7 @@ PHP_FUNCTION(bartlby_toggle_servergroup_active) {
 	int (*UpdateServerGroup)(struct servergroup *, char *);
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servergroup_id);
@@ -4013,7 +4018,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	
 	struct servicegroup svc;
 	
-	if (ZEND_NUM_ARGS() != 7 || getParameters(ht, 7, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead, &enabled_triggers)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzz", &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead, &enabled_triggers)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -4067,7 +4072,7 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 	int y;
 	int is_down;
 	
-	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
@@ -4175,7 +4180,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	
 	struct servicegroup svc;
 	
-	if (ZEND_NUM_ARGS() != 8 || getParameters(ht, 8, &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead,&enabled_triggers,  &servicegroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 8 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzz", &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead,&enabled_triggers,  &servicegroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -4226,7 +4231,7 @@ PHP_FUNCTION(bartlby_delete_servicegroup) {
 	
 	struct service svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config,&servicegroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&servicegroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -4264,7 +4269,7 @@ PHP_FUNCTION(bartlby_set_servicegroup_id) {
 	
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_string(bartlby_config);
@@ -4311,7 +4316,7 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
 	int (*UpdateServiceGroup)(struct servicegroup *, char *);
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servicegroup_id);
@@ -4394,7 +4399,7 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
 	int (*UpdateServiceGroup)(struct servicegroup *, char *);
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || getParameters(ht, 3, &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servicegroup_id);
