@@ -43,7 +43,7 @@ static int le_bartlby;
  *
  * Every user visible function must have an entry in bartlby_functions[].
  */
-function_entry bartlby_functions[] = {
+zend_function_entry bartlby_functions[] = {
 	PHP_FE(confirm_bartlby_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_service,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_worker,	NULL)		/* For testing, remove later. */
@@ -423,10 +423,10 @@ PHP_FUNCTION(bartlby_version) {
 	
 }
 PHP_FUNCTION(bartlby_set_downtime_id) {
-	pval * bartlby_config;
-	pval * from;
-	pval * to;
-	pval * mig;
+	zval * bartlby_config;
+	zval * from;
+	zval * to;
+	zval * mig;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -461,10 +461,10 @@ PHP_FUNCTION(bartlby_set_downtime_id) {
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_worker_id) {
-	pval * bartlby_config;
-	pval * from;
-	pval * to;
-	pval * mig;
+	zval * bartlby_config;
+	zval * from;
+	zval * to;
+	zval * mig;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -499,10 +499,10 @@ PHP_FUNCTION(bartlby_set_worker_id) {
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_service_id) {
-	pval * bartlby_config;
-	pval * from;
-	pval * to;
-	pval * mig;
+	zval * bartlby_config;
+	zval * from;
+	zval * to;
+	zval * mig;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -537,10 +537,10 @@ PHP_FUNCTION(bartlby_set_service_id) {
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_server_id) {
-	pval * bartlby_config;
-	pval * from;
-	pval * to;
-	pval * mig;
+	zval * bartlby_config;
+	zval * from;
+	zval * to;
+	zval * mig;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -577,8 +577,8 @@ PHP_FUNCTION(bartlby_set_server_id) {
 }
 
 PHP_FUNCTION(bartlby_delete_downtime) {
-	pval * bartlby_config;
-	pval * downtime_id;
+	zval * bartlby_config;
+	zval * downtime_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -613,13 +613,13 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_modify_downtime) {
-	pval * bartlby_config;
-	pval * dfrom;
-	pval * dto;
-	pval * dtype;
-	pval * dnotice;
-	pval * dservice;
-	pval * mid;
+	zval * bartlby_config;
+	zval * dfrom;
+	zval * dto;
+	zval * dtype;
+	zval * dnotice;
+	zval * dservice;
+	zval * mid;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -677,7 +677,7 @@ PHP_FUNCTION(bartlby_downtime_map) {
 	struct worker * wrkmap;
 	struct downtime * dtmap;
 	
-	pval * bartlby_config;
+	zval * bartlby_config;
 	
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
@@ -737,12 +737,12 @@ PHP_FUNCTION(bartlby_downtime_map) {
 
 
 PHP_FUNCTION(bartlby_add_downtime) {
-	pval * bartlby_config;
-	pval * dfrom;
-	pval * dto;
-	pval * dtype;
-	pval * dnotice;
-	pval * dservice;
+	zval * bartlby_config;
+	zval * dfrom;
+	zval * dto;
+	zval * dtype;
+	zval * dnotice;
+	zval * dservice;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -789,8 +789,8 @@ PHP_FUNCTION(bartlby_add_downtime) {
 //size_of_structs=sizeof(struct shm_header)+sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime);
 
 PHP_FUNCTION(bartlby_event_tick) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -829,9 +829,9 @@ PHP_FUNCTION(bartlby_event_tick) {
 }
 
 PHP_FUNCTION(bartlby_event_fetch) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
-	pval * event_index;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
+	zval * event_index;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -883,8 +883,8 @@ PHP_FUNCTION(bartlby_event_fetch) {
 
 
 PHP_FUNCTION(bartlby_check_shm_size) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -929,8 +929,8 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 }
 
 PHP_FUNCTION(bartlby_toggle_sirene) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -978,10 +978,10 @@ PHP_FUNCTION(bartlby_toggle_sirene) {
 
 
 PHP_FUNCTION(bartlby_set_passive) {
-	pval * bartlby_config;
-	pval * bartlby_new_state;
-	pval * bartlby_new_output;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_new_state;
+	zval * bartlby_new_output;
+	zval * bartlby_service_id;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -1039,8 +1039,8 @@ PHP_FUNCTION(bartlby_set_passive) {
 
 
 PHP_FUNCTION(bartlby_ack_problem) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -1090,9 +1090,9 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	
 }
 PHP_FUNCTION(bartlby_toggle_service_active) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
+	zval * do_writeback;
 	
 	char * shmtok;
 	int shm_id;
@@ -1162,9 +1162,9 @@ PHP_FUNCTION(bartlby_toggle_service_active) {
 //bartlby_toggle_server_notify
 
 PHP_FUNCTION(bartlby_toggle_server_notify) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
+	zval * do_writeback;
 	
 	char * shmtok;
 	int shm_id;
@@ -1241,9 +1241,9 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 
 
 PHP_FUNCTION(bartlby_toggle_server_active) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
+	zval * do_writeback;
 	
 	char * shmtok;
 	int shm_id;
@@ -1318,9 +1318,9 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 }
 
 PHP_FUNCTION(bartlby_set_worker_state) {
-	pval * bartlby_config;
-	pval * bartlby_worker_id;
-	pval * new_state;
+	zval * bartlby_config;
+	zval * bartlby_worker_id;
+	zval * new_state;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -1389,9 +1389,9 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 }
 
 PHP_FUNCTION(bartlby_toggle_service_notify) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
+	zval * do_writeback;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -1463,8 +1463,8 @@ PHP_FUNCTION(bartlby_toggle_service_notify) {
 
 //bartlby_check_force
 PHP_FUNCTION(bartlby_check_force) {
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -1513,7 +1513,7 @@ PHP_FUNCTION(bartlby_check_force) {
 }
 
 
-int btl_is_array(pval * ar, int service_id) {
+int btl_is_array(zval * ar, int service_id) {
 	HashTable *arr_hash;
 	zval **data;
     	HashPosition pointer;
@@ -1566,9 +1566,9 @@ PHP_FUNCTION(bartlby_svc_map) {
 	struct servicegroup * svcgrpmap;
 	
 	
-	pval * bartlby_config;
-	pval * svc_right_array;
-	pval * server_right_array;
+	zval * bartlby_config;
+	zval * svc_right_array;
+	zval * server_right_array;
 	
 	zval * groups;
 	zval * groupinfo;
@@ -1881,7 +1881,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 		
 }
 PHP_FUNCTION(bartlby_encode) {
-	pval * instr;
+	zval * instr;
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &instr)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -1895,7 +1895,7 @@ PHP_FUNCTION(bartlby_encode) {
 }
 
 PHP_FUNCTION(bartlby_decode) {
-	pval * instr;
+	zval * instr;
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &instr)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -1913,7 +1913,7 @@ PHP_FUNCTION(bartlby_shm_destroy) {
 	struct shmid_ds shm_desc;
 	
 	
-	pval * bartlby_config;
+	zval * bartlby_config;
 	
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
@@ -1949,7 +1949,7 @@ PHP_FUNCTION(bartlby_reload) {
 	
 	
 	
-	pval * bartlby_config;
+	zval * bartlby_config;
 	
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
@@ -1985,18 +1985,18 @@ PHP_FUNCTION(bartlby_reload) {
 }
 PHP_FUNCTION(bartlby_add_worker) {
 	//svc->mail, svc->icq, svc->services, svc->notify_levels, svc->active, svc->name
-	pval * bartlby_config;
-	pval * mail;
-	pval * icq;
-	pval * services;
-	pval * notify_levels;
-	pval * active;
-	pval * name;
-	pval * password;
-	pval * enabled_triggers;
-	pval * escalation_limit;
-	pval * escalation_minutes;
-	pval * notify_plan;
+	zval * bartlby_config;
+	zval * mail;
+	zval * icq;
+	zval * services;
+	zval * notify_levels;
+	zval * active;
+	zval * name;
+	zval * password;
+	zval * enabled_triggers;
+	zval * escalation_limit;
+	zval * escalation_minutes;
+	zval * notify_plan;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2054,8 +2054,8 @@ PHP_FUNCTION(bartlby_add_worker) {
 }
 
 PHP_FUNCTION(bartlby_delete_worker) {
-	pval * bartlby_config;
-	pval * worker_id;
+	zval * bartlby_config;
+	zval * worker_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2093,19 +2093,19 @@ PHP_FUNCTION(bartlby_delete_worker) {
 }
 
 PHP_FUNCTION(bartlby_modify_worker) {
-	pval * bartlby_config;
-	pval * mail;
-	pval * icq;
-	pval * services;
-	pval * notify_levels;
-	pval * active;
-	pval * name;
-	pval * worker_id;
-	pval * password;
-	pval * enabled_triggers;
-	pval * escalation_limit;
-	pval * escalation_minutes;
-	pval * notify_plan;
+	zval * bartlby_config;
+	zval * mail;
+	zval * icq;
+	zval * services;
+	zval * notify_levels;
+	zval * active;
+	zval * name;
+	zval * worker_id;
+	zval * password;
+	zval * enabled_triggers;
+	zval * escalation_limit;
+	zval * escalation_minutes;
+	zval * notify_plan;
 	
 	
 	void * SOHandle;
@@ -2169,9 +2169,9 @@ PHP_FUNCTION(bartlby_modify_worker) {
 }
 
 PHP_FUNCTION(bartlby_get_worker_by_id) {
-		pval * bartlby_config;
+		zval * bartlby_config;
 	
-	pval * worker_id;
+	zval * worker_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2229,8 +2229,8 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 }
 
 PHP_FUNCTION(bartlby_config) {
-	pval * bartlby_config;
-	pval * bartlby_key;
+	zval * bartlby_config;
+	zval * bartlby_key;
 	char * k;
 	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_key)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -2260,8 +2260,8 @@ PHP_FUNCTION(bartlby_get_info) {
 	
 	
 	
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	
 	if (ZEND_NUM_ARGS() != 1 || getParameters(ht, 1, &bartlby_config)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -2307,8 +2307,8 @@ PHP_FUNCTION(bartlby_get_info) {
 
 PHP_FUNCTION(bartlby_delete_server) {
 	
-	pval * bartlby_config;
-	pval * server_id;
+	zval * bartlby_config;
+	zval * server_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2345,9 +2345,9 @@ PHP_FUNCTION(bartlby_delete_server) {
 	RETURN_LONG(ret);
 }
 PHP_FUNCTION(bartlby_get_service_by_id) {
-	pval * bartlby_config;
+	zval * bartlby_config;
 	
-	pval * service_id;
+	zval * service_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2452,8 +2452,8 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 }
 
 PHP_FUNCTION(bartlby_delete_service) {
-		pval * bartlby_config;
-	pval * service_id;
+		zval * bartlby_config;
+	zval * service_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2502,15 +2502,15 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	int (*UpdateService)(struct service *, char *);
 	
-	pval *service_id, * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, *service_check_timeout, * service_ack_enabled, * service_retain;
-	pval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
-	pval * snmp_textmatch;
-	pval * service_active;
-	pval * flap_seconds;
-	pval * renotify_interval;
-	pval * escalate_divisor;
-	pval * fires_events;
-	pval * enabled_triggers;
+	zval *service_id, * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, *service_check_timeout, * service_ack_enabled, * service_retain;
+	zval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
+	zval * snmp_textmatch;
+	zval * service_active;
+	zval * flap_seconds;
+	zval * renotify_interval;
+	zval * escalate_divisor;
+	zval * fires_events;
+	zval * enabled_triggers;
 	
 	
 	/*
@@ -2640,15 +2640,15 @@ PHP_FUNCTION(bartlby_add_service) {
 	
 	int (*AddService)(struct service *, char *);
 	
-	pval * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, * service_check_timeout, * service_ack_enabled, * service_retain;
-	pval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
-	pval * snmp_textmatch;
-	pval * service_active;
-	pval * flap_seconds;
-	pval * renotify_interval;
-	pval * escalate_divisor;
-	pval * fires_events;
-	pval * enabled_triggers;
+	zval * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, * service_check_timeout, * service_ack_enabled, * service_retain;
+	zval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
+	zval * snmp_textmatch;
+	zval * service_active;
+	zval * flap_seconds;
+	zval * renotify_interval;
+	zval * escalate_divisor;
+	zval * fires_events;
+	zval * enabled_triggers;
 	
 	
 	/*
@@ -2759,20 +2759,20 @@ PHP_FUNCTION(bartlby_add_service) {
 }
 PHP_FUNCTION(bartlby_add_server) {
 	
-	pval * bartlby_config;
-	pval * server_name;
-	pval * server_ip;
-	pval * server_port;
-	pval * server_icon;
-	pval * server_enabled;
-	pval * server_flap_seconds;
-	pval * server_notify;
-	pval * server_dead;
+	zval * bartlby_config;
+	zval * server_name;
+	zval * server_ip;
+	zval * server_port;
+	zval * server_icon;
+	zval * server_enabled;
+	zval * server_flap_seconds;
+	zval * server_notify;
+	zval * server_dead;
 	
-	pval * server_ssh_keyfile;
-	pval * server_ssh_passphrase;
-	pval * server_ssh_username;
-	pval * enabled_triggers;
+	zval * server_ssh_keyfile;
+	zval * server_ssh_passphrase;
+	zval * server_ssh_username;
+	zval * enabled_triggers;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2832,20 +2832,20 @@ PHP_FUNCTION(bartlby_add_server) {
 
 PHP_FUNCTION(bartlby_modify_server) {
 	
-	pval * bartlby_config;
-	pval * server_name;
-	pval * server_ip;
-	pval * server_port;
-	pval * server_id;
-	pval * server_icon;
-	pval * server_enabled;
-	pval * server_flap_seconds;
-	pval * server_notify;
-	pval * server_dead;
-	pval * server_ssh_keyfile;
-	pval * server_ssh_passphrase;
-	pval * server_ssh_username;
-	pval * enabled_triggers;
+	zval * bartlby_config;
+	zval * server_name;
+	zval * server_ip;
+	zval * server_port;
+	zval * server_id;
+	zval * server_icon;
+	zval * server_enabled;
+	zval * server_flap_seconds;
+	zval * server_notify;
+	zval * server_dead;
+	zval * server_ssh_keyfile;
+	zval * server_ssh_passphrase;
+	zval * server_ssh_username;
+	zval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -2911,9 +2911,9 @@ PHP_FUNCTION(bartlby_modify_server) {
 }
 
 PHP_FUNCTION(bartlby_get_server_by_id) {
-	pval * bartlby_config;
+	zval * bartlby_config;
 	
-	pval * server_id;
+	zval * server_id;
 	
 	char * shmtok;
 	void * SOHandle;
@@ -3117,7 +3117,7 @@ PHP_FUNCTION(bartlby_lib_info) {
 	char * dlmsg;
 	void * SOHandle;
 	char * data_lib;
-	pval * bartlby_config;
+	zval * bartlby_config;
 	
 	char * (*GetAutor)();
 	char * (*GetVersion)();
@@ -3187,8 +3187,8 @@ PHP_FUNCTION(bartlby_get_service) {
 	int is_member;
 	int z;
 	
-	pval * bartlby_config;
-	pval * bartlby_service_id;
+	zval * bartlby_config;
+	zval * bartlby_service_id;
 	
 	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -3467,8 +3467,8 @@ PHP_FUNCTION(bartlby_get_worker) {
 	struct worker * wrkmap;
 	struct service * svcmap;
 	
-	pval * bartlby_config;
-	pval * bartlby_worker_id;
+	zval * bartlby_config;
+	zval * bartlby_worker_id;
 	
 	if (ZEND_NUM_ARGS() != 2 || getParameters(ht, 2, &bartlby_config, &bartlby_worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
@@ -3535,13 +3535,13 @@ PHP_FUNCTION(bartlby_get_worker) {
 
 
 PHP_FUNCTION(bartlby_add_servergroup) {
-	pval * bartlby_config;
-	pval * servergroup_name;
-	pval * servergroup_active;
-	pval * servergroup_notify;
-	pval * servergroup_members;
-	pval * servergroup_dead;
-	pval * enabled_triggers;
+	zval * bartlby_config;
+	zval * servergroup_name;
+	zval * servergroup_active;
+	zval * servergroup_notify;
+	zval * servergroup_members;
+	zval * servergroup_dead;
+	zval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -3603,7 +3603,7 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
 	
-	pval * bartlby_config;
+	zval * bartlby_config;
 	int is_down;
 	int current_time;
 	int y;
@@ -3697,14 +3697,14 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 
 
 PHP_FUNCTION(bartlby_modify_servergroup) {
-	pval * bartlby_config;
-	pval * servergroup_name;
-	pval * servergroup_active;
-	pval * servergroup_notify;
-	pval * servergroup_members;
-	pval * servergroup_id;
-	pval * servergroup_dead;
-	pval * enabled_triggers;
+	zval * bartlby_config;
+	zval * servergroup_name;
+	zval * servergroup_active;
+	zval * servergroup_notify;
+	zval * servergroup_members;
+	zval * servergroup_id;
+	zval * servergroup_dead;
+	zval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -3756,8 +3756,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 
 
 PHP_FUNCTION(bartlby_delete_servergroup) {
-	pval * bartlby_config;
-	pval * servergroup_id;
+	zval * bartlby_config;
+	zval * servergroup_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -3792,10 +3792,10 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servergroup_id) {
-	pval * bartlby_config;
-	pval * from;
-	pval * to;
-	pval * mig;
+	zval * bartlby_config;
+	zval * from;
+	zval * to;
+	zval * mig;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -3832,9 +3832,9 @@ PHP_FUNCTION(bartlby_set_servergroup_id) {
 
 
 PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
-	pval * bartlby_config;
-	pval * bartlby_servergroup_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_servergroup_id;
+	zval * do_writeback;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -3914,9 +3914,9 @@ PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
 }
 
 PHP_FUNCTION(bartlby_toggle_servergroup_active) {
-	pval * bartlby_config;
-	pval * bartlby_servergroup_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_servergroup_id;
+	zval * do_writeback;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -3996,13 +3996,13 @@ PHP_FUNCTION(bartlby_toggle_servergroup_active) {
 }
 
 PHP_FUNCTION(bartlby_add_servicegroup) {
-	pval * bartlby_config;
-	pval * servicegroup_name;
-	pval * servicegroup_active;
-	pval * servicegroup_notify;
-	pval * servicegroup_members;
-	pval * servicegroup_dead;
-	pval * enabled_triggers;
+	zval * bartlby_config;
+	zval * servicegroup_name;
+	zval * servicegroup_active;
+	zval * servicegroup_notify;
+	zval * servicegroup_members;
+	zval * servicegroup_dead;
+	zval * enabled_triggers;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -4062,7 +4062,7 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
 	
-	pval * bartlby_config;
+	zval * bartlby_config;
 	int current_time;
 	int y;
 	int is_down;
@@ -4156,14 +4156,14 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 
 
 PHP_FUNCTION(bartlby_modify_servicegroup) {
-	pval * bartlby_config;
-	pval * servicegroup_name;
-	pval * servicegroup_active;
-	pval * servicegroup_notify;
-	pval * servicegroup_members;
-	pval * servicegroup_id;
-	pval * servicegroup_dead;
-	pval * enabled_triggers;
+	zval * bartlby_config;
+	zval * servicegroup_name;
+	zval * servicegroup_active;
+	zval * servicegroup_notify;
+	zval * servicegroup_members;
+	zval * servicegroup_id;
+	zval * servicegroup_dead;
+	zval * enabled_triggers;
 	
 	
 	void * SOHandle;
@@ -4214,8 +4214,8 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 
 
 PHP_FUNCTION(bartlby_delete_servicegroup) {
-	pval * bartlby_config;
-	pval * servicegroup_id;
+	zval * bartlby_config;
+	zval * servicegroup_id;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -4250,10 +4250,10 @@ PHP_FUNCTION(bartlby_delete_servicegroup) {
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servicegroup_id) {
-	pval * bartlby_config;
-	pval * from;
-	pval * to;
-	pval * mig;
+	zval * bartlby_config;
+	zval * from;
+	zval * to;
+	zval * mig;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -4290,9 +4290,9 @@ PHP_FUNCTION(bartlby_set_servicegroup_id) {
 
 
 PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
-	pval * bartlby_config;
-	pval * bartlby_servicegroup_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_servicegroup_id;
+	zval * do_writeback;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -4373,9 +4373,9 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
 }
 
 PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
-	pval * bartlby_config;
-	pval * bartlby_servicegroup_id;
-	pval * do_writeback;
+	zval * bartlby_config;
+	zval * bartlby_servicegroup_id;
+	zval * do_writeback;
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
