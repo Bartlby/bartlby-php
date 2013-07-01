@@ -60,6 +60,38 @@ extern zend_module_entry bartlby_module_entry;
     	}
     	
 
+#define BARTLBY_DEFAULT_STRING 1
+#define BARTLBY_DEFAULT_LONG 2
+#define BARTLBY_DEFAULT_ERROR 3
+#define BARTLBY_FIELD_REQUIRED 1
+#define BARTLBY_FIELD_OPTIONAL 0
+
+#define GETARRAY_EL_FROM_HASH(target, element,temp,  array, required, def_type, def_value) \
+if(SUCCESS == zend_hash_find(Z_ARRVAL_P(array), element, strlen(element) + 1, (void**) &temp)) { \
+	target = *temp; \
+}  else { \
+	target = NULL; \
+} \
+if(required == 1) { \
+	if(target == NULL) { \
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Element %s is required\n", element); \
+		RETURN_BOOL(0); \
+	} \
+	if(Z_TYPE_P(target) == IS_NULL) {\
+		MAKE_STD_ZVAL(target); \
+		if(def_type == BARTLBY_DEFAULT_STRING) { \
+			ZVAL_STRING(target, (char*)def_value, 1); \
+		} \
+		if(def_type == BARTLBY_DEFAULT_LONG) { \
+			ZVAL_LONG(target, (long)def_value);\
+		}\
+		if(def_type == BARTLBY_DEFAULT_ERROR) {\
+			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Element %s is required and has no value\n", element); \
+			RETURN_BOOL(0); \
+		} \
+	}\
+}
+	
 
 #define EVENT_QUEUE_MAX 128
 
@@ -86,6 +118,7 @@ PHP_FUNCTION(bartlby_encode);
 PHP_FUNCTION(bartlby_decode);
 
 PHP_FUNCTION(bartlby_add_service);
+PHP_FUNCTION(bartlby_add_service_array);
 PHP_FUNCTION(bartlby_delete_service);
 PHP_FUNCTION(bartlby_modify_service);
 PHP_FUNCTION(bartlby_get_service_by_id);
