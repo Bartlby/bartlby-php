@@ -615,12 +615,15 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 }
 PHP_FUNCTION(bartlby_modify_downtime) {
 	zval * bartlby_config;
-	zval * dfrom;
-	zval * dto;
-	zval * dtype;
-	zval * dnotice;
-	zval * dservice;
-	zval * mid;
+	zval * downtime_from;
+	zval * downtime_to;
+	zval * downtime_type;
+	zval * downtime_notice;
+	zval * downtime_service;
+	zval * downtime_id;
+	
+	zval ** temp_pp;
+	zval * options_array;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -630,19 +633,33 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	int (*UpdateDowntime)(struct downtime *,char *);
 	
 	struct downtime svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzz", &bartlby_config,&dfrom, &dto, &dtype, &dnotice, &dservice, &mid)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+	
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&downtime_id, &options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(downtime_from, "downtime_from", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_to, "downtime_to", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_type, "downtime_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_service, "downtime_service", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_notice, "downtime_notice", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default notice");
+	
+	
 	convert_to_string(bartlby_config);
-	convert_to_long(dfrom);
-	convert_to_long(dto);
-	convert_to_long(dtype);
-	convert_to_long(dservice);
-	convert_to_long(mid);
+	convert_to_long(downtime_from);
+	convert_to_long(downtime_to);
+	convert_to_long(downtime_type);
+	convert_to_long(downtime_service);
+	convert_to_long(downtime_id);
 	
 	
-	convert_to_string(dnotice);
+	convert_to_string(downtime_notice);
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
 	if(SOHandle == NULL) {
@@ -653,12 +670,12 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	
 	LOAD_SYMBOL(UpdateDowntime,SOHandle, "UpdateDowntime");
 	
-	strcpy(svc.downtime_notice, Z_STRVAL_P(dnotice));
-	svc.downtime_from=Z_LVAL_P(dfrom);
-	svc.downtime_to=Z_LVAL_P(dto);
-	svc.downtime_type=Z_LVAL_P(dtype);
-	svc.service_id=Z_LVAL_P(dservice);
-	svc.downtime_id=Z_LVAL_P(mid);
+	strcpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice));
+	svc.downtime_from=Z_LVAL_P(downtime_from);
+	svc.downtime_to=Z_LVAL_P(downtime_to);
+	svc.downtime_type=Z_LVAL_P(downtime_type);
+	svc.service_id=Z_LVAL_P(downtime_service);
+	svc.downtime_id=Z_LVAL_P(downtime_id);
 	
 	ret=UpdateDowntime(&svc, Z_STRVAL_P(bartlby_config));
 	
@@ -739,11 +756,14 @@ PHP_FUNCTION(bartlby_downtime_map) {
 
 PHP_FUNCTION(bartlby_add_downtime) {
 	zval * bartlby_config;
-	zval * dfrom;
-	zval * dto;
-	zval * dtype;
-	zval * dnotice;
-	zval * dservice;
+	zval * downtime_from;
+	zval * downtime_to;
+	zval * downtime_type;
+	zval * downtime_notice;
+	zval * downtime_service;
+	
+	zval ** temp_pp;
+	zval * options_array;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -753,17 +773,34 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	int (*AddDowntime)(struct downtime *,char *);
 	
 	struct downtime svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 6 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzz", &bartlby_config,&dfrom, &dto, &dtype, &dnotice, &dservice)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
-	convert_to_string(bartlby_config);
-	convert_to_long(dfrom);
-	convert_to_long(dto);
-	convert_to_long(dtype);
-	convert_to_long(dservice);
 	
-	convert_to_string(dnotice);
+
+	
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
+	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(downtime_from, "downtime_from", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_to, "downtime_to", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_type, "downtime_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_service, "downtime_service", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(downtime_notice, "downtime_notice", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default notice");
+	
+	
+	
+	
+	convert_to_string(bartlby_config);
+	convert_to_long(downtime_from);
+	convert_to_long(downtime_to);
+	convert_to_long(downtime_type);
+	convert_to_long(downtime_service);
+	
+	convert_to_string(downtime_notice);
 		
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
@@ -775,11 +812,11 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	
 	LOAD_SYMBOL(AddDowntime,SOHandle, "AddDowntime");
 	
-	strcpy(svc.downtime_notice, Z_STRVAL_P(dnotice));
-	svc.downtime_from=Z_LVAL_P(dfrom);
-	svc.downtime_to=Z_LVAL_P(dto);
-	svc.downtime_type=Z_LVAL_P(dtype);
-	svc.service_id=Z_LVAL_P(dservice);
+	strcpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice));
+	svc.downtime_from=Z_LVAL_P(downtime_from);
+	svc.downtime_to=Z_LVAL_P(downtime_to);
+	svc.downtime_type=Z_LVAL_P(downtime_type);
+	svc.service_id=Z_LVAL_P(downtime_service);
 	
 	ret=AddDowntime(&svc, Z_STRVAL_P(bartlby_config));
 	
@@ -1999,6 +2036,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval * escalation_minutes;
 	zval * notify_plan;
 	
+	zval ** temp_pp;
+	zval * options_array;
+	
 	void * SOHandle;
 	char * dlmsg;
 	
@@ -2007,10 +2047,33 @@ PHP_FUNCTION(bartlby_add_worker) {
 	int (*AddWorker)(struct worker *,char *);
 	
 	struct worker svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 12 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzz", &bartlby_config,&mail, &icq, &services, &notify_levels, &active, &name, &password, &enabled_triggers, &escalation_limit, &escalation_minutes, &notify_plan)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+
+	
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	
+	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	
+	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(escalation_minutes, "worker_escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
+	
 	convert_to_string(enabled_triggers);
 	convert_to_string(bartlby_config);
 	convert_to_string(mail);
@@ -2019,9 +2082,10 @@ PHP_FUNCTION(bartlby_add_worker) {
 	convert_to_string(services);
 	convert_to_string(notify_levels);
 	convert_to_string(name);
-	convert_to_long(active);
 	convert_to_string(notify_plan);
 	
+	
+	convert_to_long(active);
 	convert_to_long(escalation_limit);
 	convert_to_long(escalation_minutes);
 	
@@ -2108,6 +2172,8 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval * escalation_minutes;
 	zval * notify_plan;
 	
+	zval ** temp_pp;
+	zval * options_array;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2117,10 +2183,32 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	int (*UpdateWorker)(struct worker *,char *);
 	
 	struct worker svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 13 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzz", &bartlby_config,&worker_id, &mail, &icq, &services, &notify_levels, &active, &name, &password, &enabled_triggers, &escalation_limit, &escalation_minutes, &notify_plan)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&worker_id, &options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	
+	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	
+	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(escalation_minutes, "worker_escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
+	
+	
 	convert_to_string(enabled_triggers);
 	convert_to_string(bartlby_config);
 	convert_to_string(mail);
@@ -2853,6 +2941,10 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval * server_ssh_username;
 	zval * enabled_triggers;
 	
+	
+	zval ** temp_pp;
+	zval * options_array;
+	
 	void * SOHandle;
 	char * dlmsg;
 	
@@ -2861,10 +2953,31 @@ PHP_FUNCTION(bartlby_add_server) {
 	int (*AddServer)(struct server *,char *);
 	
 	struct server srv;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 13 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzz", &bartlby_config,&server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&options_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(server_name, "server_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default name");
+	GETARRAY_EL_FROM_HASH(server_ip, "server_ip", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "127.0.0.1");
+	GETARRAY_EL_FROM_HASH(server_port, "server_port", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 9030);
+	GETARRAY_EL_FROM_HASH(server_icon, "server_icon", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default.gif");
+	GETARRAY_EL_FROM_HASH(server_enabled, "server_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+	GETARRAY_EL_FROM_HASH(server_flap_seconds, "server_flap_seconds", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 120);
+	GETARRAY_EL_FROM_HASH(server_notify, "server_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(server_dead, "server_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+
+	GETARRAY_EL_FROM_HASH(server_ssh_keyfile, "server_ssh_keyfile", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(server_ssh_passphrase, "server_ssh_passphrase", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	
+	
 	
 	
 	convert_to_string(bartlby_config);
@@ -2928,6 +3041,8 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval * server_ssh_username;
 	zval * enabled_triggers;
 	
+	zval ** temp_pp;
+	zval * options_array;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -2937,16 +3052,38 @@ PHP_FUNCTION(bartlby_modify_server) {
 	int (*ModifyServer)(struct server *,char *);
 	
 	struct server srv;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 14 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzzzzzzzz", &bartlby_config,&server_id, &server_name, &server_ip, &server_port, &server_icon, &server_enabled, &server_notify, &server_flap_seconds, &server_dead, &server_ssh_keyfile, &server_ssh_passphrase, &server_ssh_username, &enabled_triggers)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&server_id, &options_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(server_name, "server_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default name");
+	GETARRAY_EL_FROM_HASH(server_ip, "server_ip", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "127.0.0.1");
+	GETARRAY_EL_FROM_HASH(server_port, "server_port", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 9030);
+	GETARRAY_EL_FROM_HASH(server_icon, "server_icon", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default.gif");
+	GETARRAY_EL_FROM_HASH(server_enabled, "server_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+	GETARRAY_EL_FROM_HASH(server_flap_seconds, "server_flap_seconds", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 120);
+	GETARRAY_EL_FROM_HASH(server_notify, "server_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(server_dead, "server_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+
+	GETARRAY_EL_FROM_HASH(server_ssh_keyfile, "server_ssh_keyfile", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(server_ssh_passphrase, "server_ssh_passphrase", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	
+	
+	convert_to_long(server_id);
+	
+	
 	convert_to_string(bartlby_config);
 	convert_to_string(enabled_triggers);
 	convert_to_string(server_name);
 	convert_to_string(server_ip);
 	convert_to_long(server_port);
-	convert_to_long(server_id);
 	convert_to_string(server_icon);
 	convert_to_long(server_enabled);
 	convert_to_long(server_flap_seconds);
@@ -3625,6 +3762,9 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	zval * enabled_triggers;
 	
 	
+	zval ** temp_pp;
+	zval * options_array;
+	
 	void * SOHandle;
 	char * dlmsg;
 	
@@ -3633,10 +3773,24 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	int (*AddServerGroup)(struct servergroup *,char *);
 	
 	struct servergroup svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzz", &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead, &enabled_triggers)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(servergroup_name, "servergroup_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default_name");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servergroup_members, "servergroup_members", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servergroup_active, "servergroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servergroup_notify, "servergroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servergroup_dead, "servergroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
+	
 	convert_to_string(bartlby_config);
 	convert_to_string(servergroup_name);
 	convert_to_string(enabled_triggers);
@@ -3787,6 +3941,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	zval * servergroup_dead;
 	zval * enabled_triggers;
 	
+	zval ** temp_pp;
+	zval * options_array;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -3796,10 +3952,26 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	int (*UpdateServerGroup)(struct servergroup *,char *);
 	
 	struct servergroup svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 8 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzz", &bartlby_config,&servergroup_name, &servergroup_active, &servergroup_notify, &servergroup_members, &servergroup_dead,&enabled_triggers, &servergroup_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+	
+	
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&servergroup_id, &options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(servergroup_name, "servergroup_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default_name");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servergroup_members, "servergroup_members", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servergroup_active, "servergroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servergroup_notify, "servergroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servergroup_dead, "servergroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
+	
 	convert_to_string(bartlby_config);
 	convert_to_string(servergroup_members);
 	convert_to_string(enabled_triggers);
@@ -3807,6 +3979,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	convert_to_long(servergroup_active);
 	convert_to_long(servergroup_notify);
 	convert_to_long(servergroup_dead);
+	
+	convert_to_long(servergroup_id);
 	
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
@@ -4085,6 +4259,9 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	zval * servicegroup_dead;
 	zval * enabled_triggers;
 	
+	zval ** temp_pp;
+	zval * options_array;
+	
 	void * SOHandle;
 	char * dlmsg;
 	
@@ -4093,10 +4270,29 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	int (*AddServiceGroup)(struct servicegroup *,char *);
 	
 	struct servicegroup svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzz", &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead, &enabled_triggers)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+
+	
+	
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(servicegroup_name, "servicegroup_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default_name");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servicegroup_members, "servicegroup_members", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servicegroup_active, "servicegroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servicegroup_notify, "servicegroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servicegroup_dead, "servicegroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
+	
+	
+	
 	convert_to_string(bartlby_config);
 	convert_to_string(servicegroup_name);
 	convert_to_string(servicegroup_members);
@@ -4246,6 +4442,8 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	zval * servicegroup_dead;
 	zval * enabled_triggers;
 	
+	zval ** temp_pp;
+	zval * options_array;
 	
 	void * SOHandle;
 	char * dlmsg;
@@ -4255,10 +4453,26 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	int (*UpdateServiceGroup)(struct servicegroup *,char *);
 	
 	struct servicegroup svc;
-	//FIXME: ARRAY
-	if (ZEND_NUM_ARGS() != 8 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzzzzzz", &bartlby_config,&servicegroup_name, &servicegroup_active, &servicegroup_notify, &servicegroup_members, &servicegroup_dead,&enabled_triggers,  &servicegroup_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
+	
+	
+	
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&servicegroup_id ,&options_array) == FAILURE) {
+		WRONG_PARAM_COUNT;	
 	}
+	
+	if(Z_TYPE_P(options_array) != IS_ARRAY) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
+		RETURN_BOOL(0);
+	}
+	
+	GETARRAY_EL_FROM_HASH(servicegroup_name, "servicegroup_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "default_name");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servicegroup_members, "servicegroup_members", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(servicegroup_active, "servicegroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servicegroup_notify, "servicegroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(servicegroup_dead, "servicegroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
+	
 	convert_to_string(bartlby_config);
 	convert_to_string(enabled_triggers);
 	convert_to_string(servicegroup_members);
@@ -4266,6 +4480,8 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	convert_to_long(servicegroup_active);
 	convert_to_long(servicegroup_notify);
 	convert_to_long(servicegroup_dead);
+	
+	convert_to_long(servicegroup_id);
 	
 	
 	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
