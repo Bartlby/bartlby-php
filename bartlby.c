@@ -45,10 +45,7 @@ zend_class_entry *bartlby_ce;
  * Every user visible function must have an entry in bartlby_functions[].
  */
 
-zend_function_entry bartlby_class_functions[] = {
-	PHP_ME(Bartlby, testFunc, NULL, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
+
  
 zend_function_entry bartlby_functions[] = {
 	PHP_FE(confirm_bartlby_compiled,	NULL)		/* For testing, remove later. */
