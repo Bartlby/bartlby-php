@@ -36,6 +36,7 @@ ZEND_DECLARE_MODULE_GLOBALS(bartlby)
 
 /* True global resources - no need for thread safety here */
 static int le_bartlby;
+zend_class_entry *bartlby_ce;
 
 
 
@@ -43,7 +44,13 @@ static int le_bartlby;
  *
  * Every user visible function must have an entry in bartlby_functions[].
  */
-function_entry bartlby_functions[] = {
+
+zend_function_entry bartlby_class_functions[] = {
+	PHP_ME(Bartlby, testFunc, NULL, ZEND_ACC_PUBLIC)
+	PHP_FE_END
+};
+ 
+zend_function_entry bartlby_functions[] = {
 	PHP_FE(confirm_bartlby_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_service,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_worker,	NULL)		/* For testing, remove later. */
@@ -134,6 +141,14 @@ function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_set_servergroup_id, NULL)
 	PHP_FE(bartlby_set_servicegroup_id, NULL)
 	
+
+	PHP_FE(bartlby_bulk_service_active,NULL)
+	PHP_FE(bartlby_bulk_service_notify,NULL)
+	PHP_FE(bartlby_bulk_force_services,NULL)
+	
+	
+	
+	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
 };
 /* }}} */
@@ -182,6 +197,9 @@ static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
 }
 */
 /* }}} */
+
+
+
 
 void xbartlby_decode(char * msg, int length) {
 	int x;
@@ -339,6 +357,9 @@ void bartlby_mark_object_gone(char * cfg, long id, int type, int msg) {
 }
 
 
+
+
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(bartlby)
@@ -348,9 +369,25 @@ PHP_MINIT_FUNCTION(bartlby)
 	REGISTER_INI_ENTRIES();
 	*/
 	
+	/*
+	zend_class_entry ce;
+  INIT_CLASS_ENTRY(ce, "Bartlby", bartlby_class_functions);
+
+  bartlby_ce = zend_register_internal_class(&ce TSRMLS_CC);
+	
+	zend_declare_property_string(bartlby_ce, "foo", sizeof("foo") - 1, "bar", ZEND_ACC_PUBLIC TSRMLS_CC);
+	*/
+	
 	return SUCCESS;
 	
 }
+
+PHP_METHOD(Bartlby, testFunc) /* {{{ */
+{
+   
+    RETURN_STRING("Hello World\n", 1);
+}
+
 /* }}} */
 
 /* {{{ PHP_MSHUTDOWN_FUNCTION
@@ -1567,7 +1604,7 @@ int btl_is_array(zval * ar, int service_id) {
 	arr_hash = Z_ARRVAL_P(ar);
     	array_count = zend_hash_num_elements(arr_hash);
     	for(zend_hash_internal_pointer_reset_ex(arr_hash, &pointer); zend_hash_get_current_data_ex(arr_hash, (void**) &data, &pointer) == SUCCESS; zend_hash_move_forward_ex(arr_hash, &pointer)) {
-
+						//convert_to_long(*data); FIXME
             if(Z_TYPE_PP(data) == IS_STRING) {
             	//printf("String: %s\n", Z_STRVAL_PP(data));	
             } else if(Z_TYPE_PP(data) == IS_LONG) {
@@ -1580,6 +1617,234 @@ int btl_is_array(zval * ar, int service_id) {
             	
     	}
     	return -1;
+}
+
+PHP_FUNCTION(bartlby_bulk_force_services) {
+
+
+	zval * bartlby_config;
+	zval * bartlby_service_ids;
+	zval * do_writeback;
+	zval * state;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	int x;
+	struct service * svcmap; 
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateService)(struct service *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_ids)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	
+	convert_to_string(bartlby_config);
+	
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		
+		r=0;
+		for(x=0; x<shm_hdr->svccount; x++) {
+			if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
+				svcmap[x].do_force=1;
+				
+				r++;
+				
+					
+			}
+		}
+		
+		
+		
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+	
+	
+	
+}
+PHP_FUNCTION(bartlby_bulk_service_notify) {
+
+
+	zval * bartlby_config;
+	zval * bartlby_service_ids;
+	zval * do_writeback;
+	zval * state;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	int x;
+	struct service * svcmap; 
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateService)(struct service *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_ids, &state,  &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	convert_to_long(do_writeback);
+	convert_to_long(state);
+	convert_to_string(bartlby_config);
+	
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		
+		r=0;
+		for(x=0; x<shm_hdr->svccount; x++) {
+			if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
+				svcmap[x].notify_enabled=Z_LVAL_P(state);
+				if(Z_LVAL_P(do_writeback) == 1) {
+					LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
+					UpdateService(&svcmap[x], Z_STRVAL_P(bartlby_config));
+					
+				}
+				r++;
+				
+					
+			}
+		}
+		
+		
+		
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+	
+	
+	
+}
+
+PHP_FUNCTION(bartlby_bulk_service_active) {
+
+
+	zval * bartlby_config;
+	zval * bartlby_service_ids;
+	zval * do_writeback;
+	zval * state;
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	int x;
+	struct service * svcmap; 
+	
+	void * SOHandle;
+	char * dlmsg;
+	int (*UpdateService)(struct service *, char *);
+	
+	
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_ids, &state,  &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	convert_to_long(do_writeback);
+	convert_to_long(state);
+	convert_to_string(bartlby_config);
+	
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+ 	
+		
+	
+	
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		
+		r=0;
+		for(x=0; x<shm_hdr->svccount; x++) {
+			if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
+				svcmap[x].service_active=Z_LVAL_P(state);
+				if(Z_LVAL_P(do_writeback) == 1) {
+					LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
+					UpdateService(&svcmap[x], Z_STRVAL_P(bartlby_config));
+					
+				}
+				r++;
+				
+					
+			}
+		}
+		
+		
+		
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+	
+	
+	
 }
 
 PHP_FUNCTION(bartlby_svc_map) {
@@ -2060,14 +2325,14 @@ PHP_FUNCTION(bartlby_add_worker) {
 	}
 	
 	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
-	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
 	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
 	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
@@ -2194,14 +2459,14 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	}
 	
 	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
-	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
 	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
 	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
@@ -2766,8 +3031,14 @@ PHP_FUNCTION(bartlby_add_service_array) {
  	php_printf("service_name: %s\n", Z_STRVAL_P(service_name));
  	php_printf("service_port: %ld\n", Z_LVAL_P(service_port));
  
+ 
+  object_init(return_value);
 
-	RETURN_LONG(233);
+    // add a couple of properties
+  zend_update_property_string(NULL, return_value, "name", strlen("name"), "yig" TSRMLS_CC);
+  zend_update_property_long(NULL, return_value, "worshippers", strlen("worshippers"), 4 TSRMLS_CC);
+
+	
 	
 	
 	

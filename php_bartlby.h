@@ -179,28 +179,16 @@ PHP_FUNCTION(bartlby_set_worker_state);
 PHP_FUNCTION(bartlby_set_downtime_id);
 PHP_FUNCTION(bartlby_set_passive);
 
+	
+PHP_FUNCTION(bartlby_bulk_service_active);
+PHP_FUNCTION(bartlby_bulk_service_notify);
+PHP_FUNCTION(bartlby_bulk_force_services);
+
+PHP_METHOD(Bartlby, testFunc);
 
 
 
-/* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
 
-ZEND_BEGIN_MODULE_GLOBALS(bartlby)
-	long  global_value;
-	char *global_string;
-ZEND_END_MODULE_GLOBALS(bartlby)
-*/
-
-/* In every utility function you add that needs to use variables 
-   in php_bartlby_globals, call TSRMLS_FETCH(); after declaring other 
-   variables used by that function, or better yet, pass in TSRMLS_CC
-   after the last function argument and declare your utility function
-   with TSRMLS_DC after the last declared argument.  Always refer to
-   the globals in your function as BARTLBY_G(variable).  You are 
-   encouraged to rename these macros something shorter, see
-   examples in any other php module directory.
-*/
 
 #ifdef ZTS
 #define BARTLBY_G(v) TSRMG(bartlby_globals_id, zend_bartlby_globals *, v)
