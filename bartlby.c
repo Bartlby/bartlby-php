@@ -148,6 +148,8 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_bulk_service_notify,NULL)
 	PHP_FE(bartlby_bulk_force_services,NULL)
 	
+	PHP_FE(bartlby_service_set_interval,NULL)
+	
 	
 	
 	
@@ -1166,6 +1168,74 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	}	
 	
 }
+PHP_FUNCTION(bartlby_service_set_interval) {
+	zval * bartlby_config;
+	zval * bartlby_service_id;
+	zval * bartlby_interval;
+	zval * do_writeback;
+	
+	char * shmtok;
+	int shm_id;
+	void * bartlby_address;
+	struct shm_header * shm_hdr;
+	int r;
+	void * SOHandle;
+	char * dlmsg;
+	
+	struct service * svcmap;	
+	int (*UpdateServiceInterval)(struct service *, char *);
+	
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_id, &bartlby_interval, &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_long(bartlby_service_id);
+	convert_to_long(bartlby_interval);
+	convert_to_long(do_writeback);
+	convert_to_string(bartlby_config);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	
+		
+	
+	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	if(SOHandle == NULL) {
+		php_error(E_WARNING, "bartlby SO error");	
+		RETURN_FALSE;	
+	}
+	
+	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
+	if(bartlby_address != NULL) {
+		shm_hdr=(struct shm_header *)(void *)bartlby_address;
+		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+		
+		
+		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+			php_error(E_WARNING, "Service id out of bounds");	
+			RETURN_FALSE;	
+		}
+		
+		svcmap[Z_LVAL_P(bartlby_service_id)].check_interval = Z_LVAL_P(bartlby_interval);	
+		if(Z_LVAL_P(do_writeback) == 1) {
+			LOAD_SYMBOL(UpdateServiceInterval,SOHandle, "UpdateServiceInterval");
+			UpdateServiceInterval(&svcmap[Z_LVAL_P(bartlby_service_id)], Z_STRVAL_P(bartlby_config));
+		}
+		
+		dlclose(SOHandle);
+		shmdt(bartlby_address);
+		RETURN_LONG(r);
+		
+	
+	
+	} else {
+		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
+		free(shmtok);
+		RETURN_FALSE;
+	}	
+}
+
+
 PHP_FUNCTION(bartlby_toggle_service_active) {
 	zval * bartlby_config;
 	zval * bartlby_service_id;
