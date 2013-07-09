@@ -44,8 +44,13 @@ zend_class_entry *bartlby_ce;
  *
  * Every user visible function must have an entry in bartlby_functions[].
  */
-
-
+/*
+zend_function_entry bartlby_class_functions[] = {
+	PHP_ME(Bartlby, testFunc, NULL, ZEND_ACC_PUBLIC)
+	PHP_FE_END
+};
+ */
+ 
  
 zend_function_entry bartlby_functions[] = {
 	PHP_FE(confirm_bartlby_compiled,	NULL)		/* For testing, remove later. */
@@ -2644,6 +2649,9 @@ PHP_FUNCTION(bartlby_get_info) {
 		add_assoc_long(return_value, "round_time_count", shm_hdr->pstat.counter);
 		add_assoc_long(return_value, "servicegroups", shm_hdr->svcgroupcount);
 		add_assoc_long(return_value, "servergroups", shm_hdr->srvgroupcount);
+		add_assoc_long(return_value, "checks_performed", shm_hdr->checks_performed);
+		add_assoc_long(return_value, "checks_performed_time", shm_hdr->checks_performed_time);
+		
 		
 		shmdt(bartlby_address);
 	
