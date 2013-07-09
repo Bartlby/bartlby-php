@@ -183,6 +183,7 @@ PHP_FUNCTION(bartlby_set_passive);
 PHP_FUNCTION(bartlby_bulk_service_active);
 PHP_FUNCTION(bartlby_bulk_service_notify);
 PHP_FUNCTION(bartlby_bulk_force_services);
+PHP_FUNCTION(bartlby_service_set_interval);
 
 PHP_METHOD(Bartlby, testFunc);
 
