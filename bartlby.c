@@ -150,6 +150,8 @@ zend_function_entry bartlby_functions[] = {
 	
 	PHP_FE(bartlby_service_set_interval,NULL)
 	
+	PHP_FE(bartlby_get_core_extension_info,NULL)
+	
 	
 	
 	
@@ -263,6 +265,11 @@ char * getConfigValue(char * key, char * fname) {
 	
 	return NULL;
 }
+
+
+
+
+
 
 void * bartlby_get_sohandle(char * cfgfile) {
 	char * data_lib;
@@ -1166,6 +1173,44 @@ PHP_FUNCTION(bartlby_ack_problem) {
 		free(shmtok);
 		RETURN_FALSE;
 	}	
+	
+}
+PHP_FUNCTION(bartlby_get_core_extension_info) {
+	void * SOHandle;
+	char * dlmsg;
+	zval * extensions_path;
+	
+	char * (*GetName)();
+	char * (*GetAutor)();
+	char * (*GetVersion)();
+	
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &extensions_path)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_string(extensions_path);
+	
+	if (array_init(return_value) == FAILURE) {
+		RETURN_FALSE;
+	}
+	
+	SOHandle=dlopen(Z_STRVAL_P(extensions_path), RTLD_LAZY);
+	if((dlmsg=dlerror()) != NULL) {
+				php_error(E_ERROR, "DL Error: %s", dlmsg);
+        	return;
+   }	
+   
+  
+  
+  LOAD_SYMBOL(GetName,SOHandle, "GetName");
+  LOAD_SYMBOL(GetAutor,SOHandle, "GetAutor");
+  LOAD_SYMBOL(GetVersion,SOHandle, "GetVersion");
+  
+  add_assoc_string(return_value, "name", GetName(), 1);
+  add_assoc_string(return_value, "autor", GetAutor(), 1);
+  add_assoc_string(return_value, "version", GetVersion(), 1); 
+	
+	dlclose(SOHandle);
+	
 	
 }
 PHP_FUNCTION(bartlby_service_set_interval) {

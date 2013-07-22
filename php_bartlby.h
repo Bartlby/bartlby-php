@@ -185,6 +185,8 @@ PHP_FUNCTION(bartlby_bulk_service_notify);
 PHP_FUNCTION(bartlby_bulk_force_services);
 PHP_FUNCTION(bartlby_service_set_interval);
 
+PHP_FUNCTION(bartlby_get_core_extension_info);
+
 PHP_METHOD(Bartlby, testFunc);
 
 
@@ -207,6 +209,10 @@ PHP_METHOD(Bartlby, testFunc);
  * indent-tabs-mode: t
  * End:
  */
+ 
+#define MAX_GROUP_MEMBERS 512
+#define GROUP_MEMBER_STR_LENGTH 2048
+
  
 struct shm_counter {
 	long worker;
@@ -285,9 +291,9 @@ struct server {
 	struct service * dead_marker;
 	int is_gone;
 	
-	struct servergroup * servergroups[200];
+	struct servergroup * servergroups[MAX_GROUP_MEMBERS];
 	long servergroup_counter;
-	long servergroup_place[200];
+	long servergroup_place[MAX_GROUP_MEMBERS];
 	
 	char server_ssh_keyfile[512];
   char server_ssh_passphrase[512];
@@ -368,9 +374,9 @@ struct service {
 	int is_gone;
 	
 	
-	struct servicegroup * servicegroups[200];
+	struct servicegroup * servicegroups[MAX_GROUP_MEMBERS];
 	long servicegroup_counter;
-	long servicegroup_place[200];
+	long servicegroup_place[MAX_GROUP_MEMBERS];
 	
 	long fires_events;
 	char enabled_triggers[512];
@@ -381,7 +387,7 @@ struct servicegroup {
 	char servicegroup_name[1024];
 	int servicegroup_notify;
 	int servicegroup_active;
-	char servicegroup_members[1024];
+	char servicegroup_members[GROUP_MEMBER_STR_LENGTH];
 	int servicegroup_dead;
 	struct service * dead_marker;
 	char enabled_triggers[512];
@@ -393,7 +399,7 @@ struct servergroup {
 	char servergroup_name[1024];
 	int servergroup_notify;
 	int servergroup_active;
-	char servergroup_members[1024];
+	char servergroup_members[GROUP_MEMBER_STR_LENGTH];
 	int servergroup_dead;
 	struct service * dead_marker;
 	
