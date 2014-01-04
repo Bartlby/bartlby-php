@@ -187,6 +187,10 @@ PHP_FUNCTION(bartlby_service_set_interval);
 
 PHP_FUNCTION(bartlby_get_core_extension_info);
 
+PHP_FUNCTION(bartlby_new);
+PHP_FUNCTION(bartlby_close);
+
+
 PHP_METHOD(Bartlby, testFunc);
 
 

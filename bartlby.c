@@ -30,29 +30,27 @@ $Author$
 #include "php_bartlby.h"
 
 
-/* If you declare any globals in php_bartlby.h uncomment this:
-ZEND_DECLARE_MODULE_GLOBALS(bartlby)
-*/
 
-/* True global resources - no need for thread safety here */
-static int le_bartlby;
-zend_class_entry *bartlby_ce;
+typedef struct _bartlby_res {
+    char *cfgfile;
+    void * bartlby_address;
+    void * SOHandle;
+    
+    
+} bartlby_res;
 
 
 
-/* {{{ bartlby_functions[]
- *
- * Every user visible function must have an entry in bartlby_functions[].
- */
-/*
-zend_function_entry bartlby_class_functions[] = {
-	PHP_ME(Bartlby, testFunc, NULL, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
- */
+#define BARTLBY_RES_NAME "Bartlby Resource"
+
+int le_bartlby;
+
  
  
 zend_function_entry bartlby_functions[] = {
+	
+	PHP_FE(bartlby_new,NULL)
+	PHP_FE(bartlby_close,NULL)
 	PHP_FE(confirm_bartlby_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_service,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_worker,	NULL)		/* For testing, remove later. */
@@ -368,8 +366,38 @@ void bartlby_mark_object_gone(char * cfg, long id, int type, int msg) {
 }
 
 
+PHP_FUNCTION(bartlby_close)
+{
+	
+		//FIXME check resource type BARTLBY
+    zval *zbartlby;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby) == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    zend_list_delete(Z_LVAL_P(zbartlby));
+    RETURN_TRUE;
+}
 
 
+
+static void bartlby_res_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
+{
+    bartlby_res *res = (bartlby_res*)rsrc->ptr;
+    if (res) {
+    	//FIXME
+    	//shmdt
+    	//dlclose
+    	
+    	if(res->bartlby_address != NULL) {
+    		shmdt(res->bartlby_address);
+    	}
+    	if(res->SOHandle != NULL) {
+    		dlclose(res->SOHandle);
+    	}
+      efree(res);
+    }
+}
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -388,6 +416,11 @@ PHP_MINIT_FUNCTION(bartlby)
 	
 	zend_declare_property_string(bartlby_ce, "foo", sizeof("foo") - 1, "bar", ZEND_ACC_PUBLIC TSRMLS_CC);
 	*/
+	
+	
+	le_bartlby = zend_register_list_destructors_ex(bartlby_res_dtor, NULL, BARTLBY_RES_NAME, module_number);
+	
+	
 	
 	return SUCCESS;
 	
@@ -470,6 +503,26 @@ PHP_FUNCTION(confirm_bartlby_compiled)
 PHP_FUNCTION(bartlby_version) {
 	RETURN_STRING(BARTLBY_VERSION,1);	
 	
+}
+
+PHP_FUNCTION(bartlby_new) {
+	bartlby_res * res;
+	
+	zval * bartlby_config;
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	//FIXME return NULL if SHM or DL error
+	convert_to_string(bartlby_config);
+  res = emalloc(sizeof(bartlby_res));
+  res->cfgfile = estrndup(Z_STRVAL_P(bartlby_config), strlen(Z_STRVAL_P(bartlby_config)));
+  res->SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+  res->bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
+  
+  
+  
+  ZEND_REGISTER_RESOURCE(return_value, res, le_bartlby);
+  	
 }
 PHP_FUNCTION(bartlby_set_downtime_id) {
 	zval * bartlby_config;
@@ -1966,8 +2019,7 @@ PHP_FUNCTION(bartlby_bulk_service_active) {
 
 PHP_FUNCTION(bartlby_svc_map) {
 	zval * subarray;
-	char * shmtok;
-	int shm_id;
+	
 	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	
@@ -1986,7 +2038,7 @@ PHP_FUNCTION(bartlby_svc_map) {
 	struct servicegroup * svcgrpmap;
 	
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * svc_right_array;
 	zval * server_right_array;
 	
@@ -1996,20 +2048,23 @@ PHP_FUNCTION(bartlby_svc_map) {
 	char * group_has_server;
 	int is_member;
 	int u;
-	
 	int z;
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &svc_right_array, &server_right_array)==FAILURE) {
+	
+	bartlby_res * bres;
+	
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &svc_right_array, &server_right_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
+	bartlby_address=bres->bartlby_address;
+	
 	if(bartlby_address != NULL) {
 			shm_hdr=(struct shm_header *)(void *)bartlby_address;
 			svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
@@ -2272,13 +2327,13 @@ PHP_FUNCTION(bartlby_svc_map) {
 		
 		
 		
-		shmdt(bartlby_address);
+		
 		
 
 	
 	} else {
 		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
+		
 		RETURN_FALSE;
 	}
 		
