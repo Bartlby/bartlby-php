@@ -51,7 +51,6 @@ zend_function_entry bartlby_functions[] = {
 	
 	PHP_FE(bartlby_new,NULL)
 	PHP_FE(bartlby_close,NULL)
-	PHP_FE(confirm_bartlby_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_service,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_worker,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_info,	NULL)		/* For testing, remove later. */
@@ -181,26 +180,7 @@ zend_module_entry bartlby_module_entry = {
 ZEND_GET_MODULE(bartlby)
 #endif
 
-/* {{{ PHP_INI
- */
-/* Remove comments and fill if you need to have entries in php.ini
-PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("bartlby.global_value",      "42", PHP_INI_ALL, OnUpdateInt, global_value, zend_bartlby_globals, bartlby_globals)
-    STD_PHP_INI_ENTRY("bartlby.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_bartlby_globals, bartlby_globals)
-PHP_INI_END()
-*/
-/* }}} */
 
-/* {{{ php_bartlby_init_globals
- */
-/* Uncomment this function if you have INI entries
-static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
-{
-	bartlby_globals->global_value = 0;
-	bartlby_globals->global_string = NULL;
-}
-*/
-/* }}} */
 
 
 
@@ -312,11 +292,9 @@ void * bartlby_get_shm(char * cfgfile) {
 
 
 
-void bartlby_mark_object_gone(char * cfg, long id, int type, int msg) {
+void bartlby_mark_object_gone(bartlby_res * bres, long id, int type, int msg) {
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
+	
 	int x;
 	struct shm_header * shm_hdr;
 	struct service * svcmap;
@@ -325,18 +303,14 @@ void bartlby_mark_object_gone(char * cfg, long id, int type, int msg) {
 	struct downtime * dtmap;
 	char * tmpstr;
 	
-	bartlby_address=bartlby_get_shm(cfg); 
-	if(bartlby_address != NULL) {
 	
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-	} else {
-		return; //SHM ERROR
-	}
-
+	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	
 	switch(type) {
 		case BARTLBY_SERVICE_GONE:
 			for(x=0; x<shm_hdr->svccount; x++) {
@@ -395,6 +369,8 @@ static void bartlby_res_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
     	if(res->SOHandle != NULL) {
     		dlclose(res->SOHandle);
     	}
+    	efree(res->cfgfile);
+    	
       efree(res);
     }
 }
@@ -476,29 +452,6 @@ PHP_MINFO_FUNCTION(bartlby)
 	DISPLAY_INI_ENTRIES();
 	*/
 }
-/* }}} */
-
-
-/* Remove the following function when you have succesfully modified config.m4
-   so that your module can be compiled into PHP, it exists only for testing
-   purposes. */
-
-/* Every user-visible function in PHP should document itself in the source */
-/* {{{ proto string confirm_bartlby_compiled(string arg)
-   Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_bartlby_compiled)
-{
-	char *arg = NULL;
-	int arg_len, len;
-	char string[256];
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
-		return;
-	}
-
-	len = sprintf(string, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "bartlby", arg);
-	RETURN_STRINGL(string, len, 1);
-}
 
 PHP_FUNCTION(bartlby_version) {
 	RETURN_STRING(BARTLBY_VERSION,1);	
@@ -525,121 +478,86 @@ PHP_FUNCTION(bartlby_new) {
   	
 }
 PHP_FUNCTION(bartlby_set_downtime_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * from;
 	zval * to;
 	zval * mig;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*DowntimeChangeId)(int, int, char*);
 	
+	bartlby_res * bres;
+
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
 	convert_to_long(from);
 	convert_to_long(to);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
+	LOAD_SYMBOL(DowntimeChangeId,bres->SOHandle, "DowntimeChangeId");
 	
-	LOAD_SYMBOL(DowntimeChangeId,SOHandle, "DowntimeChangeId");
+	ret=DowntimeChangeId(Z_LVAL_P(from),Z_LVAL_P(to),bres->cfgfile);
 	
-	
-	
-	ret=DowntimeChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_worker_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * from;
 	zval * to;
 	zval * mig;
 	
-	void * SOHandle;
 	char * dlmsg;
 	
 	int ret;
 	
 	int (*WorkerChangeId)(int, int,  char*);
+	bartlby_res * bres;	
 	
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	
 	convert_to_long(from);
 	convert_to_long(to);
-	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(WorkerChangeId,SOHandle, "WorkerChangeId");
-	
-	
-	
-	ret=WorkerChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	LOAD_SYMBOL(WorkerChangeId,bres->SOHandle, "WorkerChangeId");
+	ret=WorkerChangeId(Z_LVAL_P(from),Z_LVAL_P(to),bres->cfgfile);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_service_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * from;
 	zval * to;
 	zval * mig;
 	
-	void * SOHandle;
 	char * dlmsg;
 	
 	int ret;
 	
 	int (*ServiceChangeId)(int, int,  char*);
+	bartlby_res * bres;
 	
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
 	convert_to_long(from);
 	convert_to_long(to);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	LOAD_SYMBOL(ServiceChangeId,bres->SOHandle, "ServiceChangeId");
+	ret=ServiceChangeId(Z_LVAL_P(from),Z_LVAL_P(to),bres->cfgfile);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(ServiceChangeId,SOHandle, "ServiceChangeId");
-	
-	
-	
-	ret=ServiceChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_server_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * from;
 	zval * to;
 	zval * mig;
@@ -650,72 +568,46 @@ PHP_FUNCTION(bartlby_set_server_id) {
 	int ret;
 	
 	int (*ServerChangeId)(int, int, int, char*);
+	bartlby_res * bres;
+
 	
 	
-	
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config,&from, &to, &mig)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource,&from, &to, &mig)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	
 	convert_to_long(from);
 	convert_to_long(to);
 	convert_to_long(mig);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(ServerChangeId,SOHandle, "ServerChangeId");
-	
-	
-	
-	ret=ServerChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_LVAL_P(mig),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	LOAD_SYMBOL(ServerChangeId,bres->SOHandle, "ServerChangeId");
+	ret=ServerChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_LVAL_P(mig),bres->cfgfile);
 	RETURN_LONG(ret);	
 }
 
 PHP_FUNCTION(bartlby_delete_downtime) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * downtime_id;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*DeleteDowntime)(int, char*);
-	
 	struct service svc;
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&downtime_id)==FAILURE) {
+	bartlby_res * bres;
+
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&downtime_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	
 	convert_to_long(downtime_id);
-	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(DeleteDowntime,SOHandle, "DeleteDowntime");
-	
-	
-	
-	ret=DeleteDowntime(Z_LVAL_P(downtime_id),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	LOAD_SYMBOL(DeleteDowntime,bres->SOHandle, "DeleteDowntime");
+	ret=DeleteDowntime(Z_LVAL_P(downtime_id),bres->cfgfile);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_modify_downtime) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * downtime_from;
 	zval * downtime_to;
 	zval * downtime_type;
@@ -726,17 +618,16 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*UpdateDowntime)(struct downtime *,char *);
-	
 	struct downtime svc;
+	bartlby_res * bres;
+
+
 	
-	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&downtime_id, &options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&downtime_id, &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -744,6 +635,10 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
 		RETURN_BOOL(0);
 	}
+
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
 	
 	GETARRAY_EL_FROM_HASH(downtime_from, "downtime_from", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(downtime_to, "downtime_to", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
@@ -752,24 +647,17 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	GETARRAY_EL_FROM_HASH(downtime_notice, "downtime_notice", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default notice");
 	
 	
-	convert_to_string(bartlby_config);
+	
 	convert_to_long(downtime_from);
 	convert_to_long(downtime_to);
 	convert_to_long(downtime_type);
 	convert_to_long(downtime_service);
 	convert_to_long(downtime_id);
-	
-	
 	convert_to_string(downtime_notice);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(UpdateDowntime,SOHandle, "UpdateDowntime");
+	LOAD_SYMBOL(UpdateDowntime,bres->SOHandle, "UpdateDowntime");
 	
 	strcpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice));
 	svc.downtime_from=Z_LVAL_P(downtime_from);
@@ -778,75 +666,59 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	svc.service_id=Z_LVAL_P(downtime_service);
 	svc.downtime_id=Z_LVAL_P(downtime_id);
 	
-	ret=UpdateDowntime(&svc, Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ret=UpdateDowntime(&svc, bres->cfgfile);
 	
 	RETURN_LONG(ret);		
 }
 PHP_FUNCTION(bartlby_downtime_map) {
 	zval * subarray;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	
 	int x;
 	struct service * svcmap;
 	struct worker * wrkmap;
 	struct downtime * dtmap;
+	zval * zbartlby_resource;
+	bartlby_res * bres;
+
 	
-	zval * bartlby_config;
-	
-	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
-		
-		for(x=0; x<shm_hdr->dtcount; x++) {
-			
-			ALLOC_INIT_ZVAL(subarray);
-			array_init(subarray);
-			
-			add_assoc_long(subarray, "downtime_id", dtmap[x].downtime_id);
-			add_assoc_long(subarray, "downtime_from", dtmap[x].downtime_from);
-			add_assoc_long(subarray, "downtime_to", dtmap[x].downtime_to);
-			add_assoc_long(subarray, "downtime_type", dtmap[x].downtime_type);
-			add_assoc_long(subarray, "service_id", dtmap[x].service_id);
-			
-			add_assoc_long(subarray, "is_gone", dtmap[x].is_gone);
-			
-			add_assoc_string(subarray, "downtime_notice", dtmap[x].downtime_notice, 1);
-			
-			//Push SVC to map
-			add_next_index_zval(return_value, subarray);
-			
-		}
-		
-		
-		
-		shmdt(bartlby_address);
-		
-
 	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
+		
+	for(x=0; x<shm_hdr->dtcount; x++) {
+		
+		ALLOC_INIT_ZVAL(subarray);
+		array_init(subarray);
+		
+		add_assoc_long(subarray, "downtime_id", dtmap[x].downtime_id);
+		add_assoc_long(subarray, "downtime_from", dtmap[x].downtime_from);
+		add_assoc_long(subarray, "downtime_to", dtmap[x].downtime_to);
+		add_assoc_long(subarray, "downtime_type", dtmap[x].downtime_type);
+		add_assoc_long(subarray, "service_id", dtmap[x].service_id);
+			
+		add_assoc_long(subarray, "is_gone", dtmap[x].is_gone);
+			
+		add_assoc_string(subarray, "downtime_notice", dtmap[x].downtime_notice, 1);
+		
+		//Push SVC to map
+		add_next_index_zval(return_value, subarray);
+		
 	}
+	 
 		
 	
 
@@ -856,7 +728,7 @@ PHP_FUNCTION(bartlby_downtime_map) {
 
 
 PHP_FUNCTION(bartlby_add_downtime) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * downtime_from;
 	zval * downtime_to;
 	zval * downtime_type;
@@ -866,18 +738,14 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*AddDowntime)(struct downtime *,char *);
-	
 	struct downtime svc;
-	
+	bartlby_res * bres;	
 
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -885,6 +753,9 @@ PHP_FUNCTION(bartlby_add_downtime) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
 		RETURN_BOOL(0);
 	}
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
 	
 	GETARRAY_EL_FROM_HASH(downtime_from, "downtime_from", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(downtime_to, "downtime_to", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
@@ -895,7 +766,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	
 	
 	
-	convert_to_string(bartlby_config);
+	
 	convert_to_long(downtime_from);
 	convert_to_long(downtime_to);
 	convert_to_long(downtime_type);
@@ -904,76 +775,56 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	convert_to_string(downtime_notice);
 		
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(AddDowntime,SOHandle, "AddDowntime");
+	LOAD_SYMBOL(AddDowntime,bres->SOHandle, "AddDowntime");
 	
 	strcpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice));
 	svc.downtime_from=Z_LVAL_P(downtime_from);
 	svc.downtime_to=Z_LVAL_P(downtime_to);
 	svc.downtime_type=Z_LVAL_P(downtime_type);
 	svc.service_id=Z_LVAL_P(downtime_service);
+	ret=AddDowntime(&svc, bres->cfgfile);
 	
-	ret=AddDowntime(&svc, Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 
-//size_of_structs=sizeof(struct shm_header)+sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime);
+
 
 PHP_FUNCTION(bartlby_event_tick) {
-	zval * bartlby_config;
-	zval * bartlby_service_id;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
+	zval * zbartlby_resource;
+
 	struct shm_header * shm_hdr;
 	struct service * svcmap;
 	struct worker * wrkmap;
 	struct downtime * dtmap;
 	
 	int idx;
+
+	bartlby_res * bres;
 		
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	idx=shm_hdr->cur_event_index;
+	RETURN_LONG(idx);
 		
 	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		idx=shm_hdr->cur_event_index;
-		shmdt(bartlby_address);
-		RETURN_LONG(idx);
-		
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");
-		RETURN_FALSE;
-	}	
 }
 
 PHP_FUNCTION(bartlby_event_fetch) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
 	zval * event_index;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
+	
 	struct shm_header * shm_hdr;
 	struct service * svcmap;
 	struct worker * wrkmap;
@@ -981,12 +832,18 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	struct btl_event * evntmap;
 	struct server * srvmap;	
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &event_index)==FAILURE) {
+	bartlby_res * bres;
+
+
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &event_index)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	convert_to_long(event_index);
 	
+	convert_to_long(event_index);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
+
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
@@ -995,240 +852,157 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	
 	
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		
-		if(Z_LVAL_P(event_index) < EVENT_QUEUE_MAX) {
-			add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message, 1);
-			add_assoc_long(return_value, "id", evntmap[Z_LVAL_P(event_index)].evnt_id);
-			add_assoc_long(return_value, "time", evntmap[Z_LVAL_P(event_index)].evnt_time);
-			shmdt(bartlby_address);
-		} else {
-			shmdt(bartlby_address);
-			RETURN_FALSE;
-		}
-		
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	
+	if(Z_LVAL_P(event_index) < EVENT_QUEUE_MAX) {
+		add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message, 1);
+		add_assoc_long(return_value, "id", evntmap[Z_LVAL_P(event_index)].evnt_id);
+		add_assoc_long(return_value, "time", evntmap[Z_LVAL_P(event_index)].evnt_time);
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");
 		RETURN_FALSE;
-	}	
+	}
+		
+		
 }
 
 
 PHP_FUNCTION(bartlby_check_shm_size) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int my_size;
 	
 	struct service * svcmap;	
-	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup);
-		if(my_size != shm_hdr->size_of_structs) {	
-			shmdt(bartlby_address);
-			RETURN_FALSE;
-			
-		} else {
-			shmdt(bartlby_address);
-			RETURN_TRUE;
-		}		
-		
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup);
+	if(my_size != shm_hdr->size_of_structs) {	
 		RETURN_FALSE;
-	}	
+	} else {
+		RETURN_TRUE;
+	}		
+		
 }
 
 PHP_FUNCTION(bartlby_toggle_sirene) {
-	zval * bartlby_config;
-	zval * bartlby_service_id;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
+	zval * zbartlby_resource;
 	struct shm_header * shm_hdr;
 	int r;
 	
-	struct service * svcmap;	
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-			
-		if(shm_hdr->sirene_mode== 1) {
-			shm_hdr->sirene_mode = 0;
-			r=0;
-		} else {
-			shm_hdr->sirene_mode = 1;
-			r=1;
-		}
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	if(shm_hdr->sirene_mode== 1) {
+		shm_hdr->sirene_mode = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		shm_hdr->sirene_mode = 1;
+		r=1;
+	}
+	RETURN_LONG(r);
+		
 }
 
 
 PHP_FUNCTION(bartlby_set_passive) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_new_state;
 	zval * bartlby_new_output;
 	zval * bartlby_service_id;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	
 	struct service * svcmap;	
-	
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_id, &bartlby_new_state, &bartlby_new_output)==FAILURE) {
+	bartlby_res * bres;
+
+
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource, &bartlby_service_id, &bartlby_new_state, &bartlby_new_output)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(bartlby_new_state);
-	
-	convert_to_string(bartlby_config);
 	convert_to_string(bartlby_new_output);
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 		
 	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
+		RETURN_FALSE;	
+	}
 		
-		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		
-		svcmap[Z_LVAL_P(bartlby_service_id)].last_state = svcmap[Z_LVAL_P(bartlby_service_id)].current_state;
-		svcmap[Z_LVAL_P(bartlby_service_id)].current_state = Z_LVAL_P(bartlby_new_state);	
-		snprintf(svcmap[Z_LVAL_P(bartlby_service_id)].new_server_text, 2040, "%s",Z_STRVAL_P(bartlby_new_output)); 
-		svcmap[Z_LVAL_P(bartlby_service_id)].last_check = time(NULL);	
-		
-		r=1;
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+	svcmap[Z_LVAL_P(bartlby_service_id)].last_state = svcmap[Z_LVAL_P(bartlby_service_id)].current_state;
+	svcmap[Z_LVAL_P(bartlby_service_id)].current_state = Z_LVAL_P(bartlby_new_state);	
+	snprintf(svcmap[Z_LVAL_P(bartlby_service_id)].new_server_text, 2040, "%s",Z_STRVAL_P(bartlby_new_output)); 
+	svcmap[Z_LVAL_P(bartlby_service_id)].last_check = time(NULL);	
+	r=1;
+	RETURN_LONG(r);
 	
 }
 
 
 PHP_FUNCTION(bartlby_ack_problem) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	
 	struct service * svcmap;	
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+		
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
+		RETURN_FALSE;	
 	}
-	
 		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+	svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_current = 1;	
 		
+	r=1;
+	RETURN_LONG(r);
 		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		
-		svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_current = 1;	
-		
-		r=1;
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
-	
 }
 PHP_FUNCTION(bartlby_get_core_extension_info) {
+	//FIXME LOOK AT THIS if it could fit with RESOURCE
 	void * SOHandle;
 	char * dlmsg;
 	zval * extensions_path;
@@ -1266,157 +1040,114 @@ PHP_FUNCTION(bartlby_get_core_extension_info) {
 	
 	
 }
+
+
 PHP_FUNCTION(bartlby_service_set_interval) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
 	zval * bartlby_interval;
 	zval * do_writeback;
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
-	void * SOHandle;
 	char * dlmsg;
 	
 	struct service * svcmap;	
 	int (*UpdateServiceInterval)(struct service *, char *);
-	
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_id, &bartlby_interval, &do_writeback)==FAILURE) {
+	bartlby_res * bres;
+
+
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource, &bartlby_service_id, &bartlby_interval, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
+	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(bartlby_interval);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
-	
+
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 		
-	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
 		RETURN_FALSE;	
 	}
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
 		
+	svcmap[Z_LVAL_P(bartlby_service_id)].check_interval = Z_LVAL_P(bartlby_interval);	
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateServiceInterval,bres->SOHandle, "UpdateServiceInterval");
+		UpdateServiceInterval(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
+	}
+	r=1;
+
+	RETURN_LONG(r);
 		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		
-		svcmap[Z_LVAL_P(bartlby_service_id)].check_interval = Z_LVAL_P(bartlby_interval);	
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateServiceInterval,SOHandle, "UpdateServiceInterval");
-			UpdateServiceInterval(&svcmap[Z_LVAL_P(bartlby_service_id)], Z_STRVAL_P(bartlby_config));
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
 }
+ 
+
 
 
 PHP_FUNCTION(bartlby_toggle_service_active) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
 	zval * do_writeback;
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
-	void * SOHandle;
 	char * dlmsg;
 	
 	struct service * svcmap;	
+	bartlby_res * bres;
+
 	int (*UpdateService)(struct service *, char *);
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
+	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 		
-	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
 		RETURN_FALSE;	
 	}
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		
-		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(svcmap[Z_LVAL_P(bartlby_service_id)].service_active == 1) {
-			svcmap[Z_LVAL_P(bartlby_service_id)].service_active = 0;
-			r=0;
-		} else {
-			svcmap[Z_LVAL_P(bartlby_service_id)].service_active = 1;	
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
-			UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], Z_STRVAL_P(bartlby_config));
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(svcmap[Z_LVAL_P(bartlby_service_id)].service_active == 1) {
+		svcmap[Z_LVAL_P(bartlby_service_id)].service_active = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		svcmap[Z_LVAL_P(bartlby_service_id)].service_active = 1;	
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
+		UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
+	}
+		
+	RETURN_LONG(r);
+		
+	
+		
 }
 
-//bartlby_toggle_server_notify
+
 
 PHP_FUNCTION(bartlby_toggle_server_notify) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
 	zval * do_writeback;
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
-	void * SOHandle;
 	char * dlmsg;
 	
 	struct service * svcmap;
@@ -1426,76 +1157,52 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 		
 	int (*ModifyServer)(struct server *, char *);
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	bartlby_res * bres;
+
+
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
 		
-	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
+		php_error(E_WARNING, "Server id out of bounds");	
 		RETURN_FALSE;	
 	}
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		
-		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
-			php_error(E_WARNING, "Server id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(srvmap[Z_LVAL_P(bartlby_service_id)].server_notify == 1) {
-			srvmap[Z_LVAL_P(bartlby_service_id)].server_notify = 0;
-			r=0;
-		} else {
-			srvmap[Z_LVAL_P(bartlby_service_id)].server_notify = 1;	
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(ModifyServer,SOHandle, "ModifyServer");
-			ModifyServer(&srvmap[Z_LVAL_P(bartlby_service_id)], Z_STRVAL_P(bartlby_config));
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(srvmap[Z_LVAL_P(bartlby_service_id)].server_notify == 1) {
+		srvmap[Z_LVAL_P(bartlby_service_id)].server_notify = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		srvmap[Z_LVAL_P(bartlby_service_id)].server_notify = 1;	
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(ModifyServer,bres->SOHandle, "ModifyServer");
+		ModifyServer(&srvmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
+	}
+		
+	RETURN_LONG(r);
+	
 }
 
 
 
 PHP_FUNCTION(bartlby_toggle_server_active) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
 	zval * do_writeback;
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
-	void * SOHandle;
 	char * dlmsg;
 	
 	struct service * svcmap;
@@ -1504,516 +1211,331 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 	struct server * srvmap;
 		
 	int (*ModifyServer)(struct server *, char *);
+
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
 	
-		
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
+		php_error(E_WARNING, "Server id out of bounds");	
 		RETURN_FALSE;	
 	}
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		
-		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
-			php_error(E_WARNING, "Server id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(srvmap[Z_LVAL_P(bartlby_service_id)].server_enabled == 1) {
-			srvmap[Z_LVAL_P(bartlby_service_id)].server_enabled = 0;
-			r=0;
-		} else {
-			srvmap[Z_LVAL_P(bartlby_service_id)].server_enabled = 1;	
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(ModifyServer,SOHandle, "ModifyServer");
-			ModifyServer(&srvmap[Z_LVAL_P(bartlby_service_id)], Z_STRVAL_P(bartlby_config));
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(srvmap[Z_LVAL_P(bartlby_service_id)].server_enabled == 1) {
+		srvmap[Z_LVAL_P(bartlby_service_id)].server_enabled = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		srvmap[Z_LVAL_P(bartlby_service_id)].server_enabled = 1;	
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(ModifyServer,bres->SOHandle, "ModifyServer");
+		ModifyServer(&srvmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
+	}
+		
+	RETURN_LONG(r);
+	
 }
 
 PHP_FUNCTION(bartlby_set_worker_state) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_worker_id;
 	zval * new_state;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
+	
 	struct shm_header * shm_hdr;
 	int r;
 	struct worker * wrkmap;
 	struct service * svcmap;
-	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateWorker)(struct worker *, char *);
+	bartlby_res * bres;
+
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_worker_id, &new_state)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_worker_id, &new_state)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_worker_id);
 	convert_to_long(new_state);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
+
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		
+	
+		
+	if(Z_LVAL_P(bartlby_worker_id) > shm_hdr->wrkcount-1) {
+		php_error(E_WARNING, "Worker id out of bounds");	
 		RETURN_FALSE;	
 	}
- 	
 		
+		
+	r=1;
+	wrkmap[Z_LVAL_P(bartlby_worker_id)].active=Z_LVAL_P(new_state);
 	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		
-		
-		
-		if(Z_LVAL_P(bartlby_worker_id) > shm_hdr->wrkcount-1) {
-			php_error(E_WARNING, "Worker id out of bounds");	
-			RETURN_FALSE;	
-		}
-		
-		
-		r=1;
-		wrkmap[Z_LVAL_P(bartlby_worker_id)].active=Z_LVAL_P(new_state);
-		
-		LOAD_SYMBOL(UpdateWorker,SOHandle, "UpdateWorker");
-		UpdateWorker(&wrkmap[Z_LVAL_P(bartlby_worker_id)], Z_STRVAL_P(bartlby_config));
-		
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+	LOAD_SYMBOL(UpdateWorker,bres->SOHandle, "UpdateWorker");
+	UpdateWorker(&wrkmap[Z_LVAL_P(bartlby_worker_id)], bres->cfgfile);
+	RETURN_LONG(r);
+			
 }
 
 PHP_FUNCTION(bartlby_toggle_service_notify) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
 	zval * do_writeback;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	struct service * svcmap; 
-	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateService)(struct service *, char *);
+	bartlby_res * bres;
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_service_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
+	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+		
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
 		RETURN_FALSE;	
 	}
- 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		
-		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled == 1) {
-			svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled = 0;
-			r=0;
-		} else {
-			svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled = 1;	
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
-			UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], Z_STRVAL_P(bartlby_config));
-			
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled == 1) {
+		svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled = 1;	
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
+		UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
+		
+	}
+		
+	RETURN_LONG(r);
+		
 }
 
 
 //bartlby_check_force
 PHP_FUNCTION(bartlby_check_force) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	struct service * svcmap; 
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+		
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
+		RETURN_FALSE;	
 	}
-	
+	svcmap[Z_LVAL_P(bartlby_service_id)].do_force = 1;	
+	r=1;
+	RETURN_LONG(r);
 		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		
-		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		svcmap[Z_LVAL_P(bartlby_service_id)].do_force = 1;	
-		r=1;
-		
-		
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
 }
 
 
 int btl_is_array(zval * ar, int service_id) {
 	HashTable *arr_hash;
 	zval **data;
-    	HashPosition pointer;
-    	int array_count;
-    	char * string_key;
-    	int str_key_len;
-    	long num_key;
+    HashPosition pointer;
+    int array_count;
+    char * string_key;
+    int str_key_len;
+    long num_key;
     	
-    	if(Z_TYPE_P(ar) != IS_ARRAY) {
-    		return 1;
-    	}
+    if(Z_TYPE_P(ar) != IS_ARRAY) {
+    	return 1;
+    }
 	
 	arr_hash = Z_ARRVAL_P(ar);
-    	array_count = zend_hash_num_elements(arr_hash);
-    	for(zend_hash_internal_pointer_reset_ex(arr_hash, &pointer); zend_hash_get_current_data_ex(arr_hash, (void**) &data, &pointer) == SUCCESS; zend_hash_move_forward_ex(arr_hash, &pointer)) {
-						//convert_to_long(*data); FIXME
-            if(Z_TYPE_PP(data) == IS_STRING) {
-            	//printf("String: %s\n", Z_STRVAL_PP(data));	
-            } else if(Z_TYPE_PP(data) == IS_LONG) {
-            	//printf("Long: %d\n", Z_LVAL_PP(data));	
-            	if(Z_LVAL_PP(data) == service_id) {
+    array_count = zend_hash_num_elements(arr_hash);
+    for(zend_hash_internal_pointer_reset_ex(arr_hash, &pointer); zend_hash_get_current_data_ex(arr_hash, (void**) &data, &pointer) == SUCCESS; zend_hash_move_forward_ex(arr_hash, &pointer)) {
+		//convert_to_long(*data); FIXME
+        if(Z_TYPE_PP(data) == IS_STRING) {
+        	//printf("String: %s\n", Z_STRVAL_PP(data));	
+        } else if(Z_TYPE_PP(data) == IS_LONG) {
+            //printf("Long: %d\n", Z_LVAL_PP(data));	
+           	if(Z_LVAL_PP(data) == service_id) {
         		return 1;
         	}
-            }
+        }
 
             	
-    	}
-    	return -1;
+    }
+    return -1;
 }
 
 PHP_FUNCTION(bartlby_bulk_force_services) {
-
-
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_ids;
 	zval * do_writeback;
 	zval * state;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	int x;
 	struct service * svcmap; 
 	
-	void * SOHandle;
-	char * dlmsg;
-	int (*UpdateService)(struct service *, char *);
-	
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_ids)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_ids)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	convert_to_string(bartlby_config);
 	
-	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
- 	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		
-		r=0;
-		for(x=0; x<shm_hdr->svccount; x++) {
-			if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
-				svcmap[x].do_force=1;
-				
-				r++;
-				
-					
-			}
+	r=0;
+	for(x=0; x<shm_hdr->svccount; x++) {
+		if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
+			svcmap[x].do_force=1;
+			r++;
 		}
+	}
 		
-		
-		
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
-	
+	RETURN_LONG(r);
 	
 	
 }
 PHP_FUNCTION(bartlby_bulk_service_notify) {
 
 
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_ids;
 	zval * do_writeback;
 	zval * state;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	int x;
 	struct service * svcmap; 
 	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateService)(struct service *, char *);
+	bartlby_res * bres;
+
 	
-	
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_ids, &state,  &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource, &bartlby_service_ids, &state,  &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	
 	convert_to_long(do_writeback);
 	convert_to_long(state);
-	convert_to_string(bartlby_config);
+	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
- 	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		
-		r=0;
-		for(x=0; x<shm_hdr->svccount; x++) {
-			if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
-				svcmap[x].notify_enabled=Z_LVAL_P(state);
-				if(Z_LVAL_P(do_writeback) == 1) {
-					LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
-					UpdateService(&svcmap[x], Z_STRVAL_P(bartlby_config));
-					
-				}
-				r++;
-				
+	r=0;
+	for(x=0; x<shm_hdr->svccount; x++) {
+		if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
+			svcmap[x].notify_enabled=Z_LVAL_P(state);
+			if(Z_LVAL_P(do_writeback) == 1) {
+				LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
+				UpdateService(&svcmap[x], bres->cfgfile);
 					
 			}
+			r++;
+				
+					
 		}
+	}
 		
 		
-		
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
-	
-	
+	RETURN_LONG(r);
 	
 }
 
 PHP_FUNCTION(bartlby_bulk_service_active) {
 
 
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_ids;
 	zval * do_writeback;
 	zval * state;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	int x;
 	struct service * svcmap; 
 	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateService)(struct service *, char *);
+	bartlby_res * bres;
+
 	
-	
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzzz", &bartlby_config, &bartlby_service_ids, &state,  &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource, &bartlby_service_ids, &state,  &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	
 	convert_to_long(do_writeback);
 	convert_to_long(state);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
- 	
+	
 		
 	
 	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 		
-		r=0;
-		for(x=0; x<shm_hdr->svccount; x++) {
-			if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
-				svcmap[x].service_active=Z_LVAL_P(state);
-				if(Z_LVAL_P(do_writeback) == 1) {
-					LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
-					UpdateService(&svcmap[x], Z_STRVAL_P(bartlby_config));
-					
-				}
-				r++;
+	r=0;
+	for(x=0; x<shm_hdr->svccount; x++) {
+		if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
+			svcmap[x].service_active=Z_LVAL_P(state);
+			if(Z_LVAL_P(do_writeback) == 1) {
+				LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
+				UpdateService(&svcmap[x], bres->cfgfile);
 				
-					
 			}
+			r++;
+			
+				
 		}
+	}
 		
 		
 		
 		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
-	
-	
+	RETURN_LONG(r);
 	
 }
 
@@ -2065,216 +1587,214 @@ PHP_FUNCTION(bartlby_svc_map) {
 	
 	bartlby_address=bres->bartlby_address;
 	
-	if(bartlby_address != NULL) {
-			shm_hdr=(struct shm_header *)(void *)bartlby_address;
-			svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	shm_hdr=(struct shm_header *)(void *)bartlby_address;
+	svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 			
 			
 			
-		current_time=time(NULL);
-		for(x=0; x<shm_hdr->svccount; x++) {
-			if(btl_is_array(svc_right_array, svcmap[x].service_id) == -1 &&  btl_is_array(server_right_array, svcmap[x].server_id) == -1) {
-				continue;	
-			}
-			ALLOC_INIT_ZVAL(subarray);
-			array_init(subarray);
-			add_assoc_long(subarray, "service_id", svcmap[x].service_id);
-			add_assoc_long(subarray, "server_id", svcmap[x].server_id);
-			add_assoc_long(subarray, "last_state", svcmap[x].last_state);
+	current_time=time(NULL);
+	for(x=0; x<shm_hdr->svccount; x++) {
+		if(btl_is_array(svc_right_array, svcmap[x].service_id) == -1 &&  btl_is_array(server_right_array, svcmap[x].server_id) == -1) {
+			continue;	
+		}
+		ALLOC_INIT_ZVAL(subarray);
+		array_init(subarray);
+		add_assoc_long(subarray, "service_id", svcmap[x].service_id);
+		add_assoc_long(subarray, "server_id", svcmap[x].server_id);
+		add_assoc_long(subarray, "last_state", svcmap[x].last_state);
 			
 			
-			if(svcmap[x].is_server_dead < 0) {
-				add_assoc_long(subarray, "current_state", -3);
-				add_assoc_long(subarray, "server_is_dead", 1);
-			} else {
-				add_assoc_long(subarray, "current_state", svcmap[x].current_state);
-			}
+		if(svcmap[x].is_server_dead < 0) {
+			add_assoc_long(subarray, "current_state", -3);
+			add_assoc_long(subarray, "server_is_dead", 1);
+		} else {
+			add_assoc_long(subarray, "current_state", svcmap[x].current_state);
+		}
 			
 			
-			add_assoc_long(subarray, "client_port", srvmap[svcmap[x].srv_place].client_port);
-					
-			add_assoc_string(subarray, "new_server_text", svcmap[x].new_server_text, 1);
-			add_assoc_string(subarray, "service_name", svcmap[x].service_name, 1);
-			add_assoc_string(subarray, "server_name", srvmap[svcmap[x].srv_place].server_name, 1);
-			add_assoc_string(subarray, "client_ip", srvmap[svcmap[x].srv_place].client_ip, 1);
-			add_assoc_string(subarray, "server_ssh_keyfile", srvmap[svcmap[x].srv_place].server_ssh_keyfile, 1);
-			add_assoc_string(subarray, "server_ssh_passphrase", srvmap[svcmap[x].srv_place].server_ssh_passphrase, 1);
-			add_assoc_string(subarray, "server_ssh_username", srvmap[svcmap[x].srv_place].server_ssh_username, 1);
-			add_assoc_string(subarray, "server_enabled_triggers", srvmap[svcmap[x].srv_place].enabled_triggers, 1);
-			add_assoc_string(subarray, "plugin", svcmap[x].plugin, 1);
-			add_assoc_string(subarray, "plugin_arguments", svcmap[x].plugin_arguments, 1);
-			
-			add_assoc_long(subarray, "check_interval", svcmap[x].check_interval);
-			add_assoc_long(subarray, "check_interval_original", svcmap[x].check_interval_original);
-			add_assoc_long(subarray, "last_check", svcmap[x].last_check);
-			
-			add_assoc_string(subarray, "exec_plan", svcmap[x].service_exec_plan, 1);
-			
-			add_assoc_long(subarray, "notify_enabled", svcmap[x].notify_enabled);
-			add_assoc_long(subarray, "last_notify_send", svcmap[x].last_notify_send);
-			add_assoc_long(subarray, "last_state_change", svcmap[x].last_state_change);
-			add_assoc_long(subarray, "flap_count", svcmap[x].flap_count);
-			
-			
-			add_assoc_long(subarray, "service_active", svcmap[x].service_active);
-			add_assoc_long(subarray, "service_type", svcmap[x].service_type);
-			add_assoc_long(subarray, "service_passive_timeout", svcmap[x].service_passive_timeout);
-			
-			
-			add_assoc_string(subarray, "service_var", svcmap[x].service_var, 1);
-			add_assoc_string(subarray, "server_icon", srvmap[svcmap[x].srv_place].server_icon, 1);
-			add_assoc_long(subarray, "service_check_timeout", svcmap[x].service_check_timeout);
-			add_assoc_long(subarray, "service_ack_enabled", svcmap[x].service_ack_enabled);
-			add_assoc_long(subarray, "service_ack_current", svcmap[x].service_ack_current);
-			add_assoc_long(subarray, "service_retain", svcmap[x].service_retain);
-			add_assoc_long(subarray, "service_retain_current", svcmap[x].service_retain_current);
-			add_assoc_long(subarray, "check_is_running", svcmap[x].process.pid);
-			add_assoc_long(subarray, "check_starttime", svcmap[x].process.start_time);
-			
-			add_assoc_long(subarray, "shm_place", x);
-			
-			add_assoc_long(subarray, "service_time_sum", svcmap[x].pstat.sum);
-			add_assoc_long(subarray, "service_time_count",svcmap[x].pstat.counter);
-		
-			add_assoc_long(subarray, "service_delay_sum", svcmap[x].delay_time.sum);
-			add_assoc_long(subarray, "service_delay_count",svcmap[x].delay_time.counter);
-			
-			//bartlby_get_service_by_id
-			
-			add_assoc_string(subarray, "service_snmp_community", svcmap[x].snmp_info.community, 1);
-			add_assoc_string(subarray, "service_snmp_textmatch", svcmap[x].snmp_info.textmatch, 1);
-			add_assoc_string(subarray, "service_snmp_objid", svcmap[x].snmp_info.objid, 1);
-			
-			add_assoc_long(subarray, "service_snmp_warning",svcmap[x].snmp_info.warn);
-			add_assoc_long(subarray, "service_snmp_critical",svcmap[x].snmp_info.crit);
-			add_assoc_long(subarray, "service_snmp_version",svcmap[x].snmp_info.version);
-			add_assoc_long(subarray, "service_snmp_type",svcmap[x].snmp_info.type);
-			
-			
-			add_assoc_long(subarray, "flap_seconds",svcmap[x].flap_seconds);
-			
-			add_assoc_long(subarray, "server_flap_seconds",srvmap[svcmap[x].srv_place].server_flap_seconds);
-			add_assoc_long(subarray, "server_last_notify_send",srvmap[svcmap[x].srv_place].last_notify_send);
-			add_assoc_long(subarray, "server_notify",srvmap[svcmap[x].srv_place].server_notify);
-			add_assoc_long(subarray, "server_enabled",srvmap[svcmap[x].srv_place].server_enabled);
-			add_assoc_long(subarray, "server_dead",srvmap[svcmap[x].srv_place].server_dead);
-			
-			
-			//svc.renotify_interval, svc.escalate_divisor
-			add_assoc_long(subarray, "renotify_interval",svcmap[x].renotify_interval);
-			add_assoc_long(subarray, "escalate_divisor",svcmap[x].escalate_divisor);
-			add_assoc_long(subarray, "fires_events",svcmap[x].fires_events);
-			
-			add_assoc_string(subarray, "enabled_triggers", svcmap[x].enabled_triggers, 1);
-			
-			add_assoc_long(subarray, "server_gone",srvmap[svcmap[x].srv_place].is_gone);
-			
-			//svc.is_gone
-			add_assoc_long(subarray, "is_gone",svcmap[x].is_gone);
-			
-			
-			for(y=0; y<shm_hdr->dtcount; y++) {
-				is_down=0;
-				if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
-					switch(dtmap[y].downtime_type) {
-						case DT_SERVICE:
-							if(dtmap[y].service_id == svcmap[x].service_id) {
-								is_down=1;	
-								
-							}
-						break;
-						case DT_SERVER:
-							if(dtmap[y].service_id == svcmap[x].server_id) {
-								is_down=2;	
-							}
-						break;	
-						case DT_SERVERGROUP:
-							
-							if(srvmap[svcmap[x].srv_place].servergroup_counter > 0) {
-								for(u=0; u<srvmap[svcmap[x].srv_place].servergroup_counter; u++){
-									z=srvmap[svcmap[x].srv_place].servergroup_place[u];
-									if(srvgrpmap[z].servergroup_id == dtmap[y].service_id) {
-											is_down=3;
-											break;
-									}
-										
-								}
-							}
-							
-						break;		
-						case DT_SERVICEGROUP:
-							if(svcmap[x].servicegroup_counter > 0) {
-								for(u=0; u<svcmap[x].servicegroup_counter; u++){
-										z=svcmap[x].servicegroup_place[u];
-										if(svcgrpmap[z].servicegroup_id == dtmap[y].service_id) {
-											is_down=4;
-											break;
-										}
-								}
-							}
-					
-						
-						break;	
-					}
-					if(is_down > 0) {
-						add_assoc_long(subarray, "is_downtime", 1);
-						add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
-						add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
-						add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
-						add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
-						add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
-						break;
-					}
-				}	
-			}
-			if(is_down==0) {
-				add_assoc_long(subarray, "is_downtime", 0);	
-			}
-			
-					//Resolve ServerGroups
-			
-			
-
-		
+		add_assoc_long(subarray, "client_port", srvmap[svcmap[x].srv_place].client_port);
+				
+		add_assoc_string(subarray, "new_server_text", svcmap[x].new_server_text, 1);
+		add_assoc_string(subarray, "service_name", svcmap[x].service_name, 1);
+		add_assoc_string(subarray, "server_name", srvmap[svcmap[x].srv_place].server_name, 1);
+		add_assoc_string(subarray, "client_ip", srvmap[svcmap[x].srv_place].client_ip, 1);
+		add_assoc_string(subarray, "server_ssh_keyfile", srvmap[svcmap[x].srv_place].server_ssh_keyfile, 1);
+		add_assoc_string(subarray, "server_ssh_passphrase", srvmap[svcmap[x].srv_place].server_ssh_passphrase, 1);
+		add_assoc_string(subarray, "server_ssh_username", srvmap[svcmap[x].srv_place].server_ssh_username, 1);
+		add_assoc_string(subarray, "server_enabled_triggers", srvmap[svcmap[x].srv_place].enabled_triggers, 1);
+		add_assoc_string(subarray, "plugin", svcmap[x].plugin, 1);
+		add_assoc_string(subarray, "plugin_arguments", svcmap[x].plugin_arguments, 1);
 	
+		add_assoc_long(subarray, "check_interval", svcmap[x].check_interval);
+		add_assoc_long(subarray, "check_interval_original", svcmap[x].check_interval_original);
+		add_assoc_long(subarray, "last_check", svcmap[x].last_check);
 		
+		add_assoc_string(subarray, "exec_plan", svcmap[x].service_exec_plan, 1);
+		
+		add_assoc_long(subarray, "notify_enabled", svcmap[x].notify_enabled);
+		add_assoc_long(subarray, "last_notify_send", svcmap[x].last_notify_send);
+		add_assoc_long(subarray, "last_state_change", svcmap[x].last_state_change);
+		add_assoc_long(subarray, "flap_count", svcmap[x].flap_count);
+		
+		
+		add_assoc_long(subarray, "service_active", svcmap[x].service_active);
+		add_assoc_long(subarray, "service_type", svcmap[x].service_type);
+		add_assoc_long(subarray, "service_passive_timeout", svcmap[x].service_passive_timeout);
+		
+		
+		add_assoc_string(subarray, "service_var", svcmap[x].service_var, 1);
+		add_assoc_string(subarray, "server_icon", srvmap[svcmap[x].srv_place].server_icon, 1);
+		add_assoc_long(subarray, "service_check_timeout", svcmap[x].service_check_timeout);
+		add_assoc_long(subarray, "service_ack_enabled", svcmap[x].service_ack_enabled);
+		add_assoc_long(subarray, "service_ack_current", svcmap[x].service_ack_current);
+		add_assoc_long(subarray, "service_retain", svcmap[x].service_retain);
+		add_assoc_long(subarray, "service_retain_current", svcmap[x].service_retain_current);
+		add_assoc_long(subarray, "check_is_running", svcmap[x].process.pid);
+		add_assoc_long(subarray, "check_starttime", svcmap[x].process.start_time);
+		
+		add_assoc_long(subarray, "shm_place", x);
+		
+		add_assoc_long(subarray, "service_time_sum", svcmap[x].pstat.sum);
+		add_assoc_long(subarray, "service_time_count",svcmap[x].pstat.counter);
+	
+		add_assoc_long(subarray, "service_delay_sum", svcmap[x].delay_time.sum);
+		add_assoc_long(subarray, "service_delay_count",svcmap[x].delay_time.counter);
+		
+		//bartlby_get_service_by_id
+		
+		add_assoc_string(subarray, "service_snmp_community", svcmap[x].snmp_info.community, 1);
+		add_assoc_string(subarray, "service_snmp_textmatch", svcmap[x].snmp_info.textmatch, 1);
+		add_assoc_string(subarray, "service_snmp_objid", svcmap[x].snmp_info.objid, 1);
+		
+		add_assoc_long(subarray, "service_snmp_warning",svcmap[x].snmp_info.warn);
+		add_assoc_long(subarray, "service_snmp_critical",svcmap[x].snmp_info.crit);
+		add_assoc_long(subarray, "service_snmp_version",svcmap[x].snmp_info.version);
+		add_assoc_long(subarray, "service_snmp_type",svcmap[x].snmp_info.type);
+		
+		
+		add_assoc_long(subarray, "flap_seconds",svcmap[x].flap_seconds);
+		
+		add_assoc_long(subarray, "server_flap_seconds",srvmap[svcmap[x].srv_place].server_flap_seconds);
+		add_assoc_long(subarray, "server_last_notify_send",srvmap[svcmap[x].srv_place].last_notify_send);
+		add_assoc_long(subarray, "server_notify",srvmap[svcmap[x].srv_place].server_notify);
+		add_assoc_long(subarray, "server_enabled",srvmap[svcmap[x].srv_place].server_enabled);
+		add_assoc_long(subarray, "server_dead",srvmap[svcmap[x].srv_place].server_dead);
+		
+		
+		//svc.renotify_interval, svc.escalate_divisor
+		add_assoc_long(subarray, "renotify_interval",svcmap[x].renotify_interval);
+		add_assoc_long(subarray, "escalate_divisor",svcmap[x].escalate_divisor);
+		add_assoc_long(subarray, "fires_events",svcmap[x].fires_events);
+		
+		add_assoc_string(subarray, "enabled_triggers", svcmap[x].enabled_triggers, 1);
+		
+		add_assoc_long(subarray, "server_gone",srvmap[svcmap[x].srv_place].is_gone);
+		
+		//svc.is_gone
+		add_assoc_long(subarray, "is_gone",svcmap[x].is_gone);
+		
+		
+		for(y=0; y<shm_hdr->dtcount; y++) {
+			is_down=0;
+			if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+				switch(dtmap[y].downtime_type) {
+					case DT_SERVICE:
+						if(dtmap[y].service_id == svcmap[x].service_id) {
+							is_down=1;	
+							
+						}
+					break;
+					case DT_SERVER:
+						if(dtmap[y].service_id == svcmap[x].server_id) {
+							is_down=2;	
+						}
+					break;	
+					case DT_SERVERGROUP:
+						
 						if(srvmap[svcmap[x].srv_place].servergroup_counter > 0) {
-							ALLOC_INIT_ZVAL(groups);
-							array_init(groups);
-							for(y=0; y<srvmap[svcmap[x].srv_place].servergroup_counter; y++){
+							for(u=0; u<srvmap[svcmap[x].srv_place].servergroup_counter; u++){
+								z=srvmap[svcmap[x].srv_place].servergroup_place[u];
+								if(srvgrpmap[z].servergroup_id == dtmap[y].service_id) {
+										is_down=3;
+										break;
+								}
+									
+							}
+						}
 						
-						
-									ALLOC_INIT_ZVAL(groupinfo);
-									array_init(groupinfo);
+					break;		
+					case DT_SERVICEGROUP:
+						if(svcmap[x].servicegroup_counter > 0) {
+							for(u=0; u<svcmap[x].servicegroup_counter; u++){
+									z=svcmap[x].servicegroup_place[u];
+									if(svcgrpmap[z].servicegroup_id == dtmap[y].service_id) {
+										is_down=4;
+										break;
+									}
+							}
+						}
+				
+					
+					break;	
+				}
+				if(is_down > 0) {
+					add_assoc_long(subarray, "is_downtime", 1);
+					add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
+					add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
+					add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
+					add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
+					add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
+					break;
+				}
+			}	
+		}
+		if(is_down==0) {
+			add_assoc_long(subarray, "is_downtime", 0);	
+		}
+		
+				//Resolve ServerGroups
+		
+		
+		
+
+	
+					if(srvmap[svcmap[x].srv_place].servergroup_counter > 0) {
+						ALLOC_INIT_ZVAL(groups);
+						array_init(groups);
+						for(y=0; y<srvmap[svcmap[x].srv_place].servergroup_counter; y++){
+					
+					
+								ALLOC_INIT_ZVAL(groupinfo);
+								array_init(groupinfo);
+								
+								z=srvmap[svcmap[x].srv_place].servergroup_place[y];
+								add_assoc_long(groupinfo,"servergroup_place", y);
+								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
+								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+								
+								add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+								add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+								add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
+								add_assoc_long(groupinfo,"servergroup_dead", srvgrpmap[z].servergroup_dead);
+								add_assoc_string(groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers,1);
 									
-									z=srvmap[svcmap[x].srv_place].servergroup_place[y];
-									add_assoc_long(groupinfo,"servergroup_place", y);
-									add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
-									add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
-									
-									add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
-									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
-									add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
-									add_assoc_long(groupinfo,"servergroup_dead", srvgrpmap[z].servergroup_dead);
-									add_assoc_string(groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers,1);
 									
 									
-									
-									add_next_index_zval(groups, groupinfo);
-									
-						
-						}		
+								add_next_index_zval(groups, groupinfo);
+								
+					
+					}		
 				
 				
 				
-						add_assoc_zval(subarray, "servergroups", groups);
-					}
+					add_assoc_zval(subarray, "servergroups", groups);
+				}
 					
 			
 			
@@ -2331,30 +1851,10 @@ PHP_FUNCTION(bartlby_svc_map) {
 		
 
 	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		
-		RETURN_FALSE;
-	}
-		
 	
-	/*
-	array_init(return_value);
-	
-	add_index_long(return_value,100, 1);
-	ALLOC_INIT_ZVAL(subarray);
-	array_init(subarray);
-	add_next_index_string(subarray,"testsub", 1);
-	add_assoc_zval(return_value, "sub", subarray);
-	
-	
-	ALLOC_INIT_ZVAL(subarray);
-	array_init(subarray);
-	add_next_index_string(subarray,"testsub1", 1);
-	add_assoc_zval(return_value, "sub1", subarray);
-	*/
 		
 }
+
 PHP_FUNCTION(bartlby_encode) {
 	zval * instr;
 	
@@ -2381,6 +1881,7 @@ PHP_FUNCTION(bartlby_decode) {
 	RETURN_STRING(Z_STRVAL_P(instr),1);	
 }
 PHP_FUNCTION(bartlby_shm_destroy) {
+	//FIXME RESOURCE?
 	char * shmtok;
 	int shm_id;
 	void * bartlby_address;
@@ -2417,50 +1918,30 @@ PHP_FUNCTION(bartlby_shm_destroy) {
 }
 
 PHP_FUNCTION(bartlby_reload) {
-	char * shmtok;
-	int shm_id;
 	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	
 	
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
+	bartlby_res * bres;
 	
-	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	if (array_init(return_value) == FAILURE) {
-		RETURN_FALSE;
-	}
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		shm_hdr->do_reload=1;
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	shm_hdr->do_reload=1;
 		
 		
 		
-		add_assoc_string(return_value, "reload", "OK", 1);
-		
-		shmdt(bartlby_address);
-		
-
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}
 		
 	RETURN_TRUE;	
 }
 PHP_FUNCTION(bartlby_add_worker) {
-	//svc->mail, svc->icq, svc->services, svc->notify_levels, svc->active, svc->name
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * mail;
 	zval * icq;
 	zval * services;
@@ -2476,18 +1957,14 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*AddWorker)(struct worker *,char *);
-	
 	struct worker svc;
-	
+	bartlby_res * bres;
 
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -2495,6 +1972,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
 		RETURN_BOOL(0);
 	}
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
 	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
@@ -2512,7 +1992,6 @@ PHP_FUNCTION(bartlby_add_worker) {
 	
 	
 	convert_to_string(enabled_triggers);
-	convert_to_string(bartlby_config);
 	convert_to_string(mail);
 	convert_to_string(icq);
 	convert_to_string(password);
@@ -2520,26 +1999,17 @@ PHP_FUNCTION(bartlby_add_worker) {
 	convert_to_string(notify_levels);
 	convert_to_string(name);
 	convert_to_string(notify_plan);
-	
-	
 	convert_to_long(active);
 	convert_to_long(escalation_limit);
 	convert_to_long(escalation_minutes);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(AddWorker,SOHandle, "AddWorker");
+	LOAD_SYMBOL(AddWorker,bres->SOHandle, "AddWorker");
 	
 	strcpy(svc.password, Z_STRVAL_P(password));
 	strcpy(svc.name, Z_STRVAL_P(name));
-	
 	strcpy(svc.notify_plan, Z_STRVAL_P(notify_plan));
-	
 	strcpy(svc.mail, Z_STRVAL_P(mail));
 	strcpy(svc.icq, Z_STRVAL_P(icq));
 	strcpy(svc.services, Z_STRVAL_P(services));
@@ -2549,53 +2019,37 @@ PHP_FUNCTION(bartlby_add_worker) {
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
 	
-	ret=AddWorker(&svc, Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ret=AddWorker(&svc, bres->cfgfile);
 	RETURN_LONG(ret);	
 }
 
 PHP_FUNCTION(bartlby_delete_worker) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * worker_id;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*DeleteWorker)(int, char*);
-	
-	struct service svc;
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&worker_id)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(worker_id);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(DeleteWorker,SOHandle, "DeleteWorker");
-	
-	
-	
-	ret=DeleteWorker(Z_LVAL_P(worker_id),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
-	bartlby_mark_object_gone(Z_STRVAL_P(bartlby_config),Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_DELETED);
+	LOAD_SYMBOL(DeleteWorker,bres->SOHandle, "DeleteWorker");
+	ret=DeleteWorker(Z_LVAL_P(worker_id),bres->cfgfile);
+	bartlby_mark_object_gone(bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_DELETED);
 
 	RETURN_LONG(ret);	
 }
 
 PHP_FUNCTION(bartlby_modify_worker) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * mail;
 	zval * icq;
 	zval * services;
@@ -2612,16 +2066,15 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*UpdateWorker)(struct worker *,char *);
-	
 	struct worker svc;
 	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&worker_id, &options_array) == FAILURE) {
+	bartlby_res * bres;
+
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&worker_id, &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -2637,17 +2090,15 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
 	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	
 	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	
 	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
 	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(escalation_minutes, "worker_escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+		
 	
 	convert_to_string(enabled_triggers);
-	convert_to_string(bartlby_config);
 	convert_to_string(mail);
 	convert_to_string(password);
 	convert_to_string(icq);
@@ -2661,14 +2112,8 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	convert_to_long(escalation_limit);
 	convert_to_long(escalation_minutes);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(UpdateWorker,SOHandle, "UpdateWorker");
+		
+	LOAD_SYMBOL(UpdateWorker,bres->SOHandle, "UpdateWorker");
 	
 	strcpy(svc.notify_plan, Z_STRVAL_P(notify_plan));
 	strcpy(svc.password, Z_STRVAL_P(password));
@@ -2684,47 +2129,35 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
 	
-	ret=UpdateWorker(&svc, Z_STRVAL_P(bartlby_config));
+	ret=UpdateWorker(&svc, bres->cfgfile);
 	
-	dlclose(SOHandle);
-	RETURN_STRING(Z_STRVAL_P(icq),1);
-	//Mark as gone
-	bartlby_mark_object_gone(Z_STRVAL_P(bartlby_config),Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
+	bartlby_mark_object_gone(bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
 	
 	RETURN_LONG(ret);		
 }
 
 PHP_FUNCTION(bartlby_get_worker_by_id) {
-		zval * bartlby_config;
-	
+	zval * zbartlby_resource;
 	zval * worker_id;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*GetWorkerById)(int,struct worker *, char *);
-	
 	struct worker  svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&worker_id)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
 	
 	convert_to_long(worker_id);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(GetWorkerById,SOHandle, "GetWorkerById");
-	
-	ret=GetWorkerById(Z_LVAL_P(worker_id),&svc, Z_STRVAL_P(bartlby_config));
+
+
+	LOAD_SYMBOL(GetWorkerById,bres->SOHandle, "GetWorkerById");
+	ret=GetWorkerById(Z_LVAL_P(worker_id),&svc, bres->cfgfile);
 	
 	if(ret < 0) {
 		RETURN_FALSE;	
@@ -2736,21 +2169,15 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 		add_assoc_string(return_value, "icq", svc.icq, 1);
 		add_assoc_string(return_value, "notify_plan", svc.notify_plan, 1);
 		add_assoc_string(return_value, "services", svc.services, 1);
-		
-		
-		
 		add_assoc_string(return_value, "notify_levels", svc.notify_levels,1);
 		add_assoc_string(return_value, "name", svc.name,1);
 		add_assoc_string(return_value, "password", svc.password,1);
 		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers,1);
-		 
 		add_assoc_long(return_value, "worker_id", svc.worker_id);
 		add_assoc_long(return_value, "active", svc.active);
-		
 		add_assoc_long(return_value, "escalation_limit", svc.escalation_limit);
 		add_assoc_long(return_value, "escalation_minutes", svc.escalation_minutes);
 	}
-	dlclose(SOHandle);
 		
 }
 
@@ -2778,132 +2205,98 @@ PHP_FUNCTION(bartlby_config) {
 
 PHP_FUNCTION(bartlby_get_info) {
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
+	zval * zbartlby_resource;
+	bartlby_res * bres;
+
 	
-	
-	
-	
-	zval * bartlby_config;
-	zval * bartlby_service_id;
-	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		
-		add_assoc_long(return_value, "services", shm_hdr->svccount);
-		
-		add_assoc_long(return_value, "workers", shm_hdr->wrkcount);
-		add_assoc_long(return_value, "current_running", shm_hdr->current_running);
-		add_assoc_long(return_value, "do_reload", shm_hdr->do_reload);
-		//add_assoc_long(return_value, "version", shm_hdr->version);
-		add_assoc_string(return_value, "version", shm_hdr->version, 1);
-		add_assoc_long(return_value, "last_replication", shm_hdr->last_replication);
-		add_assoc_long(return_value, "startup_time", shm_hdr->startup_time);
-		add_assoc_long(return_value, "downtimes", shm_hdr->dtcount);
-		add_assoc_long(return_value, "sirene_mode", shm_hdr->sirene_mode);
-		add_assoc_long(return_value, "servers", shm_hdr->srvcount);
-		add_assoc_long(return_value, "round_time_sum", shm_hdr->pstat.sum);
-		add_assoc_long(return_value, "round_time_count", shm_hdr->pstat.counter);
-		add_assoc_long(return_value, "servicegroups", shm_hdr->svcgroupcount);
-		add_assoc_long(return_value, "servergroups", shm_hdr->srvgroupcount);
-		add_assoc_long(return_value, "checks_performed", shm_hdr->checks_performed);
-		add_assoc_long(return_value, "checks_performed_time", shm_hdr->checks_performed_time);
-		
-		
-		shmdt(bartlby_address);
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
 	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		
-		RETURN_FALSE;
-	}
+	add_assoc_long(return_value, "services", shm_hdr->svccount);
+	add_assoc_long(return_value, "workers", shm_hdr->wrkcount);
+	add_assoc_long(return_value, "current_running", shm_hdr->current_running);
+	add_assoc_long(return_value, "do_reload", shm_hdr->do_reload);
+	//add_assoc_long(return_value, "version", shm_hdr->version);
+	add_assoc_string(return_value, "version", shm_hdr->version, 1);
+	add_assoc_long(return_value, "last_replication", shm_hdr->last_replication);
+	add_assoc_long(return_value, "startup_time", shm_hdr->startup_time);
+	add_assoc_long(return_value, "downtimes", shm_hdr->dtcount);
+	add_assoc_long(return_value, "sirene_mode", shm_hdr->sirene_mode);
+	add_assoc_long(return_value, "servers", shm_hdr->srvcount);
+	add_assoc_long(return_value, "round_time_sum", shm_hdr->pstat.sum);
+	add_assoc_long(return_value, "round_time_count", shm_hdr->pstat.counter);
+	add_assoc_long(return_value, "servicegroups", shm_hdr->svcgroupcount);
+	add_assoc_long(return_value, "servergroups", shm_hdr->srvgroupcount);
+	add_assoc_long(return_value, "checks_performed", shm_hdr->checks_performed);
+	add_assoc_long(return_value, "checks_performed_time", shm_hdr->checks_performed_time);
 	
+
 	
 }
 
 PHP_FUNCTION(bartlby_delete_server) {
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * server_id;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*DeleteServer)(int, char*);
+	bartlby_res * bres;
 	
-	struct service svc;
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&server_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(server_id);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(DeleteServer,SOHandle, "DeleteServer");
-	
-	
-	
-	ret=DeleteServer(Z_LVAL_P(server_id),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
-	bartlby_mark_object_gone(Z_STRVAL_P(bartlby_config),Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_DELETED);
+	LOAD_SYMBOL(DeleteServer,bres->SOHandle, "DeleteServer");
+	ret=DeleteServer(Z_LVAL_P(server_id),bres->cfgfile);
+	bartlby_mark_object_gone(bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_DELETED);
 
 	RETURN_LONG(ret);
 }
+
 PHP_FUNCTION(bartlby_get_service_by_id) {
-	zval * bartlby_config;
-	
+	zval * zbartlby_resource;
 	zval * service_id;
 	
-	void * SOHandle;
 	char * dlmsg;
 	
 	int ret;
+	bartlby_res * bres;
 	
 	int (*GetServiceById)(int,struct service *, char *);
 	
 	struct service  svc;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&service_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
 	
 	convert_to_long(service_id);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
+
+	LOAD_SYMBOL(GetServiceById,bres->SOHandle, "GetServiceById");
 	
 	
-	LOAD_SYMBOL(GetServiceById,SOHandle, "GetServiceById");
 	
-	ret=GetServiceById(Z_LVAL_P(service_id),&svc, Z_STRVAL_P(bartlby_config));
+	
+	ret=GetServiceById(Z_LVAL_P(service_id),&svc, bres->cfgfile );
 	if(ret < 0) {
 		RETURN_FALSE;	
 	} else {
@@ -2976,54 +2369,35 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		
 			
 	}
-	free(svc.srv);
-	dlclose(SOHandle);
+	free(svc.srv); //gets allocated in the lib
+	
 }
 
 PHP_FUNCTION(bartlby_delete_service) {
-		zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * service_id;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*DeleteService)(int, char*);
+	bartlby_res * bres;
+
 	
-	struct service svc;
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &service_id) ==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &service_id) ==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(service_id);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	
-	
-	LOAD_SYMBOL(DeleteService,SOHandle, "DeleteService");
-	
-	
-	
-	ret=DeleteService(Z_LVAL_P(service_id),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
-	//Mark as delted
-	bartlby_mark_object_gone(Z_STRVAL_P(bartlby_config),Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_DELETED);
-	
+	LOAD_SYMBOL(DeleteService,bres->SOHandle, "DeleteService");
+	ret=DeleteService(Z_LVAL_P(service_id),bres->cfgfile);
+	bartlby_mark_object_gone(bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_DELETED);
 	RETURN_LONG(ret);
 	
 }
 
 PHP_FUNCTION(bartlby_modify_service) {
 	struct service svc;
-	void * SOHandle;
 	char * dlmsg;
 	
 	int ret;
@@ -3031,7 +2405,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	int (*UpdateService)(struct service *, char *);
 	
-	zval *service_id, * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, *service_check_timeout, * service_ack_enabled, * service_retain;
+	zval *service_id, * server_id , * zbartlby_resource, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, *service_check_timeout, * service_ack_enabled, * service_retain;
 	zval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
 	zval * snmp_textmatch;
 	zval * service_active;
@@ -3041,10 +2415,10 @@ PHP_FUNCTION(bartlby_modify_service) {
 	zval * fires_events;
 	zval * enabled_triggers;
 	zval ** temp_pp;
-
 	zval * options_array;	
 
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&service_id,  &options_array) == FAILURE) {
+	bartlby_res * bres;
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&service_id,  &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -3080,10 +2454,10 @@ PHP_FUNCTION(bartlby_modify_service) {
 	GETARRAY_EL_FROM_HASH(snmp_critical, "snmp_critical", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	convert_to_long(service_id);
-	
-	convert_to_string(bartlby_config);
 	convert_to_string(plugin);
 	convert_to_string(service_name);
 	convert_to_string(plugin_arguments);
@@ -3155,19 +2529,12 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	sprintf(svc.enabled_triggers, "%s", Z_STRVAL_P(enabled_triggers));
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(UpdateService,SOHandle, "UpdateService");
+	LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
 	
-	rtc=UpdateService(&svc, Z_STRVAL_P(bartlby_config));
-	dlclose(SOHandle);
-	//Mark as changed
-	bartlby_mark_object_gone(Z_STRVAL_P(bartlby_config),Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_CHANGED);
+	rtc=UpdateService(&svc, bres->cfgfile);
+	bartlby_mark_object_gone(bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_CHANGED);
 
 	RETURN_LONG(rtc);
 	
@@ -3180,7 +2547,8 @@ PHP_FUNCTION(bartlby_modify_service) {
 
 
 PHP_FUNCTION(bartlby_add_service_array) {
-	zval * config;
+	//THIS IS A DEBUG ONLY FUNCTION
+	zval * zbartlby_resource;
 	zval * options_array;
 	
 	zval ** temp_pp;
@@ -3188,9 +2556,9 @@ PHP_FUNCTION(bartlby_add_service_array) {
 	zval * service_port;
 	zval * op1;
 	
+	bartlby_res * bres;
 	
-	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &config,&options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -3199,6 +2567,7 @@ PHP_FUNCTION(bartlby_add_service_array) {
 	GETARRAY_EL_FROM_HASH(op1, "op1", temp_pp, options_array,BARTLBY_FIELD_REQUIRED, BARTLBY_DEFAULT_LONG, 123);
 	
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(service_name);
 	convert_to_long(service_port);
@@ -3220,15 +2589,13 @@ PHP_FUNCTION(bartlby_add_service_array) {
 }
 PHP_FUNCTION(bartlby_add_service) {
 	struct service svc;
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
 	int rtc;
 	
 	int (*AddService)(struct service *, char *);
 	
-	zval * server_id , * bartlby_config, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, * service_check_timeout, * service_ack_enabled, * service_retain;
+	zval * server_id , * zbartlby_resource, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, * service_check_timeout, * service_ack_enabled, * service_retain;
 	zval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
 	zval * snmp_textmatch;
 	zval * service_active;
@@ -3241,9 +2608,10 @@ PHP_FUNCTION(bartlby_add_service) {
 	zval ** temp_pp;
 	zval * options_array;
 	
+	bartlby_res * bres;
 
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -3282,8 +2650,8 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	convert_to_string(bartlby_config);
 	convert_to_string(plugin);
 	convert_to_string(service_name);
 	convert_to_string(plugin_arguments);
@@ -3351,18 +2719,13 @@ PHP_FUNCTION(bartlby_add_service) {
 	
 	sprintf(svc.enabled_triggers, "%s", Z_STRVAL_P(enabled_triggers));
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(AddService,SOHandle, "AddService");
+	LOAD_SYMBOL(AddService,bres->SOHandle, "AddService");
 	
-	rtc=AddService(&svc, Z_STRVAL_P(bartlby_config));
+	rtc=AddService(&svc, bres->cfgfile);
 	
-	dlclose(SOHandle);
+	
 	RETURN_LONG(rtc);
 	
 	
@@ -3372,7 +2735,7 @@ PHP_FUNCTION(bartlby_add_service) {
 }
 PHP_FUNCTION(bartlby_add_server) {
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * server_name;
 	zval * server_ip;
 	zval * server_port;
@@ -3391,7 +2754,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
 	
 	int ret;
@@ -3399,8 +2762,10 @@ PHP_FUNCTION(bartlby_add_server) {
 	int (*AddServer)(struct server *,char *);
 	
 	struct server srv;
+	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&options_array)==FAILURE) {
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	
@@ -3424,9 +2789,9 @@ PHP_FUNCTION(bartlby_add_server) {
 	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	
-	convert_to_string(bartlby_config);
+
 	convert_to_string(server_name);
 	convert_to_string(server_ip);
 	convert_to_long(server_port);
@@ -3441,14 +2806,10 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_string(server_ssh_passphrase);
 	convert_to_string(server_ssh_username);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(AddServer,SOHandle, "AddServer");
+	
+	LOAD_SYMBOL(AddServer,bres->SOHandle, "AddServer");
 	
 	strcpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	strcpy(srv.server_name, Z_STRVAL_P(server_name));
@@ -3464,15 +2825,15 @@ PHP_FUNCTION(bartlby_add_server) {
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
 	
-	ret=AddServer(&srv, Z_STRVAL_P(bartlby_config));
+	ret=AddServer(&srv, bres->cfgfile);
 	
-	dlclose(SOHandle);
+	
 	RETURN_LONG(ret);
 }
 
 PHP_FUNCTION(bartlby_modify_server) {
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * server_name;
 	zval * server_ip;
 	zval * server_port;
@@ -3490,15 +2851,13 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*ModifyServer)(struct server *,char *);
-	
+	bartlby_res * bres;
 	struct server srv;
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&server_id, &options_array)==FAILURE) {
+
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&server_id, &options_array)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	
@@ -3521,11 +2880,10 @@ PHP_FUNCTION(bartlby_modify_server) {
 	GETARRAY_EL_FROM_HASH(server_ssh_passphrase, "server_ssh_passphrase", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
+
 	convert_to_long(server_id);
-	
-	
-	convert_to_string(bartlby_config);
 	convert_to_string(enabled_triggers);
 	convert_to_string(server_name);
 	convert_to_string(server_ip);
@@ -3540,14 +2898,10 @@ PHP_FUNCTION(bartlby_modify_server) {
 	convert_to_string(server_ssh_passphrase);
 	convert_to_string(server_ssh_username);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(ModifyServer,SOHandle, "ModifyServer");
+	
+	LOAD_SYMBOL(ModifyServer,bres->SOHandle, "ModifyServer");
 	
 	strcpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	strcpy(srv.server_name, Z_STRVAL_P(server_name));
@@ -3566,24 +2920,20 @@ PHP_FUNCTION(bartlby_modify_server) {
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
 	
-	ret=ModifyServer(&srv, Z_STRVAL_P(bartlby_config));
+	ret=ModifyServer(&srv, bres->cfgfile);
 	
-	dlclose(SOHandle);
-	bartlby_mark_object_gone(Z_STRVAL_P(bartlby_config),Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
-
+	bartlby_mark_object_gone(bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
 	RETURN_LONG(ret);
 }
 
 PHP_FUNCTION(bartlby_get_server_by_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	
 	zval * server_id;
 	
-	char * shmtok;
-	void * SOHandle;
 	char * dlmsg;
 	struct shm_header * shm_hdr;
-		struct service * svcmap;
+	struct service * svcmap;
 	struct worker * wrkmap;
 	struct downtime * dtmap;
 	struct server * srvmap;
@@ -3592,7 +2942,6 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	struct btl_event * evntmap;
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
-	void * bartlby_address;
 	int x;
 	int z;
 	int y;
@@ -3605,26 +2954,21 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	int dtmapindex;
 	
 	int (*GetServerById)(int,struct server *, char *);
-	
 	struct server  svc;
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&server_id)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	convert_to_long(server_id);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(GetServerById,SOHandle, "GetServerById");
-	
-	ret=GetServerById(Z_LVAL_P(server_id),&svc, Z_STRVAL_P(bartlby_config));
+	LOAD_SYMBOL(GetServerById,bres->SOHandle, "GetServerById");
+	ret=GetServerById(Z_LVAL_P(server_id),&svc, bres->cfgfile);
 	
 	if(ret < 0) {
 		RETURN_FALSE;	
@@ -3645,143 +2989,117 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		add_assoc_long(return_value, "server_id",Z_LVAL_P(server_id));
 		
 		
-		bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-		if(bartlby_address != NULL) {
-			shm_hdr=(struct shm_header *)(void *)bartlby_address;
-			svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-			wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-			dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-			srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-			evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-			srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-			svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+		shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+		svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 			
-			current_time=time(NULL);
-			is_down=0;
+		current_time=time(NULL);
+		is_down=0;
 			
-			for(x=0; x<shm_hdr->srvcount; x++) {
-				if(srvmap[x].server_id == Z_LVAL_P(server_id)) {
-					add_assoc_long(return_value, "server_enabled",srvmap[x].server_enabled);
-					add_assoc_long(return_value, "server_notify",srvmap[x].server_notify);
-					add_assoc_long(return_value, "server_flap_seconds",srvmap[x].server_flap_seconds);
-					add_assoc_long(return_value, "last_notify_send",srvmap[x].last_notify_send);
-					add_assoc_long(return_value, "server_dead",srvmap[x].server_dead);
-					add_assoc_long(return_value, "server_shm_place",x);
+		for(x=0; x<shm_hdr->srvcount; x++) {
+			if(srvmap[x].server_id == Z_LVAL_P(server_id)) {
+				add_assoc_long(return_value, "server_enabled",srvmap[x].server_enabled);
+				add_assoc_long(return_value, "server_notify",srvmap[x].server_notify);
+				add_assoc_long(return_value, "server_flap_seconds",srvmap[x].server_flap_seconds);
+				add_assoc_long(return_value, "last_notify_send",srvmap[x].last_notify_send);
+				add_assoc_long(return_value, "server_dead",srvmap[x].server_dead);
+				add_assoc_long(return_value, "server_shm_place",x);
+			
+					if(srvmap[x].servergroup_counter > 0) {
+						ALLOC_INIT_ZVAL(groups);
+						array_init(groups);
+						for(y=0; y<srvmap[x].servergroup_counter; y++){
+						
+						
+								ALLOC_INIT_ZVAL(groupinfo);
+								array_init(groupinfo);
+									
+								z=srvmap[x].servergroup_place[y];
+								add_assoc_long(groupinfo,"servergroup_place", y);
+								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
+								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+								
+								add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+								add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+								add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
+								
+								
+								for(u=0; u<shm_hdr->dtcount; u++) {
 					
-					
-						
-					
-
-		
-	
-		
-						if(srvmap[x].servergroup_counter > 0) {
-							ALLOC_INIT_ZVAL(groups);
-							array_init(groups);
-							for(y=0; y<srvmap[x].servergroup_counter; y++){
-						
-						
-									ALLOC_INIT_ZVAL(groupinfo);
-									array_init(groupinfo);
-									
-									z=srvmap[x].servergroup_place[y];
-									add_assoc_long(groupinfo,"servergroup_place", y);
-									add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
-									add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
-									
-									add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
-									add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
-									add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
-									
-									
-									for(u=0; u<shm_hdr->dtcount; u++) {
-						
-										if(current_time >= dtmap[u].downtime_from && current_time <= dtmap[u].downtime_to) {
-											
-												if(dtmap[u].downtime_type ==  DT_SERVERGROUP) {
-													if(srvgrpmap[z].servergroup_id == dtmap[u].service_id) {
-																	is_down=3;
-																	dtmapindex=u;
-																	break;
-													}
+									if(current_time >= dtmap[u].downtime_from && current_time <= dtmap[u].downtime_to) {
+										
+											if(dtmap[u].downtime_type ==  DT_SERVERGROUP) {
+												if(srvgrpmap[z].servergroup_id == dtmap[u].service_id) {
+																is_down=3;
+																dtmapindex=u;
+																break;
 												}
 											}
-									}	
+										}
+								}	
 									
-									add_next_index_zval(groups, groupinfo);
-						
-						}		
+								add_next_index_zval(groups, groupinfo);
+					
+					}		
 				
 				
 				
-						add_assoc_zval(return_value, "groups", groups);
-					}
+					add_assoc_zval(return_value, "groups", groups);
+				}
 					
 					
 					
 					
 					
 					
-					for(y=0; y<shm_hdr->dtcount; y++) {
-						
-						if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+				for(y=0; y<shm_hdr->dtcount; y++) {
+			
+					if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
 							
-								if(dtmap[y].downtime_type ==  DT_SERVER) {
-									if(Z_LVAL_P(server_id) == dtmap[y].service_id) {
-													is_down=2;
-													dtmapindex=y;
-													break;
-									}
+							if(dtmap[y].downtime_type ==  DT_SERVER) {
+								if(Z_LVAL_P(server_id) == dtmap[y].service_id) {
+												is_down=2;
+												dtmapindex=y;
+												break;
 								}
 							}
-						}	
+						}
+					}	
+				
+				
+					if(is_down > 0) {
+							add_assoc_long(return_value, "is_downtime", 1);
+							add_assoc_long(return_value, "downtime_from", dtmap[dtmapindex].downtime_from);
+							add_assoc_long(return_value, "downtime_to", dtmap[dtmapindex].downtime_to);
+							add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice, 1);
+							add_assoc_long(return_value, "downtime_service", dtmap[dtmapindex].service_id);
+							add_assoc_long(return_value, "downtime_type", dtmap[dtmapindex].downtime_type);
+							
+					} else {
+						add_assoc_long(return_value, "is_downtime", 0);
+					}		
+				
+				
 					
 					
-						if(is_down > 0) {
-								add_assoc_long(return_value, "is_downtime", 1);
-								add_assoc_long(return_value, "downtime_from", dtmap[dtmapindex].downtime_from);
-								add_assoc_long(return_value, "downtime_to", dtmap[dtmapindex].downtime_to);
-								add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice, 1);
-								add_assoc_long(return_value, "downtime_service", dtmap[dtmapindex].service_id);
-								add_assoc_long(return_value, "downtime_type", dtmap[dtmapindex].downtime_type);
-								
-						} else {
-							add_assoc_long(return_value, "is_downtime", 0);
-						}		
 					
 					
-					
-					
-					
-					
-					break;
-				}			
-			}
-			
-		
-	
-			
-			shmdt(bartlby_address);
-			
-       	
-		
-		} else {
-			php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-			free(shmtok);
-			RETURN_FALSE;
+				break;
+			}			
 		}
-		
 			
 	}
-	dlclose(SOHandle);
 		
 }
 
 PHP_FUNCTION(bartlby_lib_info) {
 	char * dlmsg;
-	void * SOHandle;
-	char * data_lib;
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	
 	char * (*GetAutor)();
 	char * (*GetVersion)();
@@ -3789,26 +3107,22 @@ PHP_FUNCTION(bartlby_lib_info) {
 	char * GetAutorStr;
 	char * GetVersionStr;
 	char * GetNameStr;
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
-	LOAD_SYMBOL(GetAutor,SOHandle, "GetAutor");
-    	LOAD_SYMBOL(GetVersion,SOHandle, "GetVersion");
-    	LOAD_SYMBOL(GetName,SOHandle, "GetName");
+	LOAD_SYMBOL(GetAutor,bres->SOHandle, "GetAutor");
+    LOAD_SYMBOL(GetVersion,bres->SOHandle, "GetVersion");
+    LOAD_SYMBOL(GetName,bres->SOHandle, "GetName");
     	
 	GetAutorStr=GetAutor();
-    	GetVersionStr=GetVersion();
-    	GetNameStr=GetName();
+    GetVersionStr=GetVersion();
+    GetNameStr=GetName();
     	
-    	if (array_init(return_value) == FAILURE) {
+    if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	add_assoc_string(return_value, "Autor", GetAutorStr, 1);
@@ -3818,15 +3132,11 @@ PHP_FUNCTION(bartlby_lib_info) {
 	free(GetAutorStr);
 	free(GetVersionStr);
 	free(GetNameStr);
-	dlclose(SOHandle);
-    	
+		
 }
 
 PHP_FUNCTION(bartlby_get_service) {
 	
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int current_time;
 	int is_down;
@@ -3851,14 +3161,16 @@ PHP_FUNCTION(bartlby_get_service) {
 	int is_member;
 	int z;
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_service_id; 
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_service_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_service_id);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
@@ -3868,338 +3180,275 @@ PHP_FUNCTION(bartlby_get_service) {
 	
 	
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 		
-		if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
-			php_error(E_WARNING, "Service id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(Z_LVAL_P(bartlby_service_id) < 0) {
-			php_error(E_WARNING, "Service id below zero");	
-			RETURN_FALSE;	
-		}
-		add_assoc_long(return_value, "service_id", svcmap[Z_LVAL_P(bartlby_service_id)].service_id);
-		add_assoc_long(return_value, "server_id", svcmap[Z_LVAL_P(bartlby_service_id)].server_id);
-		add_assoc_long(return_value, "last_state", svcmap[Z_LVAL_P(bartlby_service_id)].last_state);
-		
-		
-		if(svcmap[Z_LVAL_P(bartlby_service_id)].is_server_dead < 0) {
-			add_assoc_long(return_value, "current_state", -3);
-			add_assoc_long(return_value, "server_is_dead", 1);
-		} else {
-			add_assoc_long(return_value, "current_state", svcmap[Z_LVAL_P(bartlby_service_id)].current_state);
-		}
-		
-		
-		
-		add_assoc_long(return_value, "client_port", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_port);
-				
-		add_assoc_string(return_value, "new_server_text", svcmap[Z_LVAL_P(bartlby_service_id)].new_server_text, 1);
-		add_assoc_string(return_value, "service_name", svcmap[Z_LVAL_P(bartlby_service_id)].service_name, 1);
-		add_assoc_string(return_value, "server_name", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_name, 1);
-		add_assoc_string(return_value, "client_ip", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_ip, 1);
-		
-		add_assoc_string(return_value, "server_ssh_keyfile", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_keyfile, 1);
-		add_assoc_string(return_value, "server_ssh_passphrase", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_passphrase, 1);
-		add_assoc_string(return_value, "server_ssh_username", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_username, 1);
-		
-		add_assoc_string(return_value, "server_enabled_triggers", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].enabled_triggers, 1);
-		
-		add_assoc_string(return_value, "plugin", svcmap[Z_LVAL_P(bartlby_service_id)].plugin, 1);
-		add_assoc_string(return_value, "plugin_arguments", svcmap[Z_LVAL_P(bartlby_service_id)].plugin_arguments, 1);
-		
-		add_assoc_long(return_value, "check_interval", svcmap[Z_LVAL_P(bartlby_service_id)].check_interval);
-		add_assoc_long(return_value, "check_interval_original", svcmap[Z_LVAL_P(bartlby_service_id)].check_interval_original);
-		add_assoc_long(return_value, "last_check", svcmap[Z_LVAL_P(bartlby_service_id)].last_check);
-		
-		
-		add_assoc_string(return_value, "exec_plan", svcmap[Z_LVAL_P(bartlby_service_id)].service_exec_plan, 1);
-		
-		add_assoc_long(return_value, "notify_enabled", svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled);
-		add_assoc_long(return_value, "last_notify_send", svcmap[Z_LVAL_P(bartlby_service_id)].last_notify_send);
-		add_assoc_long(return_value, "last_state_change", svcmap[Z_LVAL_P(bartlby_service_id)].last_state_change);
-		add_assoc_long(return_value, "flap_count", svcmap[Z_LVAL_P(bartlby_service_id)].flap_count);
-		
-		
-		add_assoc_long(return_value, "service_active", svcmap[Z_LVAL_P(bartlby_service_id)].service_active);
-		add_assoc_long(return_value, "service_type", svcmap[Z_LVAL_P(bartlby_service_id)].service_type);
-		add_assoc_long(return_value, "service_passive_timeout", svcmap[Z_LVAL_P(bartlby_service_id)].service_passive_timeout);
-		
-		
-		add_assoc_string(return_value, "service_var", svcmap[Z_LVAL_P(bartlby_service_id)].service_var, 1);
-		
-		add_assoc_long(return_value, "service_check_timeout", svcmap[Z_LVAL_P(bartlby_service_id)].service_check_timeout);
-		add_assoc_long(return_value, "service_ack_enabled", svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_enabled);
-		add_assoc_long(return_value, "service_ack_current", svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_current);
-		
-		add_assoc_long(return_value, "service_retain", svcmap[Z_LVAL_P(bartlby_service_id)].service_retain);
-		add_assoc_long(return_value, "service_retain_current", svcmap[Z_LVAL_P(bartlby_service_id)].service_retain_current);
-		add_assoc_long(return_value, "check_is_running", svcmap[Z_LVAL_P(bartlby_service_id)].process.pid);
-		add_assoc_long(return_value, "check_starttime", svcmap[Z_LVAL_P(bartlby_service_id)].process.start_time);
-		
-		
-		add_assoc_long(return_value, "service_time_sum", svcmap[Z_LVAL_P(bartlby_service_id)].pstat.sum);
-		add_assoc_long(return_value, "service_time_count",svcmap[Z_LVAL_P(bartlby_service_id)].pstat.counter);
-		
-		add_assoc_long(return_value, "service_delay_sum", svcmap[Z_LVAL_P(bartlby_service_id)].delay_time.sum);
-		add_assoc_long(return_value, "service_delay_count",svcmap[Z_LVAL_P(bartlby_service_id)].delay_time.counter);
-		
-		
-		add_assoc_string(return_value, "service_var",  svcmap[Z_LVAL_P(bartlby_service_id)].service_var, 1);
-		add_assoc_string(return_value, "server_icon",  srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_icon, 1);
-		
-		add_assoc_string(return_value, "service_snmp_community",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.community, 1);
-		add_assoc_string(return_value, "service_snmp_textmatch",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.textmatch, 1);
-		add_assoc_string(return_value, "service_snmp_objid",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.objid, 1);
-		
-		add_assoc_long(return_value, "service_snmp_warning", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.warn);
-		add_assoc_long(return_value, "service_snmp_critical", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.crit);
-		add_assoc_long(return_value, "service_snmp_version", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.version);
-		add_assoc_long(return_value, "service_snmp_type", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.type);
-		
-		add_assoc_long(return_value, "flap_seconds", svcmap[Z_LVAL_P(bartlby_service_id)].flap_seconds);
-		
-		add_assoc_long(return_value, "server_flap_seconds",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_flap_seconds);
-		add_assoc_long(return_value, "server_last_notify_send",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].last_notify_send);
-		add_assoc_long(return_value, "server_notify",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_notify);
-		add_assoc_long(return_value, "server_enabled",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_enabled);
-		add_assoc_long(return_value, "server_dead",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_dead);
-			
-		add_assoc_long(return_value, "renotify_interval",svcmap[Z_LVAL_P(bartlby_service_id)].renotify_interval);
-		add_assoc_long(return_value, "escalate_divisor",svcmap[Z_LVAL_P(bartlby_service_id)].escalate_divisor);
-		add_assoc_long(return_value, "fires_events",svcmap[Z_LVAL_P(bartlby_service_id)].fires_events);
-		add_assoc_long(return_value, "is_gone",svcmap[Z_LVAL_P(bartlby_service_id)].is_gone);
-			
-		add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
-			
-		
-		//Downtime 060120
-		is_down=0;
-		current_time=time(NULL);
-		for(y=0; y<shm_hdr->dtcount; y++) {
-				is_down=0;
-				if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
-					switch(dtmap[y].downtime_type) {
-						case DT_SERVICE:
-							if(dtmap[y].service_id == svcmap[Z_LVAL_P(bartlby_service_id)].service_id) {
-								is_down=1;	
-								
-							}
-						break;
-						case DT_SERVER:
-							if(dtmap[y].service_id == svcmap[Z_LVAL_P(bartlby_service_id)].server_id) {
-								is_down=2;	
-							}
-						break;	
-						case DT_SERVERGROUP:
-							
-							if(srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter > 0) {
-								for(u=0; u<srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter; u++){
-									z=srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_place[u];
-									if(srvgrpmap[z].servergroup_id == dtmap[y].service_id) {
-											is_down=3;
-											break;
-									}
-										
-								}
-							}
-							
-						break;		
-						case DT_SERVICEGROUP:
-							if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
-								for(u=0; u<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; u++){
-										z=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[u];
-										if(svcgrpmap[z].servicegroup_id == dtmap[y].service_id) {
-											is_down=4;
-											break;
-										}
-								}
-							}
-					
-						
-						break;
-						
-									
-					}
-					if(is_down > 0) {
-						add_assoc_long(return_value, "is_downtime", 1);
-						add_assoc_long(return_value, "downtime_from", dtmap[y].downtime_from);
-						add_assoc_long(return_value, "downtime_to", dtmap[y].downtime_to);
-						add_assoc_string(return_value, "downtime_notice", dtmap[y].downtime_notice, 1);
-						add_assoc_long(return_value, "downtime_service", dtmap[y].service_id);
-						add_assoc_long(return_value, "downtime_type", dtmap[y].downtime_type);
-						break;
-					}
-				}	
-		}
-		if(is_down==0) {
-			add_assoc_long(return_value, "is_downtime", 0);	
-		}
-		
-		//is member of following groups #SERVICEGROUP
-
-
-		
-	
-		
-		if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
-			ALLOC_INIT_ZVAL(groups);
-			array_init(groups);
-			for(y=0; y<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
-					
-					
-					ALLOC_INIT_ZVAL(groupinfo);
-					array_init(groupinfo);
-					
-					x=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[y];
-					add_assoc_long(groupinfo,"servicegroup_place", y);
-					add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[x].servicegroup_name,1);
-					add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[x].servicegroup_members,1);
-					
-					add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[x].servicegroup_active);
-					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[x].servicegroup_notify);
-					add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[x].servicegroup_id);
-					
-					
-					add_next_index_zval(groups, groupinfo);
-					
-			}		
-			
-			
-			
-			add_assoc_zval(return_value, "groups", groups);
-		}
-	
-		
-		shmdt(bartlby_address);
-	/*	
-		int service_id;
-	int server_id;
-	int last_state;
-	int current_state;
-	int client_port;
-	char  new_server_text[2048];
-	char  service_name[2048];
-	char  server_name[2048];
-	char  client_ip[2048];
-	char  plugin[2048];
-	char  plugin_arguments[2048];
-	int check_interval;
-	int last_check;
-	
-	
-	
-	int hour_from;
-	int min_from;
-	int hour_to;
-	int min_to;
-	
-	
-	int notify_enabled;
-	int last_notify_send;
-	int flap_count;
-	
-	char  service_var[2048];
-	int service_type;
-	int service_passive_timeout;
-	*/
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
+		RETURN_FALSE;	
 	}
+	if(Z_LVAL_P(bartlby_service_id) < 0) {
+		php_error(E_WARNING, "Service id below zero");	
+		RETURN_FALSE;	
+	}
+	add_assoc_long(return_value, "service_id", svcmap[Z_LVAL_P(bartlby_service_id)].service_id);
+	add_assoc_long(return_value, "server_id", svcmap[Z_LVAL_P(bartlby_service_id)].server_id);
+	add_assoc_long(return_value, "last_state", svcmap[Z_LVAL_P(bartlby_service_id)].last_state);
+		
+		
+	if(svcmap[Z_LVAL_P(bartlby_service_id)].is_server_dead < 0) {
+		add_assoc_long(return_value, "current_state", -3);
+		add_assoc_long(return_value, "server_is_dead", 1);
+	} else {
+		add_assoc_long(return_value, "current_state", svcmap[Z_LVAL_P(bartlby_service_id)].current_state);
+	}
+		
+		
+		
+	add_assoc_long(return_value, "client_port", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_port);
+				
+	add_assoc_string(return_value, "new_server_text", svcmap[Z_LVAL_P(bartlby_service_id)].new_server_text, 1);
+	add_assoc_string(return_value, "service_name", svcmap[Z_LVAL_P(bartlby_service_id)].service_name, 1);
+	add_assoc_string(return_value, "server_name", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_name, 1);
+	add_assoc_string(return_value, "client_ip", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_ip, 1);
+	
+	add_assoc_string(return_value, "server_ssh_keyfile", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_keyfile, 1);
+	add_assoc_string(return_value, "server_ssh_passphrase", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_passphrase, 1);
+	add_assoc_string(return_value, "server_ssh_username", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_ssh_username, 1);
+	
+	add_assoc_string(return_value, "server_enabled_triggers", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].enabled_triggers, 1);
+	
+	add_assoc_string(return_value, "plugin", svcmap[Z_LVAL_P(bartlby_service_id)].plugin, 1);
+	add_assoc_string(return_value, "plugin_arguments", svcmap[Z_LVAL_P(bartlby_service_id)].plugin_arguments, 1);
+		
+	add_assoc_long(return_value, "check_interval", svcmap[Z_LVAL_P(bartlby_service_id)].check_interval);
+	add_assoc_long(return_value, "check_interval_original", svcmap[Z_LVAL_P(bartlby_service_id)].check_interval_original);
+	add_assoc_long(return_value, "last_check", svcmap[Z_LVAL_P(bartlby_service_id)].last_check);
+	
+		
+	add_assoc_string(return_value, "exec_plan", svcmap[Z_LVAL_P(bartlby_service_id)].service_exec_plan, 1);
+		
+	add_assoc_long(return_value, "notify_enabled", svcmap[Z_LVAL_P(bartlby_service_id)].notify_enabled);
+	add_assoc_long(return_value, "last_notify_send", svcmap[Z_LVAL_P(bartlby_service_id)].last_notify_send);
+	add_assoc_long(return_value, "last_state_change", svcmap[Z_LVAL_P(bartlby_service_id)].last_state_change);
+	add_assoc_long(return_value, "flap_count", svcmap[Z_LVAL_P(bartlby_service_id)].flap_count);
+		
+		
+	add_assoc_long(return_value, "service_active", svcmap[Z_LVAL_P(bartlby_service_id)].service_active);
+	add_assoc_long(return_value, "service_type", svcmap[Z_LVAL_P(bartlby_service_id)].service_type);
+	add_assoc_long(return_value, "service_passive_timeout", svcmap[Z_LVAL_P(bartlby_service_id)].service_passive_timeout);
+		
+		
+	add_assoc_string(return_value, "service_var", svcmap[Z_LVAL_P(bartlby_service_id)].service_var, 1);
+	
+	add_assoc_long(return_value, "service_check_timeout", svcmap[Z_LVAL_P(bartlby_service_id)].service_check_timeout);
+	add_assoc_long(return_value, "service_ack_enabled", svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_enabled);
+	add_assoc_long(return_value, "service_ack_current", svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_current);
+	
+	add_assoc_long(return_value, "service_retain", svcmap[Z_LVAL_P(bartlby_service_id)].service_retain);
+	add_assoc_long(return_value, "service_retain_current", svcmap[Z_LVAL_P(bartlby_service_id)].service_retain_current);
+	add_assoc_long(return_value, "check_is_running", svcmap[Z_LVAL_P(bartlby_service_id)].process.pid);
+	add_assoc_long(return_value, "check_starttime", svcmap[Z_LVAL_P(bartlby_service_id)].process.start_time);
+	
+	
+	add_assoc_long(return_value, "service_time_sum", svcmap[Z_LVAL_P(bartlby_service_id)].pstat.sum);
+	add_assoc_long(return_value, "service_time_count",svcmap[Z_LVAL_P(bartlby_service_id)].pstat.counter);
+	
+	add_assoc_long(return_value, "service_delay_sum", svcmap[Z_LVAL_P(bartlby_service_id)].delay_time.sum);
+	add_assoc_long(return_value, "service_delay_count",svcmap[Z_LVAL_P(bartlby_service_id)].delay_time.counter);
+	
+	
+	add_assoc_string(return_value, "service_var",  svcmap[Z_LVAL_P(bartlby_service_id)].service_var, 1);
+	add_assoc_string(return_value, "server_icon",  srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_icon, 1);
+	
+	add_assoc_string(return_value, "service_snmp_community",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.community, 1);
+	add_assoc_string(return_value, "service_snmp_textmatch",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.textmatch, 1);
+	add_assoc_string(return_value, "service_snmp_objid",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.objid, 1);
+	
+	add_assoc_long(return_value, "service_snmp_warning", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.warn);
+	add_assoc_long(return_value, "service_snmp_critical", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.crit);
+	add_assoc_long(return_value, "service_snmp_version", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.version);
+	add_assoc_long(return_value, "service_snmp_type", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.type);
+	
+	add_assoc_long(return_value, "flap_seconds", svcmap[Z_LVAL_P(bartlby_service_id)].flap_seconds);
+	
+	add_assoc_long(return_value, "server_flap_seconds",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_flap_seconds);
+	add_assoc_long(return_value, "server_last_notify_send",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].last_notify_send);
+	add_assoc_long(return_value, "server_notify",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_notify);
+	add_assoc_long(return_value, "server_enabled",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_enabled);
+	add_assoc_long(return_value, "server_dead",srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_dead);
+		
+	add_assoc_long(return_value, "renotify_interval",svcmap[Z_LVAL_P(bartlby_service_id)].renotify_interval);
+	add_assoc_long(return_value, "escalate_divisor",svcmap[Z_LVAL_P(bartlby_service_id)].escalate_divisor);
+	add_assoc_long(return_value, "fires_events",svcmap[Z_LVAL_P(bartlby_service_id)].fires_events);
+	add_assoc_long(return_value, "is_gone",svcmap[Z_LVAL_P(bartlby_service_id)].is_gone);
+			
+	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
+			
+		
+	//Downtime 060120
+	is_down=0;
+	current_time=time(NULL);
+	for(y=0; y<shm_hdr->dtcount; y++) {
+			is_down=0;
+			if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+				switch(dtmap[y].downtime_type) {
+					case DT_SERVICE:
+						if(dtmap[y].service_id == svcmap[Z_LVAL_P(bartlby_service_id)].service_id) {
+							is_down=1;	
+							
+						}
+					break;
+					case DT_SERVER:
+						if(dtmap[y].service_id == svcmap[Z_LVAL_P(bartlby_service_id)].server_id) {
+							is_down=2;	
+						}
+					break;	
+					case DT_SERVERGROUP:
+						
+						if(srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter > 0) {
+							for(u=0; u<srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter; u++){
+								z=srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_place[u];
+								if(srvgrpmap[z].servergroup_id == dtmap[y].service_id) {
+										is_down=3;
+										break;
+								}
+									
+							}
+						}
+						
+					break;		
+					case DT_SERVICEGROUP:
+						if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
+							for(u=0; u<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; u++){
+									z=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[u];
+									if(svcgrpmap[z].servicegroup_id == dtmap[y].service_id) {
+										is_down=4;
+										break;
+									}
+							}
+						}
+				
+					
+					break;
+					
+								
+				}
+				if(is_down > 0) {
+					add_assoc_long(return_value, "is_downtime", 1);
+					add_assoc_long(return_value, "downtime_from", dtmap[y].downtime_from);
+					add_assoc_long(return_value, "downtime_to", dtmap[y].downtime_to);
+					add_assoc_string(return_value, "downtime_notice", dtmap[y].downtime_notice, 1);
+					add_assoc_long(return_value, "downtime_service", dtmap[y].service_id);
+					add_assoc_long(return_value, "downtime_type", dtmap[y].downtime_type);
+					break;
+				}
+			}	
+	}
+	if(is_down==0) {
+		add_assoc_long(return_value, "is_downtime", 0);	
+	}
+	
+	//is member of following groups #SERVICEGROUP
+
+	
+
+	
+	if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
+		ALLOC_INIT_ZVAL(groups);
+		array_init(groups);
+		for(y=0; y<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
+				
+				
+				ALLOC_INIT_ZVAL(groupinfo);
+				array_init(groupinfo);
+				
+				x=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[y];
+				add_assoc_long(groupinfo,"servicegroup_place", y);
+				add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[x].servicegroup_name,1);
+				add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[x].servicegroup_members,1);
+				
+				add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[x].servicegroup_active);
+				add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[x].servicegroup_notify);
+				add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[x].servicegroup_id);
+				
+				
+				add_next_index_zval(groups, groupinfo);
+				
+		}		
+		
+		
+		
+		add_assoc_zval(return_value, "groups", groups);
+	}
+
+	
 	
 	
 }
 
 PHP_FUNCTION(bartlby_get_worker) {
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	
 	struct worker * wrkmap;
 	struct service * svcmap;
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_worker_id;
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_worker_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_worker_id);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
 		
-		if(Z_LVAL_P(bartlby_worker_id) > shm_hdr->wrkcount-1) {
-			php_error(E_WARNING, "Worker id out of bounds");	
-			RETURN_FALSE;	
-		}
-		
-		
-		add_assoc_string(return_value, "mail", wrkmap[Z_LVAL_P(bartlby_worker_id)].mail, 1);
-		add_assoc_string(return_value, "icq", wrkmap[Z_LVAL_P(bartlby_worker_id)].icq, 1);
-		add_assoc_string(return_value, "notify_plan", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_plan, 1);
-		add_assoc_string(return_value, "services", wrkmap[Z_LVAL_P(bartlby_worker_id)].services, 1);
-		
-		add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels,1);
-		add_assoc_string(return_value, "name", wrkmap[Z_LVAL_P(bartlby_worker_id)].name,1);
-		add_assoc_string(return_value, "password", wrkmap[Z_LVAL_P(bartlby_worker_id)].password,1);
-		add_assoc_long(return_value, "worker_id", wrkmap[Z_LVAL_P(bartlby_worker_id)].worker_id);
-		
-		add_assoc_long(return_value, "escalation_limit", wrkmap[Z_LVAL_P(bartlby_worker_id)].escalation_limit);
-		add_assoc_long(return_value, "escalation_minutes", wrkmap[Z_LVAL_P(bartlby_worker_id)].escalation_minutes);
-		
-		add_assoc_string(return_value, "enabled_triggers", wrkmap[Z_LVAL_P(bartlby_worker_id)].enabled_triggers,1);
-		add_assoc_long(return_value, "active", wrkmap[Z_LVAL_P(bartlby_worker_id)].active);
-		add_assoc_long(return_value, "is_gone", wrkmap[Z_LVAL_P(bartlby_worker_id)].is_gone);		
-
-		shmdt(bartlby_address);
-		
-	/*	
-	char  mail[2048];
-	char  icq[2048];
-	char  services[2048];
-	
-	
-	int icq_notify;
-	int mail_notify;
-	int escalation_count;
-	int escalation_time;
-	char t[500];
-	*/
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
+	if(Z_LVAL_P(bartlby_worker_id) > shm_hdr->wrkcount-1) {
+		php_error(E_WARNING, "Worker id out of bounds");	
+		RETURN_FALSE;	
 	}
+		
+		
+	add_assoc_string(return_value, "mail", wrkmap[Z_LVAL_P(bartlby_worker_id)].mail, 1);
+	add_assoc_string(return_value, "icq", wrkmap[Z_LVAL_P(bartlby_worker_id)].icq, 1);
+	add_assoc_string(return_value, "notify_plan", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_plan, 1);
+	add_assoc_string(return_value, "services", wrkmap[Z_LVAL_P(bartlby_worker_id)].services, 1);
+	
+	add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels,1);
+	add_assoc_string(return_value, "name", wrkmap[Z_LVAL_P(bartlby_worker_id)].name,1);
+	add_assoc_string(return_value, "password", wrkmap[Z_LVAL_P(bartlby_worker_id)].password,1);
+	add_assoc_long(return_value, "worker_id", wrkmap[Z_LVAL_P(bartlby_worker_id)].worker_id);
+	
+	add_assoc_long(return_value, "escalation_limit", wrkmap[Z_LVAL_P(bartlby_worker_id)].escalation_limit);
+	add_assoc_long(return_value, "escalation_minutes", wrkmap[Z_LVAL_P(bartlby_worker_id)].escalation_minutes);
+	
+	add_assoc_string(return_value, "enabled_triggers", wrkmap[Z_LVAL_P(bartlby_worker_id)].enabled_triggers,1);
+	add_assoc_long(return_value, "active", wrkmap[Z_LVAL_P(bartlby_worker_id)].active);
+	add_assoc_long(return_value, "is_gone", wrkmap[Z_LVAL_P(bartlby_worker_id)].is_gone);		
+
+	
 	
 }
 
 
 
 PHP_FUNCTION(bartlby_add_servergroup) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * servergroup_name;
 	zval * servergroup_active;
 	zval * servergroup_notify;
@@ -4211,7 +3460,6 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
 	char * dlmsg;
 	
 	int ret;
@@ -4219,8 +3467,9 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	int (*AddServerGroup)(struct servergroup *,char *);
 	
 	struct servergroup svc;
+	bartlby_res * bres;
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -4237,7 +3486,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	GETARRAY_EL_FROM_HASH(servergroup_dead, "servergroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_string(servergroup_name);
 	convert_to_string(enabled_triggers);
 	convert_to_string(servergroup_members);
@@ -4246,14 +3495,9 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	convert_to_long(servergroup_dead);
 		
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(AddServerGroup,SOHandle, "AddServerGroup");
+	LOAD_SYMBOL(AddServerGroup,bres->SOHandle, "AddServerGroup");
 	
 	strcpy(svc.servergroup_name, Z_STRVAL_P(servergroup_name));
 	svc.servergroup_notify=Z_LVAL_P(servergroup_notify);
@@ -4263,17 +3507,13 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	
 	svc.servergroup_dead=Z_LVAL_P(servergroup_dead);
 	
-	ret=AddServerGroup(&svc, Z_STRVAL_P(bartlby_config));
+	ret=AddServerGroup(&svc, bres->cfgfile);
 	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 
 PHP_FUNCTION(bartlby_servergroup_map) {
 	zval * subarray;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	
 	int x;
@@ -4284,101 +3524,87 @@ PHP_FUNCTION(bartlby_servergroup_map) {
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	int is_down;
 	int current_time;
 	int y;
+
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	
+	for(x=0; x<shm_hdr->srvgroupcount; x++) {
+			
+		ALLOC_INIT_ZVAL(subarray);
+		array_init(subarray);
 		
-		for(x=0; x<shm_hdr->srvgroupcount; x++) {
-			
-			ALLOC_INIT_ZVAL(subarray);
-			array_init(subarray);
-			
-			add_assoc_long(subarray, "servergroup_id", srvgrpmap[x].servergroup_id);
-			add_assoc_string(subarray, "servergroup_name", srvgrpmap[x].servergroup_name,1);
-			add_assoc_long(subarray, "servergroup_active", srvgrpmap[x].servergroup_active);
-			add_assoc_long(subarray, "servergroup_notify", srvgrpmap[x].servergroup_notify);
-			add_assoc_string(subarray, "servergroup_members", srvgrpmap[x].servergroup_members, 1);
-			add_assoc_long(subarray, "servergroup_dead", srvgrpmap[x].servergroup_dead);
-			add_assoc_string(subarray, "enabled_triggers", srvgrpmap[x].enabled_triggers,1);
+		add_assoc_long(subarray, "servergroup_id", srvgrpmap[x].servergroup_id);
+		add_assoc_string(subarray, "servergroup_name", srvgrpmap[x].servergroup_name,1);
+		add_assoc_long(subarray, "servergroup_active", srvgrpmap[x].servergroup_active);
+		add_assoc_long(subarray, "servergroup_notify", srvgrpmap[x].servergroup_notify);
+		add_assoc_string(subarray, "servergroup_members", srvgrpmap[x].servergroup_members, 1);
+		add_assoc_long(subarray, "servergroup_dead", srvgrpmap[x].servergroup_dead);
+		add_assoc_string(subarray, "enabled_triggers", srvgrpmap[x].enabled_triggers,1);
 			
 			
-			add_assoc_long(subarray, "shm_place", x);
+		add_assoc_long(subarray, "shm_place", x);
+		
+		current_time=time(NULL);
+		is_down=0;
+		for(y=0; y<shm_hdr->dtcount; y++) {
 			
-			current_time=time(NULL);
-			is_down=0;
-			for(y=0; y<shm_hdr->dtcount; y++) {
-				
-				if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
+			if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
 					
-						if(dtmap[y].downtime_type ==  DT_SERVERGROUP) {
-							if(srvgrpmap[x].servergroup_id == dtmap[y].service_id) {
-											is_down=3;
-											break;
-							}
+					if(dtmap[y].downtime_type ==  DT_SERVERGROUP) {
+						if(srvgrpmap[x].servergroup_id == dtmap[y].service_id) {
+										is_down=3;
+										break;
 						}
 					}
-				}	
-			
-			
-				if(is_down > 0) {
-						add_assoc_long(subarray, "is_downtime", 1);
-						add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
-						add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
-						add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
-						add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
-						add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
-						
-				} else {
-					add_assoc_long(subarray, "is_downtime", 0);
-				}			
-			
-			
-			//Push SVC to map
-			add_next_index_zval(return_value, subarray);
-			
-		}
+				}
+			}	
 		
 		
+			if(is_down > 0) {
+					add_assoc_long(subarray, "is_downtime", 1);
+					add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
+					add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
+					add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
+					add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
+					add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
+					
+			} else {
+				add_assoc_long(subarray, "is_downtime", 0);
+			}			
 		
-		shmdt(bartlby_address);
 		
-
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
+		//Push SVC to map
+		add_next_index_zval(return_value, subarray);
+		
 	}
-		
-	
-
 		
 }
 
 
 PHP_FUNCTION(bartlby_modify_servergroup) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * servergroup_name;
 	zval * servergroup_active;
 	zval * servergroup_notify;
@@ -4389,8 +3615,6 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	
 	zval ** temp_pp;
 	zval * options_array;
-	
-	void * SOHandle;
 	char * dlmsg;
 	
 	int ret;
@@ -4398,10 +3622,11 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	int (*UpdateServerGroup)(struct servergroup *,char *);
 	
 	struct servergroup svc;
+	bartlby_res * bres;
 	
 	
 	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&servergroup_id, &options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&servergroup_id, &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -4418,7 +3643,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	GETARRAY_EL_FROM_HASH(servergroup_dead, "servergroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	convert_to_string(servergroup_members);
 	convert_to_string(enabled_triggers);
 	convert_to_string(servergroup_name);
@@ -4429,14 +3655,9 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	convert_to_long(servergroup_id);
 	
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
+	LOAD_SYMBOL(UpdateServerGroup,bres->SOHandle, "UpdateServerGroup");
 	
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	
@@ -4448,19 +3669,17 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	svc.servergroup_dead=Z_LVAL_P(servergroup_dead);
 	
 	
-	ret=UpdateServerGroup(&svc, Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ret=UpdateServerGroup(&svc, bres->cfgfile);
 	
 	RETURN_LONG(ret);		
 }
 
 
 PHP_FUNCTION(bartlby_delete_servergroup) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * servergroup_id;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
 	
 	int ret;
@@ -4468,77 +3687,61 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	int (*DeleteServerGroup)(int, char*);
 	
 	struct service svc;
+	bartlby_res * bres;
+
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&servergroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&servergroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	convert_to_long(servergroup_id);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(DeleteServerGroup,SOHandle, "DeleteServerGroup");
+	LOAD_SYMBOL(DeleteServerGroup,bres->SOHandle, "DeleteServerGroup");
 	
 	
 	
-	ret=DeleteServerGroup(Z_LVAL_P(servergroup_id),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ret=DeleteServerGroup(Z_LVAL_P(servergroup_id),bres->cfgfile);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servergroup_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * from;
 	zval * to;
 	zval * mig;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*ServerGroupChangeId)(int, int, char*);
+	bartlby_res * bres;
 	
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(from);
 	convert_to_long(to);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(ServerGroupChangeId,SOHandle, "ServerGroupChangeId");
+	LOAD_SYMBOL(ServerGroupChangeId,bres->SOHandle, "ServerGroupChangeId");
 	
 	
 	
-	ret=ServerGroupChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
+	ret=ServerGroupChangeId(Z_LVAL_P(from),Z_LVAL_P(to),bres->cfgfile);
 	RETURN_LONG(ret);	
 }
 
 
 PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_servergroup_id;
 	zval * do_writeback;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	struct service * svcmap;
@@ -4547,80 +3750,55 @@ PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
 	struct btl_event * evntmap;
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
-	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateServerGroup)(struct servergroup *, char *);
+	bartlby_res * bres;
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servergroup_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+		
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		
+	if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
+		php_error(E_WARNING, "service group id out of bounds");	
 		RETURN_FALSE;	
 	}
- 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		
-		if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
-			php_error(E_WARNING, "service group id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify == 1) {
-			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify = 0;
-			r=0;
-		} else {
-			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify = 1;
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
-			UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], Z_STRVAL_P(bartlby_config));
-			
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify == 1) {
+		srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify = 1;
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateServerGroup,bres->SOHandle, "UpdateServerGroup");
+		UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], bres->cfgfile);
+		
+	}
+	
+	RETURN_LONG(r);
+	
 }
 
 PHP_FUNCTION(bartlby_toggle_servergroup_active) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_servergroup_id;
 	zval * do_writeback;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	struct service * svcmap;
@@ -4630,74 +3808,55 @@ PHP_FUNCTION(bartlby_toggle_servergroup_active) {
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
 	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateServerGroup)(struct servergroup *, char *);
+	bartlby_res * bres;
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servergroup_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	
+		
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+		
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+		
+	if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
+		php_error(E_WARNING, "service group id out of bounds");	
 		RETURN_FALSE;	
 	}
- 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		
-		if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
-			php_error(E_WARNING, "service group id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active == 1) {
-			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active = 0;
-			r=0;
-		} else {
-			srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active = 1;
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateServerGroup,SOHandle, "UpdateServerGroup");
-			UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], Z_STRVAL_P(bartlby_config));
-			
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active == 1) {
+		srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active = 1;
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateServerGroup,bres->SOHandle, "UpdateServerGroup");
+		UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], bres->cfgfile);
+		
+	}
+	
+	RETURN_LONG(r);
+	
 }
 
 PHP_FUNCTION(bartlby_add_servicegroup) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * servicegroup_name;
 	zval * servicegroup_active;
 	zval * servicegroup_notify;
@@ -4708,19 +3867,15 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*AddServiceGroup)(struct servicegroup *,char *);
-	
 	struct servicegroup svc;
-	
+	bartlby_res * bres;
 
 	
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -4738,8 +3893,8 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	
 	
 	
-	
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+		
 	convert_to_string(servicegroup_name);
 	convert_to_string(servicegroup_members);
 	convert_to_long(servicegroup_active);
@@ -4747,14 +3902,9 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	convert_to_long(servicegroup_dead);
 	convert_to_string(enabled_triggers);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(AddServiceGroup,SOHandle, "AddServiceGroup");
+	LOAD_SYMBOL(AddServiceGroup,bres->SOHandle, "AddServiceGroup");
 	
 	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
 	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
@@ -4763,17 +3913,13 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
 	
-	ret=AddServiceGroup(&svc, Z_STRVAL_P(bartlby_config));
+	ret=AddServiceGroup(&svc, bres->cfgfile);
 	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 
 PHP_FUNCTION(bartlby_servicegroup_map) {
 	zval * subarray;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	
 	int x;
@@ -4785,101 +3931,87 @@ PHP_FUNCTION(bartlby_servicegroup_map) {
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	int current_time;
 	int y;
 	int is_down;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	convert_to_string(bartlby_config);
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
-		for(x=0; x<shm_hdr->svcgroupcount; x++) {
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	for(x=0; x<shm_hdr->svcgroupcount; x++) {
+		
+		ALLOC_INIT_ZVAL(subarray);
+		array_init(subarray);
+		
+		add_assoc_long(subarray, "servicegroup_id", svcgrpmap[x].servicegroup_id);
+		add_assoc_string(subarray, "servicegroup_name", svcgrpmap[x].servicegroup_name,1);
+		add_assoc_long(subarray, "servicegroup_active", svcgrpmap[x].servicegroup_active);
+		add_assoc_long(subarray, "servicegroup_notify", svcgrpmap[x].servicegroup_notify);
+		add_assoc_string(subarray, "servicegroup_members", svcgrpmap[x].servicegroup_members,1);
+		add_assoc_long(subarray, "servicegroup_dead", svcgrpmap[x].servicegroup_dead);
+		add_assoc_string(subarray, "enabled_triggers", svcgrpmap[x].enabled_triggers,1);
+		add_assoc_long(subarray, "shm_place", x);
+		
+		
+		
+		current_time=time(NULL);
+		is_down=0;
+		for(y=0; y<shm_hdr->dtcount; y++) {
 			
-			ALLOC_INIT_ZVAL(subarray);
-			array_init(subarray);
-			
-			add_assoc_long(subarray, "servicegroup_id", svcgrpmap[x].servicegroup_id);
-			add_assoc_string(subarray, "servicegroup_name", svcgrpmap[x].servicegroup_name,1);
-			add_assoc_long(subarray, "servicegroup_active", svcgrpmap[x].servicegroup_active);
-			add_assoc_long(subarray, "servicegroup_notify", svcgrpmap[x].servicegroup_notify);
-			add_assoc_string(subarray, "servicegroup_members", svcgrpmap[x].servicegroup_members,1);
-			add_assoc_long(subarray, "servicegroup_dead", svcgrpmap[x].servicegroup_dead);
-			add_assoc_string(subarray, "enabled_triggers", svcgrpmap[x].enabled_triggers,1);
-			add_assoc_long(subarray, "shm_place", x);
-			
-			
-			
-			current_time=time(NULL);
-			is_down=0;
-			for(y=0; y<shm_hdr->dtcount; y++) {
+			if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
 				
-				if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
-					
-						if(dtmap[y].downtime_type ==  DT_SERVICEGROUP) {
-							if(svcgrpmap[x].servicegroup_id == dtmap[y].service_id) {
-											is_down=4;
-											break;
-							}
+					if(dtmap[y].downtime_type ==  DT_SERVICEGROUP) {
+						if(svcgrpmap[x].servicegroup_id == dtmap[y].service_id) {
+										is_down=4;
+										break;
 						}
 					}
-				}	
-			
-			
-				if(is_down > 0) {
-						add_assoc_long(subarray, "is_downtime", 1);
-						add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
-						add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
-						add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
-						add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
-						add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
-						
-				} else {
-					add_assoc_long(subarray, "is_downtime", 0);
-				}			
-			
-			
-			//Push SVC to map
-			add_next_index_zval(return_value, subarray);
-			
-		}
+				}
+			}	
 		
 		
+			if(is_down > 0) {
+					add_assoc_long(subarray, "is_downtime", 1);
+					add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
+					add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
+					add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
+					add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
+					add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
+					
+			} else {
+				add_assoc_long(subarray, "is_downtime", 0);
+			}			
 		
-		shmdt(bartlby_address);
 		
-
-	
-	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
+		//Push SVC to map
+		add_next_index_zval(return_value, subarray);
+		
 	}
-		
 	
-
 		
 }
 
 
 PHP_FUNCTION(bartlby_modify_servicegroup) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * servicegroup_name;
 	zval * servicegroup_active;
 	zval * servicegroup_notify;
@@ -4891,18 +4023,15 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	zval ** temp_pp;
 	zval * options_array;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*UpdateServiceGroup)(struct servicegroup *,char *);
-	
 	struct servicegroup svc;
+	bartlby_res * bres;
 	
 	
-	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&servicegroup_id ,&options_array) == FAILURE) {
+	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&servicegroup_id ,&options_array) == FAILURE) {
 		WRONG_PARAM_COUNT;	
 	}
 	
@@ -4918,8 +4047,8 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	GETARRAY_EL_FROM_HASH(servicegroup_notify, "servicegroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servicegroup_dead, "servicegroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	convert_to_string(bartlby_config);
 	convert_to_string(enabled_triggers);
 	convert_to_string(servicegroup_members);
 	convert_to_string(servicegroup_name);
@@ -4930,14 +4059,9 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	convert_to_long(servicegroup_id);
 	
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
+	LOAD_SYMBOL(UpdateServiceGroup,bres->SOHandle, "UpdateServiceGroup");
 	
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
@@ -4948,97 +4072,74 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
 	
 	
-	ret=UpdateServiceGroup(&svc, Z_STRVAL_P(bartlby_config));
+	ret=UpdateServiceGroup(&svc, bres->cfgfile);
 	
-	dlclose(SOHandle);
+	
 	
 	RETURN_LONG(ret);		
 }
 
 
 PHP_FUNCTION(bartlby_delete_servicegroup) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * servicegroup_id;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*DeleteServiceGroup)(int, char*);
-	
 	struct service svc;
+	bartlby_res * bres;
+
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config,&servicegroup_id)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&servicegroup_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
-	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(servicegroup_id);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
 	
-	LOAD_SYMBOL(DeleteServiceGroup,SOHandle, "DeleteServiceGroup");
+	LOAD_SYMBOL(DeleteServiceGroup,bres->SOHandle, "DeleteServiceGroup");
+	ret=DeleteServiceGroup(Z_LVAL_P(servicegroup_id),bres->cfgfile);
 	
-	
-	
-	ret=DeleteServiceGroup(Z_LVAL_P(servicegroup_id),Z_STRVAL_P(bartlby_config));
-	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servicegroup_id) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * from;
 	zval * to;
 	zval * mig;
 	
-	void * SOHandle;
+	
 	char * dlmsg;
-	
 	int ret;
-	
 	int (*ServiceGroupChangeId)(int, int, char*);
+	bartlby_res * bres;
 	
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config,&from, &to)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(from);
 	convert_to_long(to);
 	
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
-		RETURN_FALSE;	
-	}
 	
-	
-	LOAD_SYMBOL(ServiceGroupChangeId,SOHandle, "ServiceGroupChangeId");
+	LOAD_SYMBOL(ServiceGroupChangeId,bres->SOHandle, "ServiceGroupChangeId");
 	
 	
 	
-	ret=ServiceGroupChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_STRVAL_P(bartlby_config));
+	ret=ServiceGroupChangeId(Z_LVAL_P(from),Z_LVAL_P(to),bres->cfgfile);
 	
-	dlclose(SOHandle);
 	RETURN_LONG(ret);	
 }
 
 
 PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_servicegroup_id;
 	zval * do_writeback;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	struct service * svcmap;
@@ -5048,80 +4149,55 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
-	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateServiceGroup)(struct servicegroup *, char *);
+	bartlby_res * bres;
 	
-	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servicegroup_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+		
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
+		php_error(E_WARNING, "service group id out of bounds");	
 		RETURN_FALSE;	
 	}
- 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
-		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
-			php_error(E_WARNING, "service group id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify == 1) {
-			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify = 0;
-			r=0;
-		} else {
-			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify = 1;
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
-			UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)], Z_STRVAL_P(bartlby_config));
-			
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify == 1) {
+		svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify = 1;
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateServiceGroup,bres->SOHandle, "UpdateServiceGroup");
+		UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)],bres->cfgfile);
+		
+	}
+	
+	RETURN_LONG(r);
+	
 }
 
 PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
-	zval * bartlby_config;
+	zval * zbartlby_resource;
 	zval * bartlby_servicegroup_id;
 	zval * do_writeback;
-	char * shmtok;
-	int shm_id;
-	void * bartlby_address;
 	struct shm_header * shm_hdr;
 	int r;
 	struct service * svcmap;
@@ -5131,88 +4207,52 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
-	
-	void * SOHandle;
 	char * dlmsg;
 	int (*UpdateServiceGroup)(struct servicegroup *, char *);
 	
+	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &bartlby_config, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_servicegroup_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_servicegroup_id);
 	convert_to_long(do_writeback);
-	convert_to_string(bartlby_config);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	if(SOHandle == NULL) {
-		php_error(E_WARNING, "bartlby SO error");	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+		
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
+	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	
+	if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
+		php_error(E_WARNING, "service group id out of bounds");	
 		RETURN_FALSE;	
 	}
- 	
-		
-	
-	
-	
-	bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config)); 
-	if(bartlby_address != NULL) {
-		shm_hdr=(struct shm_header *)(void *)bartlby_address;
-		
-		svcmap=(struct service *)(void *)(bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
-		
-		if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
-			php_error(E_WARNING, "service group id out of bounds");	
-			RETURN_FALSE;	
-		}
-		if(svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active == 1) {
-			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active = 0;
-			r=0;
-		} else {
-			svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active = 1;
-			r=1;
-		}
-		if(Z_LVAL_P(do_writeback) == 1) {
-			LOAD_SYMBOL(UpdateServiceGroup,SOHandle, "UpdateServiceGroup");
-			UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)], Z_STRVAL_P(bartlby_config));
-			
-		}
-		
-		dlclose(SOHandle);
-		shmdt(bartlby_address);
-		RETURN_LONG(r);
-		
-	
-	
+	if(svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active == 1) {
+		svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active = 0;
+		r=0;
 	} else {
-		php_error(E_WARNING, "SHM segment is not existing (bartlby running?)");	
-		free(shmtok);
-		RETURN_FALSE;
-	}	
+		svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_active = 1;
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateServiceGroup,bres->SOHandle, "UpdateServiceGroup");
+		UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)], bres->cfgfile);
+		
+	}
+	
+	RETURN_LONG(r);
+		
 }
 
 
-/* }}} */
-/* The previous line is meant for vim and emacs, so it can correctly fold and 
-   unfold functions in source code. See the corresponding marks just before 
-   function definition, where the functions purpose is also documented. Please 
-   follow this convention for the convenience of others editing your code.
-*/
 
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
