@@ -296,7 +296,7 @@ void * bartlby_get_shm(char * cfgfile) {
 		bartlby_address=shmat(shm_id,NULL,0);
 		return bartlby_address;
 	} else {
-		
+		php_error(E_ERROR, "cannot attach to SHM");	
 		return NULL;
 	}
 }
