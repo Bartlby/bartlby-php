@@ -1,7 +1,7 @@
-srcdir = /storage/SF.NET/BARTLBY/GIT/bartlby-php
-builddir = /storage/SF.NET/BARTLBY/GIT/bartlby-php
-top_srcdir = /storage/SF.NET/BARTLBY/GIT/bartlby-php
-top_builddir = /storage/SF.NET/BARTLBY/GIT/bartlby-php
+srcdir = /usr/local/src/bartlby-php
+builddir = /usr/local/src/bartlby-php
+top_srcdir = /usr/local/src/bartlby-php
+top_builddir = /usr/local/src/bartlby-php
 EGREP = /bin/grep -E
 SED = /bin/sed
 CONFIGURE_COMMAND = './configure'
@@ -9,20 +9,20 @@ CONFIGURE_OPTIONS =
 SHLIB_SUFFIX_NAME = so
 SHLIB_DL_SUFFIX_NAME = so
 ZEND_EXT_TYPE = zend_extension
-RE2C = re2c
-AWK = gawk
+RE2C = exit 0;
+AWK = nawk
 shared_objects_bartlby = bartlby.lo
 PHP_PECL_EXTENSION = bartlby
 PHP_MODULES = $(phplibdir)/bartlby.la
 PHP_ZEND_EX =
 all_targets = $(PHP_MODULES) $(PHP_ZEND_EX)
 install_targets = install-modules install-headers
-prefix = /usr/local
+prefix = /usr
 exec_prefix = $(prefix)
 libdir = ${exec_prefix}/lib
-prefix = /usr/local
-phplibdir = /storage/SF.NET/BARTLBY/GIT/bartlby-php/modules
-phpincludedir = /usr/local/include/php
+prefix = /usr
+phplibdir = /usr/local/src/bartlby-php/modules
+phpincludedir = /usr/include/php5
 CC = cc
 CFLAGS = -g -O2
 CFLAGS_CLEAN = $(CFLAGS)
@@ -31,16 +31,16 @@ CPPFLAGS = -DHAVE_CONFIG_H
 CXX =
 CXXFLAGS =
 CXXFLAGS_CLEAN = $(CXXFLAGS)
-EXTENSION_DIR = /usr/local/lib/php/extensions/no-debug-zts-20090626
-PHP_EXECUTABLE = /usr/local/bin/php
+EXTENSION_DIR = /usr/lib/php5/20100525
+PHP_EXECUTABLE = /usr/bin/php
 EXTRA_LDFLAGS =
 EXTRA_LIBS =
-INCLUDES = -I/usr/local/include/php -I/usr/local/include/php/main -I/usr/local/include/php/TSRM -I/usr/local/include/php/Zend -I/usr/local/include/php/ext -I/usr/local/include/php/ext/date/lib
+INCLUDES = -I/usr/include/php5 -I/usr/include/php5/main -I/usr/include/php5/TSRM -I/usr/include/php5/Zend -I/usr/include/php5/ext -I/usr/include/php5/ext/date/lib
 LFLAGS =
 LDFLAGS =
 SHARED_LIBTOOL =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
-SHELL = /bin/sh
+SHELL = /bin/bash
 INSTALL_HEADERS =
 mkinstalldirs = $(top_srcdir)/build/shtool mkdir -p
 INSTALL = $(top_srcdir)/build/shtool install -c
@@ -56,6 +56,8 @@ all: $(all_targets)
 	@echo
 	
 build-modules: $(PHP_MODULES) $(PHP_ZEND_EX)
+
+build-binaries: $(PHP_BINARIES)
 
 libphp$(PHP_MAJOR_VERSION).la: $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS)
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(EXTRA_CFLAGS) -rpath $(phptempdir) $(EXTRA_LDFLAGS) $(LDFLAGS) $(PHP_RPATHS) $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS) $(EXTRA_LIBS) $(ZEND_EXTRA_LIBS) -o $@
@@ -78,6 +80,8 @@ install-sapi: $(OVERALL_TARGET)
 		done; \
 	fi
 	@$(INSTALL_IT)
+
+install-binaries: build-binaries $(install_binary_targets)
 
 install-modules: build-modules
 	@test -d modules && \
@@ -123,7 +127,7 @@ PHP_TEST_SHARED_EXTENSIONS =  ` \
 			. $$i; $(top_srcdir)/build/shtool echo -n -- " -d $(ZEND_EXT_TYPE)=$(top_builddir)/modules/$$dlname"; \
 		done; \
 	fi`
-PHP_DEPRECATED_DIRECTIVES_REGEX = '^(define_syslog_variables|register_(globals|long_arrays)?|safe_mode|magic_quotes_(gpc|runtime|sybase)?|(zend_)?extension(_debug)?(_ts)?)[\t\ ]*='
+PHP_DEPRECATED_DIRECTIVES_REGEX = '^(magic_quotes_(gpc|runtime|sybase)?|(zend_)?extension(_debug)?(_ts)?)[\t\ ]*='
 
 test: all
 	-@if test ! -z "$(PHP_EXECUTABLE)" && test -x "$(PHP_EXECUTABLE)"; then \
@@ -161,8 +165,8 @@ distclean: clean
 
 .PHONY: all clean install distclean test
 .NOEXPORT:
-bartlby.lo: /storage/SF.NET/BARTLBY/GIT/bartlby-php/bartlby.c
-	$(LIBTOOL) --mode=compile $(CC)  -I. -I/storage/SF.NET/BARTLBY/GIT/bartlby-php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)  -c /storage/SF.NET/BARTLBY/GIT/bartlby-php/bartlby.c -o bartlby.lo 
+bartlby.lo: /usr/local/src/bartlby-php/bartlby.c
+	$(LIBTOOL) --mode=compile $(CC)  -I. -I/usr/local/src/bartlby-php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)  -c /usr/local/src/bartlby-php/bartlby.c -o bartlby.lo 
 $(phplibdir)/bartlby.la: ./bartlby.la
 	$(LIBTOOL) --mode=install cp ./bartlby.la $(phplibdir)
 
