@@ -3480,7 +3480,7 @@ PHP_FUNCTION(bartlby_get_servergroup) {
 	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
 	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 	
-	if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->dtcount-1) {
+	if(Z_LVAL_P(bartlby_servergroup_id) > shm_hdr->srvgroupcount-1) {
 		php_error(E_WARNING, "Server id out of bounds");	
 		RETURN_FALSE;	
 	}
@@ -3558,7 +3558,7 @@ PHP_FUNCTION(bartlby_get_servicegroup) {
 	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
 	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 	
-	if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->dtcount-1) {
+	if(Z_LVAL_P(bartlby_servicegroup_id) > shm_hdr->svcgroupcount-1) {
 		php_error(E_WARNING, "Server id out of bounds");	
 		RETURN_FALSE;	
 	}
