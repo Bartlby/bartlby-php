@@ -52,6 +52,7 @@ extern zend_module_entry bartlby_module_entry;
 
 #include <sys/types.h>
 #include <sys/shm.h>
+#include <sys/times.h> 
 
 #define LOAD_SYMBOL(x,y,z) 	x=dlsym(y, z); \
     	if((dlmsg=dlerror()) != NULL) { \
@@ -103,8 +104,6 @@ PHP_RSHUTDOWN_FUNCTION(bartlby);
 PHP_MINFO_FUNCTION(bartlby);
 
 PHP_FUNCTION(confirm_bartlby_compiled);	/* For testing, remove later. */
-PHP_FUNCTION(bartlby_get_worker);	/* For testing, remove later. */
-PHP_FUNCTION(bartlby_get_service);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_get_info);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_version);
 PHP_FUNCTION(bartlby_config);
@@ -113,6 +112,15 @@ PHP_FUNCTION(bartlby_add_server);
 PHP_FUNCTION(bartlby_delete_server);
 PHP_FUNCTION(bartlby_modify_server);
 PHP_FUNCTION(bartlby_get_server_by_id);
+
+PHP_FUNCTION(bartlby_get_worker);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_service);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_server);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_downtime);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_servergroup);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_servicegroup);	/* For testing, remove later. */
+
+
 
 PHP_FUNCTION(bartlby_encode);
 PHP_FUNCTION(bartlby_decode);
@@ -130,21 +138,22 @@ PHP_FUNCTION(bartlby_modify_worker);
 PHP_FUNCTION(bartlby_get_worker_by_id);
 
 PHP_FUNCTION(bartlby_add_downtime);
-PHP_FUNCTION(bartlby_downtime_map);
+//PHP_FUNCTION(bartlby_downtime_map);
 PHP_FUNCTION(bartlby_modify_downtime);
 PHP_FUNCTION(bartlby_delete_downtime);
 
 PHP_FUNCTION(bartlby_reload);
-PHP_FUNCTION(bartlby_svc_map);
+//PHP_FUNCTION(bartlby_svc_map);
+//PHP_FUNCTION(bartlby_svc_map_test);
 PHP_FUNCTION(bartlby_shm_destroy);
 
 
 PHP_FUNCTION(bartlby_add_servergroup);
-PHP_FUNCTION(bartlby_servergroup_map);
+//PHP_FUNCTION(bartlby_servergroup_map);
 PHP_FUNCTION(bartlby_modify_servergroup);
 PHP_FUNCTION(bartlby_delete_servergroup);
 PHP_FUNCTION(bartlby_add_servicegroup);
-PHP_FUNCTION(bartlby_servicegroup_map);
+//PHP_FUNCTION(bartlby_servicegroup_map);
 PHP_FUNCTION(bartlby_modify_servicegroup);
 PHP_FUNCTION(bartlby_delete_servicegroup);
 PHP_FUNCTION(bartlby_toggle_servicegroup_notify);
@@ -248,13 +257,17 @@ struct sprocess {
 		
 };
 
-struct sched_threads {
+struct sched_worker {
 	int pid;
 	struct service * svc;
 	int start_time;
-	int its_over;
-} astt;
+	int  idle;
+	int shutdown;
+	struct tms timing;
+	int idx;
+	
 
+} astt;
 
 
 struct shm_header {
@@ -276,6 +289,7 @@ struct shm_header {
 	int cur_event_index;
 	long checks_performed;
 	int checks_performed_time;
+	struct  sched_worker worker_threads[50];
 	
 	
 };
