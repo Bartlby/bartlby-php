@@ -3698,9 +3698,11 @@ PHP_FUNCTION(bartlby_get_server) {
 			add_next_index_zval(groups, groupinfo);
 				
 		}
+		
+		add_assoc_zval(return_value, "groups", groups);
 	}		
 		
-	add_assoc_zval(return_value, "groups", groups);
+
 	for(y=0; y<shm_hdr->dtcount; y++) {
 		if(current_time >= dtmap[y].downtime_from && current_time <= dtmap[y].downtime_to) {
 			if(dtmap[y].downtime_type ==  DT_SERVER) {
