@@ -34,6 +34,9 @@
 #define DT_SERVERGROUP 3
 #define DT_SERVICEGROUP 4
 
+#define SERVICE_UNHANDLED 0;
+#define SERVICE_HANDLED 1;
+
 #ifndef PHP_BARTLBY_H
 #define PHP_BARTLBY_H
 
@@ -167,6 +170,7 @@ PHP_FUNCTION(bartlby_set_servicegroup_id);
 
 
 PHP_FUNCTION(bartlby_toggle_service_notify);
+PHP_FUNCTION(bartlby_toggle_service_handled);
 PHP_FUNCTION(bartlby_toggle_server_notify);
 PHP_FUNCTION(bartlby_toggle_service_active);
 PHP_FUNCTION(bartlby_toggle_server_active);
@@ -398,6 +402,7 @@ struct service {
 	
 	long fires_events;
 	char enabled_triggers[512];
+	int handled;
 };
 
 struct servicegroup {
