@@ -117,6 +117,7 @@ zend_function_entry bartlby_functions[] = {
 	
 	
 	PHP_FE(bartlby_toggle_service_notify, NULL)
+	PHP_FE(bartlby_toggle_service_handled, NULL)
 	PHP_FE(bartlby_toggle_server_notify, NULL)
 	PHP_FE(bartlby_toggle_service_active, NULL)
 	PHP_FE(bartlby_toggle_server_active, NULL)
@@ -1253,6 +1254,50 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	RETURN_LONG(r);
 			
 }
+PHP_FUNCTION(bartlby_toggle_service_handled) {
+	zval * zbartlby_resource;
+	zval * bartlby_service_id;
+	zval * do_writeback;
+	struct shm_header * shm_hdr;
+	int r;
+	struct service * svcmap; 
+	char * dlmsg;
+	int (*UpdateService)(struct service *, char *);
+	bartlby_res * bres;
+	
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	convert_to_long(bartlby_service_id);
+	convert_to_long(do_writeback);
+	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
+	
+	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+		
+		
+	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
+		php_error(E_WARNING, "Service id out of bounds");	
+		RETURN_FALSE;	
+	}
+	if(svcmap[Z_LVAL_P(bartlby_service_id)].handled == 1) {
+		svcmap[Z_LVAL_P(bartlby_service_id)].handled = 0;
+		r=0;
+	} else {
+		svcmap[Z_LVAL_P(bartlby_service_id)].handled = 1;	
+		r=1;
+	}
+	if(Z_LVAL_P(do_writeback) == 1) {
+		LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
+		UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
+		
+	}
+		
+	RETURN_LONG(r);
+		
+}
 
 PHP_FUNCTION(bartlby_toggle_service_notify) {
 	zval * zbartlby_resource;
@@ -2323,6 +2368,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_long(return_value, "service_snmp_type",svc.snmp_info.type);
 		
 		add_assoc_long(return_value, "flap_seconds",svc.flap_seconds);
+		add_assoc_long(return_value, "handled",svc.handled);
 		
 		
 		//svc.renotify_interval, svc.escalate_divisor
@@ -2378,6 +2424,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	zval * renotify_interval;
 	zval * escalate_divisor;
 	zval * fires_events;
+	zval * handled;
 	zval * enabled_triggers;
 	zval ** temp_pp;
 	zval * options_array;	
@@ -2419,6 +2466,8 @@ PHP_FUNCTION(bartlby_modify_service) {
 	GETARRAY_EL_FROM_HASH(snmp_critical, "snmp_critical", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
+	GETARRAY_EL_FROM_HASH(handled, "handled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
@@ -2455,6 +2504,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	convert_to_long(fires_events);
 	
 	convert_to_string(exec_plan);
+	convert_to_long(handled);
 	
 	svc.service_id=Z_LVAL_P(service_id);
 	sprintf(svc.plugin, "%s", Z_STRVAL_P(plugin));
@@ -2491,7 +2541,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	svc.renotify_interval=Z_LVAL_P(renotify_interval);
 	svc.escalate_divisor=Z_LVAL_P(escalate_divisor);
 	svc.fires_events=Z_LVAL_P(fires_events);
-	
+	svc.handled=Z_LVAL_P(handled);
 	sprintf(svc.enabled_triggers, "%s", Z_STRVAL_P(enabled_triggers));
 	
 	
@@ -2569,7 +2619,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	zval * escalate_divisor;
 	zval * fires_events;
 	zval * enabled_triggers;
-	
+	zval * handled;
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2613,7 +2663,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(snmp_warning, "snmp_warning", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(snmp_critical, "snmp_critical", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
-	
+	GETARRAY_EL_FROM_HASH(handled, "handled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -2633,7 +2683,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	convert_to_long(service_retain);
 	convert_to_long(service_active);
 	convert_to_long(flap_seconds);
-	
+	convert_to_long(handled);
 	
 	convert_to_long(escalate_divisor);
 	convert_to_long(renotify_interval);
@@ -2681,7 +2731,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc.snmp_info.crit=Z_LVAL_P(snmp_critical);
 	svc.snmp_info.type=Z_LVAL_P(snmp_type);
 	svc.service_active=Z_LVAL_P(service_active);
-	
+	svc.handled=Z_LVAL_P(handled);
 	sprintf(svc.enabled_triggers, "%s", Z_STRVAL_P(enabled_triggers));
 	
 	
@@ -3253,9 +3303,10 @@ PHP_FUNCTION(bartlby_get_service) {
 	add_assoc_long(return_value, "escalate_divisor",svcmap[Z_LVAL_P(bartlby_service_id)].escalate_divisor);
 	add_assoc_long(return_value, "fires_events",svcmap[Z_LVAL_P(bartlby_service_id)].fires_events);
 	add_assoc_long(return_value, "is_gone",svcmap[Z_LVAL_P(bartlby_service_id)].is_gone);
+	add_assoc_long(return_value, "handled",svcmap[Z_LVAL_P(bartlby_service_id)].handled);
 			
 	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
-			
+	
 		
 	//Downtime 060120
 	is_down=0;
