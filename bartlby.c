@@ -297,7 +297,7 @@ void * bartlby_get_shm(char * cfgfile) {
 		bartlby_address=shmat(shm_id,NULL,0);
 		return bartlby_address;
 	} else {
-		php_error(E_ERROR, "cannot attach to SHM");	
+		php_error(E_WARNING, "cannot attach to SHM");	
 		return NULL;
 	}
 }
@@ -484,7 +484,9 @@ PHP_FUNCTION(bartlby_new) {
   res->SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
   res->bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
   
-  
+  if(res->bartlby_address == NULL) {
+  	RETURN_FALSE;
+  }
   
   ZEND_REGISTER_RESOURCE(return_value, res, le_bartlby);
   	
