@@ -268,12 +268,12 @@ void * bartlby_get_sohandle(char * cfgfile) {
 	
 	data_lib=getConfigValue("data_library", cfgfile);
 	if(data_lib == NULL) {
-		php_error(E_ERROR, "cannot find data_lib key in %s", cfgfile);	
+		php_error(E_WARNING, "cannot find data_lib key in %s", cfgfile);	
 		return NULL;
 	}
 	SOHandle=dlopen(data_lib, RTLD_LAZY);
 	if((dlmsg=dlerror()) != NULL) {
-		php_error(E_ERROR, "DL Error: %s", dlmsg);
+		php_error(E_WARNING, "DL Error: %s", dlmsg);
         	return NULL;
     	}	
     	free(data_lib);
@@ -484,7 +484,7 @@ PHP_FUNCTION(bartlby_new) {
   res->SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
   res->bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
   
-  if(res->bartlby_address == NULL) {
+  if(res->bartlby_address == NULL || res->SOHandle == NULL) {
   	RETURN_FALSE;
   }
   
