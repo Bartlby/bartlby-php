@@ -2360,14 +2360,14 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_string(return_value, "service_var", svc.service_var, 1);
 
 		
-		add_assoc_string(return_value, "service_snmp_community", svc.snmp_info.community, 1);
-		add_assoc_string(return_value, "service_snmp_textmatch", svc.snmp_info.textmatch, 1);
-		add_assoc_string(return_value, "service_snmp_objid", svc.snmp_info.objid, 1);
+		add_assoc_string(return_value, "snmp_community", svc.snmp_info.community, 1);
+		add_assoc_string(return_value, "snmp_textmatch", svc.snmp_info.textmatch, 1);
+		add_assoc_string(return_value, "snmp_objid", svc.snmp_info.objid, 1);
 		
-		add_assoc_long(return_value, "service_snmp_warning",svc.snmp_info.warn);
-		add_assoc_long(return_value, "service_snmp_critical",svc.snmp_info.crit);
-		add_assoc_long(return_value, "service_snmp_version",svc.snmp_info.version);
-		add_assoc_long(return_value, "service_snmp_type",svc.snmp_info.type);
+		add_assoc_long(return_value, "snmp_warning",svc.snmp_info.warn);
+		add_assoc_long(return_value, "snmp_critical",svc.snmp_info.crit);
+		add_assoc_long(return_value, "snmp_version",svc.snmp_info.version);
+		add_assoc_long(return_value, "snmp_type",svc.snmp_info.type);
 		
 		add_assoc_long(return_value, "flap_seconds",svc.flap_seconds);
 		add_assoc_long(return_value, "handled",svc.handled);
@@ -3284,14 +3284,14 @@ PHP_FUNCTION(bartlby_get_service) {
 	add_assoc_string(return_value, "service_var",  svcmap[Z_LVAL_P(bartlby_service_id)].service_var, 1);
 	add_assoc_string(return_value, "server_icon",  srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_icon, 1);
 	
-	add_assoc_string(return_value, "service_snmp_community",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.community, 1);
-	add_assoc_string(return_value, "service_snmp_textmatch",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.textmatch, 1);
-	add_assoc_string(return_value, "service_snmp_objid",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.objid, 1);
+	add_assoc_string(return_value, "snmp_community",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.community, 1);
+	add_assoc_string(return_value, "snmp_textmatch",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.textmatch, 1);
+	add_assoc_string(return_value, "snmp_objid",  svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.objid, 1);
 	
-	add_assoc_long(return_value, "service_snmp_warning", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.warn);
-	add_assoc_long(return_value, "service_snmp_critical", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.crit);
-	add_assoc_long(return_value, "service_snmp_version", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.version);
-	add_assoc_long(return_value, "service_snmp_type", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.type);
+	add_assoc_long(return_value, "snmp_warning", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.warn);
+	add_assoc_long(return_value, "snmp_critical", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.crit);
+	add_assoc_long(return_value, "snmp_version", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.version);
+	add_assoc_long(return_value, "snmp_type", svcmap[Z_LVAL_P(bartlby_service_id)].snmp_info.type);
 	
 	add_assoc_long(return_value, "flap_seconds", svcmap[Z_LVAL_P(bartlby_service_id)].flap_seconds);
 	
