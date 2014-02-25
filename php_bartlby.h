@@ -321,6 +321,7 @@ struct server {
   char server_ssh_passphrase[512];
   char server_ssh_username[512];
   char enabled_triggers[512];
+  int default_service_type;
 } xxyz;
 
 

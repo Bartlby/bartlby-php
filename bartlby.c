@@ -2766,7 +2766,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval * server_ssh_passphrase;
 	zval * server_ssh_username;
 	zval * enabled_triggers;
-	
+	zval * default_service_type;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -2805,10 +2805,11 @@ PHP_FUNCTION(bartlby_add_server) {
 	GETARRAY_EL_FROM_HASH(server_ssh_passphrase, "server_ssh_passphrase", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
-	
+	GETARRAY_EL_FROM_HASH(default_service_type, "default_service_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-
+	convert_to_long(default_service_type);
 	convert_to_string(server_name);
 	convert_to_string(server_ip);
 	convert_to_long(server_port);
@@ -2837,6 +2838,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	srv.server_flap_seconds=Z_LVAL_P(server_flap_seconds);
 	srv.server_notify=Z_LVAL_P(server_notify);
 	srv.server_dead=Z_LVAL_P(server_dead);
+	srv.default_service_type=Z_LVAL_P(default_service_type);
 	
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
@@ -2864,7 +2866,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval * server_ssh_passphrase;
 	zval * server_ssh_username;
 	zval * enabled_triggers;
-	
+	zval * default_service_type;
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2897,9 +2899,11 @@ PHP_FUNCTION(bartlby_modify_server) {
 	GETARRAY_EL_FROM_HASH(server_ssh_passphrase, "server_ssh_passphrase", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
+	GETARRAY_EL_FROM_HASH(default_service_type, "default_service_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-
+	convert_to_long(default_service_type);
 	convert_to_long(server_id);
 	convert_to_string(enabled_triggers);
 	convert_to_string(server_name);
@@ -2930,8 +2934,8 @@ PHP_FUNCTION(bartlby_modify_server) {
 	srv.server_enabled=Z_LVAL_P(server_enabled);
 	srv.server_flap_seconds=Z_LVAL_P(server_flap_seconds);
 	srv.server_notify=Z_LVAL_P(server_notify);
-	
 	srv.server_dead=Z_LVAL_P(server_dead);
+	srv.default_service_type=Z_LVAL_P(default_service_type);
 	
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
@@ -3005,6 +3009,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		add_assoc_long(return_value, "server_port",svc.client_port);
 		add_assoc_long(return_value, "server_id",Z_LVAL_P(server_id));
 		
+		add_assoc_long(return_value, "default_service_type",svc.default_service_type);
 		
 		shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
 		svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
@@ -3709,6 +3714,9 @@ PHP_FUNCTION(bartlby_get_server) {
 	add_assoc_string(return_value, "server_ssh_passphrase", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_passphrase, 1);
 	add_assoc_string(return_value, "server_ssh_username", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_username, 1);
 	add_assoc_string(return_value, "server_enabled_triggers", srvmap[Z_LVAL_P(bartlby_server_id)].enabled_triggers, 1);
+
+	add_assoc_long(return_value, "default_service_type",srvmap[Z_LVAL_P(bartlby_server_id)].default_service_type);
+	
 		
 	add_assoc_string(return_value, "server_icon", srvmap[Z_LVAL_P(bartlby_server_id)].server_icon, 1);
 	add_assoc_long(return_value, "server_port",srvmap[Z_LVAL_P(bartlby_server_id)].client_port);
