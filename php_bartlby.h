@@ -441,7 +441,7 @@ struct worker {
 	char name[2048];
 	char  mail[2048];
 	char  icq[2048];
-	char  services[2048];
+	
 	
 	long worker_id;
 	int active;
@@ -456,6 +456,13 @@ struct worker {
 	long escalation_limit;
 	long escalation_minutes;
 	int is_gone;
+
+	char  visible_services[2048];
+	char  visible_servers[2048];
+	char  selected_services[2048];
+	char  selected_servers[2048];
+
+
 }sa;
 
 

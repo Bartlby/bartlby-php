@@ -1955,7 +1955,12 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval * zbartlby_resource;
 	zval * mail;
 	zval * icq;
-	zval * services;
+	zval * selected_services;
+	zval * visible_services;
+
+	zval * selected_servers;
+	zval * visible_servers;
+	
 	zval * notify_levels;
 	zval * active;
 	zval * name;
@@ -1987,26 +1992,35 @@ PHP_FUNCTION(bartlby_add_worker) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(name, "name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
 	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(mail, "mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(icq, "icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(password, "password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(selected_services, "selected_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(selected_servers, "selected_servers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+
+	GETARRAY_EL_FROM_HASH(visible_services, "visible_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(visible_servers, "visible_servers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+
+
+	GETARRAY_EL_FROM_HASH(notify_levels, "notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
-	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(notify_plan, "notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
-	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
-	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
-	GETARRAY_EL_FROM_HASH(escalation_minutes, "worker_escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(active, "active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+	GETARRAY_EL_FROM_HASH(escalation_limit, "escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(escalation_minutes, "escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	convert_to_string(enabled_triggers);
 	convert_to_string(mail);
 	convert_to_string(icq);
 	convert_to_string(password);
-	convert_to_string(services);
+	convert_to_string(selected_services);
+	convert_to_string(selected_servers);
+	convert_to_string(visible_services);
+	convert_to_string(visible_servers);
 	convert_to_string(notify_levels);
 	convert_to_string(name);
 	convert_to_string(notify_plan);
@@ -2023,7 +2037,10 @@ PHP_FUNCTION(bartlby_add_worker) {
 	strcpy(svc.notify_plan, Z_STRVAL_P(notify_plan));
 	strcpy(svc.mail, Z_STRVAL_P(mail));
 	strcpy(svc.icq, Z_STRVAL_P(icq));
-	strcpy(svc.services, Z_STRVAL_P(services));
+	strcpy(svc.selected_services, Z_STRVAL_P(selected_services));
+	strcpy(svc.selected_servers, Z_STRVAL_P(selected_servers));
+	strcpy(svc.visible_servers, Z_STRVAL_P(visible_servers));
+	strcpy(svc.visible_services, Z_STRVAL_P(visible_services));
 	strcpy(svc.notify_levels, Z_STRVAL_P(notify_levels));
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	svc.active=Z_LVAL_P(active);
@@ -2063,7 +2080,10 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval * zbartlby_resource;
 	zval * mail;
 	zval * icq;
-	zval * services;
+	zval * visible_services;
+	zval * visible_servers;
+	zval * selected_services;
+	zval * selected_servers;
 	zval * notify_levels;
 	zval * active;
 	zval * name;
@@ -2094,18 +2114,22 @@ PHP_FUNCTION(bartlby_modify_worker) {
 		RETURN_BOOL(0);
 	}
 	
-	GETARRAY_EL_FROM_HASH(name, "worker_name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(name, "name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
 	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(mail, "worker_mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(icq, "worker_icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(password, "worker_password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
-	GETARRAY_EL_FROM_HASH(services, "worker_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(notify_levels, "worker_notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(notify_plan, "worker_notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	GETARRAY_EL_FROM_HASH(active, "worker_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
-	GETARRAY_EL_FROM_HASH(escalation_limit, "worker_escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
-	GETARRAY_EL_FROM_HASH(escalation_minutes, "worker_escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(mail, "mail", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(icq, "icq", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(password, "password", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
+	GETARRAY_EL_FROM_HASH(selected_services, "selected_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(selected_servers, "selected_servers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(visible_services, "visible_services", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(visible_servers, "visible_servers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(notify_levels, "notify_levels", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(notify_plan, "notify_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(active, "active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+	GETARRAY_EL_FROM_HASH(escalation_limit, "escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(escalation_minutes, "escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		
 	
@@ -2113,7 +2137,11 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	convert_to_string(mail);
 	convert_to_string(password);
 	convert_to_string(icq);
-	convert_to_string(services);
+	convert_to_string(visible_servers);
+	convert_to_string(visible_services);
+	convert_to_string(selected_servers);
+	convert_to_string(selected_services);
+
 	convert_to_string(notify_levels);
 	convert_to_string(name);
 	convert_to_long(active);
@@ -2131,7 +2159,11 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	strcpy(svc.name, Z_STRVAL_P(name));
 	strcpy(svc.mail, Z_STRVAL_P(mail));
 	strcpy(svc.icq, Z_STRVAL_P(icq));
-	strcpy(svc.services, Z_STRVAL_P(services));
+	strcpy(svc.selected_services, Z_STRVAL_P(selected_services));
+	strcpy(svc.selected_servers, Z_STRVAL_P(selected_servers));
+	strcpy(svc.visible_servers, Z_STRVAL_P(visible_servers));
+	strcpy(svc.visible_services, Z_STRVAL_P(visible_services));
+
 	strcpy(svc.notify_levels, Z_STRVAL_P(notify_levels));
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	svc.active=Z_LVAL_P(active);
@@ -2179,7 +2211,12 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 		add_assoc_string(return_value, "mail", svc.mail, 1);
 		add_assoc_string(return_value, "icq", svc.icq, 1);
 		add_assoc_string(return_value, "notify_plan", svc.notify_plan, 1);
-		add_assoc_string(return_value, "services", svc.services, 1);
+		add_assoc_string(return_value, "selected_services", svc.selected_services, 1);
+		add_assoc_string(return_value, "selected_servers", svc.selected_servers, 1);
+		add_assoc_string(return_value, "visible_servers", svc.visible_servers, 1);
+		add_assoc_string(return_value, "visible_services", svc.visible_services, 1);
+
+
 		add_assoc_string(return_value, "notify_levels", svc.notify_levels,1);
 		add_assoc_string(return_value, "name", svc.name,1);
 		add_assoc_string(return_value, "password", svc.password,1);
@@ -3824,8 +3861,14 @@ PHP_FUNCTION(bartlby_get_worker) {
 	add_assoc_string(return_value, "mail", wrkmap[Z_LVAL_P(bartlby_worker_id)].mail, 1);
 	add_assoc_string(return_value, "icq", wrkmap[Z_LVAL_P(bartlby_worker_id)].icq, 1);
 	add_assoc_string(return_value, "notify_plan", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_plan, 1);
-	add_assoc_string(return_value, "services", wrkmap[Z_LVAL_P(bartlby_worker_id)].services, 1);
+	add_assoc_string(return_value, "visible_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_services, 1);
+	add_assoc_string(return_value, "selected_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_services, 1);
 	
+
+	add_assoc_string(return_value, "visible_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_servers, 1);
+	add_assoc_string(return_value, "selected_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_servers, 1);
+	
+
 	add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels,1);
 	add_assoc_string(return_value, "name", wrkmap[Z_LVAL_P(bartlby_worker_id)].name,1);
 	add_assoc_string(return_value, "password", wrkmap[Z_LVAL_P(bartlby_worker_id)].password,1);
