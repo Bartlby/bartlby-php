@@ -162,7 +162,7 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_get_core_extension_info,NULL)
 	
 	
-	
+	PHP_FE(bartlby_notification_log_at_index, NULL)
 	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
 };
@@ -964,6 +964,51 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	r=1;
 	RETURN_LONG(r);
 		
+}
+PHP_FUNCTION(bartlby_notification_log_at_index) {
+		zval * zbartlby_resource;
+		zval * idx;
+		struct shm_header * shm_hdr;
+		bartlby_res * bres;
+		/*
+int notification_valid; //-1 invalid == end of list
+	long worker_id; //Worker id
+	long service_id; //Service_id
+	int state; //State
+	int aggregated; //Default -1 > 0 - this notification has already been aggregated
+	char trigger_name[512];
+	int type; // 0 if it was a normal notification, 1 = it was a escalation notification to the standby's
+	time_t time;
+	int aggregation_interval;
+		*/
+
+		if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &idx)==FAILURE) {
+			WRONG_PARAM_COUNT;
+		}
+
+		ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+		convert_to_long(idx);
+
+
+		if(Z_LVAL_P(idx) < 0 || Z_LVAL_P(idx) >= NOTIFICATION_LOG_MAX) {
+			RETURN_FALSE;
+		}
+		if (array_init(return_value) == FAILURE) {
+			RETURN_FALSE;
+		}
+		shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+
+		add_assoc_long(return_value, "notification_valid", shm_hdr->notification_log[Z_LVAL_P(idx)].notification_valid);
+		add_assoc_long(return_value, "worker_id", shm_hdr->notification_log[Z_LVAL_P(idx)].worker_id);
+		add_assoc_long(return_value, "service_id", shm_hdr->notification_log[Z_LVAL_P(idx)].service_id);
+		add_assoc_long(return_value, "state", shm_hdr->notification_log[Z_LVAL_P(idx)].state);
+		add_assoc_long(return_value, "aggregated", shm_hdr->notification_log[Z_LVAL_P(idx)].aggregated);
+		add_assoc_long(return_value, "type", shm_hdr->notification_log[Z_LVAL_P(idx)].type);
+		add_assoc_long(return_value, "time", shm_hdr->notification_log[Z_LVAL_P(idx)].time);
+		add_assoc_long(return_value, "aggregation_interval", shm_hdr->notification_log[Z_LVAL_P(idx)].aggregation_interval);
+		add_assoc_string(return_value, "trigger_name", shm_hdr->notification_log[Z_LVAL_P(idx)].trigger_name, 1);
+		
+
 }
 PHP_FUNCTION(bartlby_get_core_extension_info) {
 	//FIXME LOOK AT THIS if it could fit with RESOURCE
@@ -1969,6 +2014,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval * escalation_limit;
 	zval * escalation_minutes;
 	zval * notify_plan;
+
+	zval * is_super_user;
+	zval * notification_aggregation_interval;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -2012,6 +2060,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	GETARRAY_EL_FROM_HASH(escalation_limit, "escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(escalation_minutes, "escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
+	GETARRAY_EL_FROM_HASH(is_super_user, "is_super_user", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(notification_aggregation_interval, "notification_aggregation_interval", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	
 	
 	convert_to_string(enabled_triggers);
 	convert_to_string(mail);
@@ -2027,7 +2078,8 @@ PHP_FUNCTION(bartlby_add_worker) {
 	convert_to_long(active);
 	convert_to_long(escalation_limit);
 	convert_to_long(escalation_minutes);
-	
+	convert_to_long(notification_aggregation_interval);
+	convert_to_long(is_super_user);
 	
 	
 	LOAD_SYMBOL(AddWorker,bres->SOHandle, "AddWorker");
@@ -2047,6 +2099,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
 	
+	svc.is_super_user=Z_LVAL_P(is_super_user);
+	svc.notification_aggregation_interval=Z_LVAL_P(notification_aggregation_interval);
+
 	ret=AddWorker(&svc, bres->cfgfile);
 	RETURN_LONG(ret);	
 }
@@ -2093,7 +2148,9 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval * escalation_limit;
 	zval * escalation_minutes;
 	zval * notify_plan;
-	
+	zval * is_super_user;
+	zval * notification_aggregation_interval;
+
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2128,7 +2185,9 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	GETARRAY_EL_FROM_HASH(active, "active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
 	GETARRAY_EL_FROM_HASH(escalation_limit, "escalation_limit", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(escalation_minutes, "escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
-	
+	GETARRAY_EL_FROM_HASH(is_super_user, "is_super_user", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(notification_aggregation_interval, "notification_aggregation_interval", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+		
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		
@@ -2151,6 +2210,8 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	convert_to_long(escalation_limit);
 	convert_to_long(escalation_minutes);
 	
+	convert_to_long(notification_aggregation_interval);
+	convert_to_long(is_super_user);
 		
 	LOAD_SYMBOL(UpdateWorker,bres->SOHandle, "UpdateWorker");
 	
@@ -2172,6 +2233,9 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
 	
+	svc.is_super_user=Z_LVAL_P(is_super_user);
+	svc.notification_aggregation_interval=Z_LVAL_P(notification_aggregation_interval);
+
 	ret=UpdateWorker(&svc, bres->cfgfile);
 	
 	bartlby_mark_object_gone(bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
@@ -2225,6 +2289,8 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 		add_assoc_long(return_value, "active", svc.active);
 		add_assoc_long(return_value, "escalation_limit", svc.escalation_limit);
 		add_assoc_long(return_value, "escalation_minutes", svc.escalation_minutes);
+		add_assoc_long(return_value, "is_super_user", svc.is_super_user);
+		add_assoc_long(return_value, "notification_aggregation_interval", svc.notification_aggregation_interval);
 	}
 		
 }
@@ -3881,6 +3947,8 @@ PHP_FUNCTION(bartlby_get_worker) {
 	add_assoc_long(return_value, "active", wrkmap[Z_LVAL_P(bartlby_worker_id)].active);
 	add_assoc_long(return_value, "is_gone", wrkmap[Z_LVAL_P(bartlby_worker_id)].is_gone);		
 
+	add_assoc_long(return_value, "is_super_user", wrkmap[Z_LVAL_P(bartlby_worker_id)].is_super_user);		
+	add_assoc_long(return_value, "notification_aggregation_interval", wrkmap[Z_LVAL_P(bartlby_worker_id)].notification_aggregation_interval);		
 	
 	
 }

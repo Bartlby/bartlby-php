@@ -2,8 +2,9 @@
 //testing 1231
 $cfg = "/opt/bartlby/etc/bartlby.cfg";
 $r = bartlby_new($cfg);
-$v = bartlby_get_servergroup($r, 0);
+$v = bartlby_notification_log_at_index($r, 511);
 var_dump($v);
+
 exit;
 $cfg = "/storage/SF.NET/BARTLBY/GIT/bartlby-core/bartlby.cfg";
 $map = bartlby_svc_map($cfg, null, null);

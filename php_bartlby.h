@@ -204,6 +204,10 @@ PHP_FUNCTION(bartlby_new);
 PHP_FUNCTION(bartlby_close);
 
 
+//Notitification Log
+
+PHP_FUNCTION(bartlby_notification_log_at_index);
+
 PHP_METHOD(Bartlby, testFunc);
 
 
@@ -273,6 +277,20 @@ struct sched_worker {
 
 } astt;
 
+struct notification_log_entry {
+	int notification_valid; //-1 invalid == end of list
+	long worker_id; //Worker id
+	long service_id; //Service_id
+	int state; //State
+	int aggregated; //Default -1 > 0 - this notification has already been aggregated
+	char trigger_name[512];
+	int type; // 0 if it was a normal notification, 1 = it was a escalation notification to the standby's
+	time_t time;
+	int aggregation_interval;
+};
+#define NOTIFICATION_LOG_MAX 512
+
+
 
 struct shm_header {
 	long size_of_structs;
@@ -294,6 +312,9 @@ struct shm_header {
 	long checks_performed;
 	int checks_performed_time;
 	struct  sched_worker worker_threads[50];
+	struct notification_log_entry notification_log[NOTIFICATION_LOG_MAX];
+	long notification_log_current_top;	
+	time_t notification_log_aggregate_last_run;
 	
 	
 };
@@ -461,6 +482,8 @@ struct worker {
 	char  visible_servers[2048];
 	char  selected_services[2048];
 	char  selected_servers[2048];
+	int  notification_aggregation_interval;
+	int is_super_user;
 
 
 }sa;
