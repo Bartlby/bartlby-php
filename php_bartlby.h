@@ -273,7 +273,7 @@ struct sched_worker {
 	int shutdown;
 	struct tms timing;
 	int idx;
-	
+
 
 } astt;
 
@@ -289,7 +289,6 @@ struct notification_log_entry {
 	int aggregation_interval;
 };
 #define NOTIFICATION_LOG_MAX 512
-
 
 
 struct shm_header {
@@ -316,7 +315,6 @@ struct shm_header {
 	long notification_log_current_top;	
 	time_t notification_log_aggregate_last_run;
 	
-	
 };
 
 struct server {
@@ -331,6 +329,7 @@ struct server {
 	long server_flap_seconds;
 	int flap_count;
 	int last_notify_send;
+	
 	struct service * dead_marker;
 	int is_gone;
 	
@@ -339,10 +338,12 @@ struct server {
 	long servergroup_place[MAX_GROUP_MEMBERS];
 	
 	char server_ssh_keyfile[512];
-  char server_ssh_passphrase[512];
-  char server_ssh_username[512];
-  char enabled_triggers[512];
-  int default_service_type;
+	char server_ssh_passphrase[512];
+	char server_ssh_username[512];
+	
+	char enabled_triggers[512];
+	int default_service_type;
+	int orch_id;
 } xxyz;
 
 
@@ -380,13 +381,14 @@ struct service {
 	long service_passive_timeout;
 	
 	int notify_last_state;
-
+	
 	long service_check_timeout;
 	
 	
 	
 	int service_ack_enabled;
 	int service_ack_current;
+	
 	
 	long service_retain;
 	long service_retain_current;
@@ -423,8 +425,11 @@ struct service {
 	long servicegroup_place[MAX_GROUP_MEMBERS];
 	
 	long fires_events;
+	
 	char enabled_triggers[512];
+
 	int handled;
+	int orch_id;
 };
 
 struct servicegroup {
@@ -433,10 +438,12 @@ struct servicegroup {
 	int servicegroup_notify;
 	int servicegroup_active;
 	char servicegroup_members[GROUP_MEMBER_STR_LENGTH];
+	
 	int servicegroup_dead;
 	struct service * dead_marker;
-	char enabled_triggers[512];
 	
+	char enabled_triggers[512];
+	int orch_id;
 };
 
 struct servergroup {
@@ -447,14 +454,16 @@ struct servergroup {
 	char servergroup_members[GROUP_MEMBER_STR_LENGTH];
 	int servergroup_dead;
 	struct service * dead_marker;
-	
 	char enabled_triggers[512];
-	
+	int orch_id;
 };
 
 
 struct service_sort {
 	struct service * svc;	
+};
+struct sched_worker_sort {
+	struct sched_worker * th;
 };
 
 
@@ -485,7 +494,7 @@ struct worker {
 	int  notification_aggregation_interval;
 	int is_super_user;
 
-
+	int orch_id;
 }sa;
 
 
@@ -498,6 +507,9 @@ struct downtime {
 	int service_id;
 	
 	int is_gone;
+
+	int orch_id;
+	
 }sb;
 
 struct btl_event {
@@ -540,4 +552,5 @@ typedef struct port_packet_struct{
 	
 	 
 } portier_packet;
+
 
