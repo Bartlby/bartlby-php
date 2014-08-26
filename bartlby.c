@@ -628,6 +628,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	zval * downtime_notice;
 	zval * downtime_service;
 	zval * downtime_id;
+	zval * orch_id;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -659,7 +660,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	GETARRAY_EL_FROM_HASH(downtime_type, "downtime_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(downtime_service, "downtime_service", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(downtime_notice, "downtime_notice", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default notice");
-	
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	convert_to_long(downtime_from);
@@ -668,6 +669,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	convert_to_long(downtime_service);
 	convert_to_long(downtime_id);
 	convert_to_string(downtime_notice);
+	convert_to_long(orch_id);
 	
 	
 	
@@ -679,7 +681,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	svc.downtime_type=Z_LVAL_P(downtime_type);
 	svc.service_id=Z_LVAL_P(downtime_service);
 	svc.downtime_id=Z_LVAL_P(downtime_id);
-	
+	svc.orch_id=Z_LVAL_P(orch_id);
 	ret=UpdateDowntime(&svc, bres->cfgfile);
 	
 	RETURN_LONG(ret);		
@@ -695,6 +697,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	zval * downtime_type;
 	zval * downtime_notice;
 	zval * downtime_service;
+	zval * orch_id;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -723,6 +726,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	GETARRAY_EL_FROM_HASH(downtime_type, "downtime_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(downtime_service, "downtime_service", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(downtime_notice, "downtime_notice", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default notice");
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	
@@ -732,7 +736,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	convert_to_long(downtime_to);
 	convert_to_long(downtime_type);
 	convert_to_long(downtime_service);
-	
+	convert_to_long(orch_id);
 	convert_to_string(downtime_notice);
 		
 	
@@ -745,6 +749,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	svc.downtime_to=Z_LVAL_P(downtime_to);
 	svc.downtime_type=Z_LVAL_P(downtime_type);
 	svc.service_id=Z_LVAL_P(downtime_service);
+	svc.orch_id=Z_LVAL_P(orch_id);
 	ret=AddDowntime(&svc, bres->cfgfile);
 	
 	RETURN_LONG(ret);	
@@ -2014,6 +2019,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval * escalation_limit;
 	zval * escalation_minutes;
 	zval * notify_plan;
+	zval * orch_id;
 
 	zval * is_super_user;
 	zval * notification_aggregation_interval;
@@ -2062,6 +2068,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	
 	GETARRAY_EL_FROM_HASH(is_super_user, "is_super_user", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(notification_aggregation_interval, "notification_aggregation_interval", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	convert_to_string(enabled_triggers);
@@ -2080,7 +2087,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	convert_to_long(escalation_minutes);
 	convert_to_long(notification_aggregation_interval);
 	convert_to_long(is_super_user);
-	
+	convert_to_long(orch_id);
 	
 	LOAD_SYMBOL(AddWorker,bres->SOHandle, "AddWorker");
 	
@@ -2101,6 +2108,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	
 	svc.is_super_user=Z_LVAL_P(is_super_user);
 	svc.notification_aggregation_interval=Z_LVAL_P(notification_aggregation_interval);
+	svc.orch_id=Z_LVAL_P(orch_id);
 
 	ret=AddWorker(&svc, bres->cfgfile);
 	RETURN_LONG(ret);	
@@ -2148,6 +2156,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval * escalation_limit;
 	zval * escalation_minutes;
 	zval * notify_plan;
+	zval * orch_id;
 	zval * is_super_user;
 	zval * notification_aggregation_interval;
 
@@ -2187,6 +2196,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	GETARRAY_EL_FROM_HASH(escalation_minutes, "escalation_minutes", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(is_super_user, "is_super_user", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(notification_aggregation_interval, "notification_aggregation_interval", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 		
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -2209,7 +2219,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	convert_to_long(worker_id);
 	convert_to_long(escalation_limit);
 	convert_to_long(escalation_minutes);
-	
+	convert_to_long(orch_id);
 	convert_to_long(notification_aggregation_interval);
 	convert_to_long(is_super_user);
 		
@@ -2234,6 +2244,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
 	
 	svc.is_super_user=Z_LVAL_P(is_super_user);
+	svc.orch_id=Z_LVAL_P(orch_id);
 	svc.notification_aggregation_interval=Z_LVAL_P(notification_aggregation_interval);
 
 	ret=UpdateWorker(&svc, bres->cfgfile);
@@ -2291,6 +2302,7 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 		add_assoc_long(return_value, "escalation_minutes", svc.escalation_minutes);
 		add_assoc_long(return_value, "is_super_user", svc.is_super_user);
 		add_assoc_long(return_value, "notification_aggregation_interval", svc.notification_aggregation_interval);
+		add_assoc_long(return_value, "orch_id", svc.orch_id);
 	}
 		
 }
@@ -2480,6 +2492,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_long(return_value, "renotify_interval",svc.renotify_interval);
 		add_assoc_long(return_value, "escalate_divisor",svc.escalate_divisor);
 		add_assoc_long(return_value, "fires_events",svc.fires_events);
+		add_assoc_long(return_value, "orch_id",svc.orch_id);
 		
 		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers, 1);
 		
@@ -2531,6 +2544,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	zval * fires_events;
 	zval * handled;
 	zval * enabled_triggers;
+	zval * orch_id;
 	zval ** temp_pp;
 	zval * options_array;	
 
@@ -2572,6 +2586,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
 	GETARRAY_EL_FROM_HASH(handled, "handled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -2582,6 +2597,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	convert_to_string(plugin_arguments);
 	convert_to_long(notify_enabled);
 	convert_to_long(server_id);
+	convert_to_long(orch_id);
 	convert_to_long(service_check_timeout);
 	convert_to_string(enabled_triggers);
 		
@@ -2639,7 +2655,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	svc.snmp_info.warn=Z_LVAL_P(snmp_warning);
 	svc.snmp_info.crit=Z_LVAL_P(snmp_critical);
 	svc.snmp_info.type=Z_LVAL_P(snmp_type);
-	
+	svc.orch_id=Z_LVAL_P(orch_id);
 	svc.service_active=Z_LVAL_P(service_active);
 	svc.flap_seconds=Z_LVAL_P(flap_seconds);
 	
@@ -2725,6 +2741,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	zval * fires_events;
 	zval * enabled_triggers;
 	zval * handled;
+	zval * orch_id;
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2769,6 +2786,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(snmp_critical, "snmp_critical", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(handled, "handled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -2776,6 +2794,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	convert_to_string(service_name);
 	convert_to_string(plugin_arguments);
 	convert_to_long(notify_enabled);
+	convert_to_long(orch_id);
 	
 	convert_to_long(check_interval);
 	convert_to_long(service_type);
@@ -2822,7 +2841,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc.fires_events=Z_LVAL_P(fires_events);
 	
 	svc.service_check_timeout=Z_LVAL_P(service_check_timeout);
-	
+	svc.orch_id=Z_LVAL_P(orch_id);
 	svc.check_interval=Z_LVAL_P(check_interval);
 	svc.service_type=Z_LVAL_P(service_type);
 	svc.service_passive_timeout=Z_LVAL_P(service_passive_timeout);
@@ -2870,6 +2889,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval * server_ssh_username;
 	zval * enabled_triggers;
 	zval * default_service_type;
+	zval * orch_id;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -2909,6 +2929,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
 	GETARRAY_EL_FROM_HASH(default_service_type, "default_service_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -2921,6 +2942,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_long(server_flap_seconds);
 	convert_to_long(server_notify);
 	convert_to_long(server_dead);
+	convert_to_long(orch_id);
 	convert_to_string(enabled_triggers);
 	
 	convert_to_string(server_ssh_keyfile);
@@ -2942,6 +2964,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	srv.server_notify=Z_LVAL_P(server_notify);
 	srv.server_dead=Z_LVAL_P(server_dead);
 	srv.default_service_type=Z_LVAL_P(default_service_type);
+	srv.orch_id=Z_LVAL_P(orch_id);
 	
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
@@ -2970,6 +2993,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval * server_ssh_username;
 	zval * enabled_triggers;
 	zval * default_service_type;
+	zval * orch_id;
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2996,6 +3020,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	GETARRAY_EL_FROM_HASH(server_flap_seconds, "server_flap_seconds", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 120);
 	GETARRAY_EL_FROM_HASH(server_notify, "server_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(server_dead, "server_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(enabled_triggers, "enabled_triggers", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 
 	GETARRAY_EL_FROM_HASH(server_ssh_keyfile, "server_ssh_keyfile", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
@@ -3016,6 +3041,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	convert_to_long(server_enabled);
 	convert_to_long(server_flap_seconds);
 	convert_to_long(server_notify);
+	convert_to_long(orch_id);
 	convert_to_long(server_dead);
 	
 	convert_to_string(server_ssh_keyfile);
@@ -3039,7 +3065,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	srv.server_notify=Z_LVAL_P(server_notify);
 	srv.server_dead=Z_LVAL_P(server_dead);
 	srv.default_service_type=Z_LVAL_P(default_service_type);
-	
+	srv.orch_id=Z_LVAL_P(orch_id);
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
@@ -3110,7 +3136,9 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		
 		add_assoc_string(return_value, "server_icon", svc.server_icon, 1);
 		add_assoc_long(return_value, "server_port",svc.client_port);
+		add_assoc_long(return_value, "orch_id",svc.orch_id);
 		add_assoc_long(return_value, "server_id",Z_LVAL_P(server_id));
+
 		
 		add_assoc_long(return_value, "default_service_type",svc.default_service_type);
 		
@@ -3414,7 +3442,8 @@ PHP_FUNCTION(bartlby_get_service) {
 	add_assoc_long(return_value, "fires_events",svcmap[Z_LVAL_P(bartlby_service_id)].fires_events);
 	add_assoc_long(return_value, "is_gone",svcmap[Z_LVAL_P(bartlby_service_id)].is_gone);
 	add_assoc_long(return_value, "handled",svcmap[Z_LVAL_P(bartlby_service_id)].handled);
-			
+	add_assoc_long(return_value, "orch_id",svcmap[Z_LVAL_P(bartlby_service_id)].orch_id);
+
 	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
 	
 		
@@ -3598,6 +3627,7 @@ PHP_FUNCTION(bartlby_get_downtime) {
 	add_assoc_long(return_value, "downtime_type", dtmap[Z_LVAL_P(bartlby_downtime_id)].downtime_type);
 	add_assoc_long(return_value, "service_id", dtmap[Z_LVAL_P(bartlby_downtime_id)].service_id);
 	add_assoc_long(return_value, "is_gone", dtmap[Z_LVAL_P(bartlby_downtime_id)].is_gone);
+	add_assoc_long(return_value, "orch_id", dtmap[Z_LVAL_P(bartlby_downtime_id)].orch_id);
 	add_assoc_string(return_value, "downtime_notice", dtmap[Z_LVAL_P(bartlby_downtime_id)].downtime_notice, 1);
 
 }
@@ -3652,6 +3682,7 @@ PHP_FUNCTION(bartlby_get_servergroup) {
 	add_assoc_long(return_value, "servergroup_notify", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify);
 	add_assoc_string(return_value, "servergroup_members", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_members, 1);
 	add_assoc_long(return_value, "servergroup_dead", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_dead);
+	add_assoc_long(return_value, "orch_id", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].orch_id);
 	add_assoc_string(return_value, "enabled_triggers", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].enabled_triggers,1);
 	add_assoc_long(return_value, "shm_place", Z_LVAL_P(bartlby_servergroup_id));
 	current_time=time(NULL);
@@ -3730,6 +3761,7 @@ PHP_FUNCTION(bartlby_get_servicegroup) {
 	add_assoc_long(return_value, "servicegroup_notify", svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_notify);
 	add_assoc_string(return_value, "servicegroup_members", svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_members, 1);
 	add_assoc_long(return_value, "servicegroup_dead", svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_dead);
+	add_assoc_long(return_value, "orch_id", svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].orch_id);
 	add_assoc_string(return_value, "enabled_triggers", svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].enabled_triggers,1);
 	add_assoc_long(return_value, "shm_place", Z_LVAL_P(bartlby_servicegroup_id));
 	current_time=time(NULL);
@@ -3830,6 +3862,7 @@ PHP_FUNCTION(bartlby_get_server) {
 	add_assoc_long(return_value, "server_flap_seconds",srvmap[Z_LVAL_P(bartlby_server_id)].server_flap_seconds);
 	add_assoc_long(return_value, "last_notify_send",srvmap[Z_LVAL_P(bartlby_server_id)].last_notify_send);
 	add_assoc_long(return_value, "server_dead",srvmap[Z_LVAL_P(bartlby_server_id)].server_dead);
+	add_assoc_long(return_value, "orch_id",srvmap[Z_LVAL_P(bartlby_server_id)].orch_id);
 	add_assoc_long(return_value, "server_shm_place",Z_LVAL_P(bartlby_server_id));
 		
 	if(srvmap[Z_LVAL_P(bartlby_server_id)].servergroup_counter > 0) {
@@ -3949,6 +3982,7 @@ PHP_FUNCTION(bartlby_get_worker) {
 
 	add_assoc_long(return_value, "is_super_user", wrkmap[Z_LVAL_P(bartlby_worker_id)].is_super_user);		
 	add_assoc_long(return_value, "notification_aggregation_interval", wrkmap[Z_LVAL_P(bartlby_worker_id)].notification_aggregation_interval);		
+	add_assoc_long(return_value, "orch_id", wrkmap[Z_LVAL_P(bartlby_worker_id)].orch_id);		
 	
 	
 }
@@ -3962,6 +3996,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	zval * servergroup_notify;
 	zval * servergroup_members;
 	zval * servergroup_dead;
+	zval * orch_id;
 	zval * enabled_triggers;
 	
 	
@@ -3992,6 +4027,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	GETARRAY_EL_FROM_HASH(servergroup_active, "servergroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servergroup_notify, "servergroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servergroup_dead, "servergroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -4001,6 +4037,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	convert_to_long(servergroup_active);
 	convert_to_long(servergroup_notify);
 	convert_to_long(servergroup_dead);
+	convert_to_long(orch_id);
 		
 	
 	
@@ -4014,6 +4051,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	
 	svc.servergroup_dead=Z_LVAL_P(servergroup_dead);
+	svc.orch_id=Z_LVAL_P(orch_id);
 	
 	ret=AddServerGroup(&svc, bres->cfgfile);
 	
@@ -4031,6 +4069,7 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	zval * servergroup_id;
 	zval * servergroup_dead;
 	zval * enabled_triggers;
+	zval * orch_id;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -4060,6 +4099,7 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	GETARRAY_EL_FROM_HASH(servergroup_active, "servergroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servergroup_notify, "servergroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servergroup_dead, "servergroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -4070,6 +4110,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	convert_to_long(servergroup_active);
 	convert_to_long(servergroup_notify);
 	convert_to_long(servergroup_dead);
+	convert_to_long(orch_id);
+
 	
 	convert_to_long(servergroup_id);
 	
@@ -4086,7 +4128,7 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	svc.servergroup_notify=Z_LVAL_P(servergroup_notify);
 	svc.servergroup_id=Z_LVAL_P(servergroup_id);
 	svc.servergroup_dead=Z_LVAL_P(servergroup_dead);
-	
+	svc.orch_id=Z_LVAL_P(orch_id);
 	
 	ret=UpdateServerGroup(&svc, bres->cfgfile);
 	
@@ -4282,6 +4324,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	zval * servicegroup_members;
 	zval * servicegroup_dead;
 	zval * enabled_triggers;
+	zval * orch_id;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -4309,6 +4352,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	GETARRAY_EL_FROM_HASH(servicegroup_active, "servicegroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servicegroup_notify, "servicegroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servicegroup_dead, "servicegroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
 	
@@ -4320,6 +4364,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	convert_to_long(servicegroup_notify);
 	convert_to_long(servicegroup_dead);
 	convert_to_string(enabled_triggers);
+	convert_to_long(orch_id);
 	
 	
 	
@@ -4331,6 +4376,7 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
+	svc.orch_id=Z_LVAL_P(orch_id);
 	
 	ret=AddServiceGroup(&svc, bres->cfgfile);
 	
@@ -4349,6 +4395,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	zval * servicegroup_id;
 	zval * servicegroup_dead;
 	zval * enabled_triggers;
+	zval * orch_id;
 	
 	zval ** temp_pp;
 	zval * options_array;
@@ -4376,6 +4423,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	GETARRAY_EL_FROM_HASH(servicegroup_active, "servicegroup_active", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servicegroup_notify, "servicegroup_notify", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(servicegroup_dead, "servicegroup_dead", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -4385,7 +4433,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	convert_to_long(servicegroup_active);
 	convert_to_long(servicegroup_notify);
 	convert_to_long(servicegroup_dead);
-	
+	convert_to_long(orch_id);
 	convert_to_long(servicegroup_id);
 	
 	
@@ -4400,7 +4448,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
 	svc.servicegroup_id=Z_LVAL_P(servicegroup_id);
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
-	
+	svc.orch_id=Z_LVAL_P(orch_id);
 	
 	ret=UpdateServiceGroup(&svc, bres->cfgfile);
 	
