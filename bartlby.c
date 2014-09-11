@@ -1011,6 +1011,7 @@ int notification_valid; //-1 invalid == end of list
 		add_assoc_long(return_value, "type", shm_hdr->notification_log[Z_LVAL_P(idx)].type);
 		add_assoc_long(return_value, "time", shm_hdr->notification_log[Z_LVAL_P(idx)].time);
 		add_assoc_long(return_value, "aggregation_interval", shm_hdr->notification_log[Z_LVAL_P(idx)].aggregation_interval);
+		add_assoc_long(return_value, "received_via", shm_hdr->notification_log[Z_LVAL_P(idx)].received_via);
 		add_assoc_string(return_value, "trigger_name", shm_hdr->notification_log[Z_LVAL_P(idx)].trigger_name, 1);
 		
 
