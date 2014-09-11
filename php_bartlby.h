@@ -289,8 +289,11 @@ struct notification_log_entry {
 	int type; // 0 if it was a normal notification, 1 = it was a escalation notification to the standby's
 	time_t time;
 	int aggregation_interval;
+	int received_via;
 };
 #define NOTIFICATION_LOG_MAX 512
+#define NOTIFICATION_VIA_LOCAL 1
+#define NOTIFICATION_VIA_UPSTREAM 2
 
 
 struct shm_header {
