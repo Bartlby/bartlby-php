@@ -2497,6 +2497,10 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		
 		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers, 1);
 		
+
+		add_assoc_long(return_value, "prio",svc.prio);
+		add_assoc_long(return_value, "notify_super_users",svc.notify_super_users);
+		add_assoc_string(return_value, "usid",svc.usid, 1);
 			
 	}
 	free(svc.srv); //gets allocated in the lib
@@ -2546,6 +2550,9 @@ PHP_FUNCTION(bartlby_modify_service) {
 	zval * handled;
 	zval * enabled_triggers;
 	zval * orch_id;
+	zval * prio;
+	zval * notify_super_users;
+	zval * usid;
 	zval ** temp_pp;
 	zval * options_array;	
 
@@ -2589,8 +2596,19 @@ PHP_FUNCTION(bartlby_modify_service) {
 	GETARRAY_EL_FROM_HASH(handled, "handled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 
+
+	GETARRAY_EL_FROM_HASH(prio, "prio", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 50);
+	GETARRAY_EL_FROM_HASH(notify_super_users, "notify_super_users", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(usid, "usid", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	
+
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
+
+	convert_to_long(prio);
+	convert_to_long(notify_super_users);
+	convert_to_string(usid);
 	
 	convert_to_long(service_id);
 	convert_to_string(plugin);
@@ -2628,6 +2646,12 @@ PHP_FUNCTION(bartlby_modify_service) {
 	convert_to_string(exec_plan);
 	convert_to_long(handled);
 	
+
+
+	svc.prio=Z_LVAL_P(prio);
+	svc.notify_super_users=Z_LVAL_P(notify_super_users);
+	sprintf(svc.usid, "%s", Z_STRVAL_P(usid));
+
 	svc.service_id=Z_LVAL_P(service_id);
 	sprintf(svc.plugin, "%s", Z_STRVAL_P(plugin));
 	sprintf(svc.service_name, "%s", Z_STRVAL_P(service_name));
@@ -2743,6 +2767,10 @@ PHP_FUNCTION(bartlby_add_service) {
 	zval * enabled_triggers;
 	zval * handled;
 	zval * orch_id;
+	zval * usid;
+	zval * prio;
+	zval * notify_super_users;
+
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2788,6 +2816,10 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(snmp_type, "snmp_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(handled, "handled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+
+	GETARRAY_EL_FROM_HASH(prio, "prio", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 50);
+	GETARRAY_EL_FROM_HASH(notify_super_users, "notify_super_users", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
+	GETARRAY_EL_FROM_HASH(usid, "usid", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -2822,8 +2854,17 @@ PHP_FUNCTION(bartlby_add_service) {
 	convert_to_long(snmp_warning);
 	convert_to_long(snmp_critical);
 	convert_to_long(snmp_type);
+
+	convert_to_long(prio);
+	convert_to_long(notify_super_users);
+	convert_to_string(usid);
 	
 	
+
+	sprintf(svc.usid, "%s", Z_STRVAL_P(usid));
+	svc.prio=Z_LVAL_P(prio);
+	svc.notify_super_users=Z_LVAL_P(notify_super_users);
+
 	sprintf(svc.plugin, "%s", Z_STRVAL_P(plugin));
 	sprintf(svc.service_exec_plan, "%s", Z_STRVAL_P(exec_plan));
 	
@@ -2891,7 +2932,8 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval * enabled_triggers;
 	zval * default_service_type;
 	zval * orch_id;
-	
+	zval * exec_plan;
+
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2931,6 +2973,8 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	GETARRAY_EL_FROM_HASH(default_service_type, "default_service_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	GETARRAY_EL_FROM_HASH(exec_plan, "exec_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -2945,6 +2989,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_long(server_dead);
 	convert_to_long(orch_id);
 	convert_to_string(enabled_triggers);
+	convert_to_string(exec_plan);
 	
 	convert_to_string(server_ssh_keyfile);
 	convert_to_string(server_ssh_passphrase);
@@ -2970,6 +3015,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
+	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
 	
 	ret=AddServer(&srv, bres->cfgfile);
 	
@@ -2995,6 +3041,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval * enabled_triggers;
 	zval * default_service_type;
 	zval * orch_id;
+	zval * exec_plan;
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -3029,6 +3076,8 @@ PHP_FUNCTION(bartlby_modify_server) {
 	GETARRAY_EL_FROM_HASH(server_ssh_username, "server_ssh_username", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	
 	GETARRAY_EL_FROM_HASH(default_service_type, "default_service_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
+
+	GETARRAY_EL_FROM_HASH(exec_plan, "exec_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -3070,7 +3119,8 @@ PHP_FUNCTION(bartlby_modify_server) {
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
-	
+	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
+
 	ret=ModifyServer(&srv, bres->cfgfile);
 	
 	bartlby_mark_object_gone(bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
@@ -3129,6 +3179,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		}
 		add_assoc_string(return_value, "server_name", svc.server_name, 1);
 		add_assoc_string(return_value, "server_ip", svc.client_ip, 1);
+		add_assoc_string(return_value, "exec_plan", svc.exec_plan, 1);
 		
 		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile, 1);
 		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase, 1);
@@ -3444,6 +3495,11 @@ PHP_FUNCTION(bartlby_get_service) {
 	add_assoc_long(return_value, "is_gone",svcmap[Z_LVAL_P(bartlby_service_id)].is_gone);
 	add_assoc_long(return_value, "handled",svcmap[Z_LVAL_P(bartlby_service_id)].handled);
 	add_assoc_long(return_value, "orch_id",svcmap[Z_LVAL_P(bartlby_service_id)].orch_id);
+
+	add_assoc_long(return_value, "prio",svcmap[Z_LVAL_P(bartlby_service_id)].prio);
+	add_assoc_long(return_value, "notify_super_users",svcmap[Z_LVAL_P(bartlby_service_id)].notify_super_users);
+	add_assoc_string(return_value, "usid", svcmap[Z_LVAL_P(bartlby_service_id)].usid, 1);
+
 
 	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
 	
@@ -3855,6 +3911,7 @@ PHP_FUNCTION(bartlby_get_server) {
 	
 		
 	add_assoc_string(return_value, "server_icon", srvmap[Z_LVAL_P(bartlby_server_id)].server_icon, 1);
+	add_assoc_string(return_value, "exec_plan", srvmap[Z_LVAL_P(bartlby_server_id)].exec_plan, 1);
 	add_assoc_long(return_value, "server_port",srvmap[Z_LVAL_P(bartlby_server_id)].client_port);
 	add_assoc_long(return_value, "server_id",srvmap[Z_LVAL_P(bartlby_server_id)].server_id);
 		
