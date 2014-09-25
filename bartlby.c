@@ -3133,7 +3133,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile, 1);
 		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase, 1);
 		add_assoc_string(return_value, "server_ssh_username", svc.server_ssh_username, 1);
-		add_assoc_string(return_value, "server_enabled_triggers", svc.enabled_triggers, 1);
+		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers, 1);
 		
 		add_assoc_string(return_value, "server_icon", svc.server_icon, 1);
 		add_assoc_long(return_value, "server_port",svc.client_port);
@@ -3849,7 +3849,7 @@ PHP_FUNCTION(bartlby_get_server) {
 	add_assoc_string(return_value, "server_ssh_keyfile", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_keyfile, 1);
 	add_assoc_string(return_value, "server_ssh_passphrase", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_passphrase, 1);
 	add_assoc_string(return_value, "server_ssh_username", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_username, 1);
-	add_assoc_string(return_value, "server_enabled_triggers", srvmap[Z_LVAL_P(bartlby_server_id)].enabled_triggers, 1);
+	add_assoc_string(return_value, "enabled_triggers", srvmap[Z_LVAL_P(bartlby_server_id)].enabled_triggers, 1);
 
 	add_assoc_long(return_value, "default_service_type",srvmap[Z_LVAL_P(bartlby_server_id)].default_service_type);
 	
