@@ -61,6 +61,7 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_get_worker,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_server,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_downtime,	NULL)		/* For testing, remove later. */
+	PHP_FE(bartlby_get_downtime_by_id,	NULL)		/* For testing, remove later. */
 	
 
 	PHP_FE(bartlby_get_servicegroup,	NULL)		/* For testing, remove later. */
@@ -3636,6 +3637,49 @@ PHP_FUNCTION(bartlby_get_service) {
 	
 	
 }
+
+PHP_FUNCTION(bartlby_get_downtime_by_id) {
+	zval * zbartlby_resource;
+	zval * downtime_id;
+	
+	char * dlmsg;
+	int ret;
+	int (*GetDowntimeById)(int,struct downtime *, char *);
+	struct downtime  svc;
+	
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&downtime_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	convert_to_long(downtime_id);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
+
+
+	LOAD_SYMBOL(GetDowntimeById,bres->SOHandle, "GetDowntimeById");
+	ret=GetDowntimeById(Z_LVAL_P(downtime_id),&svc, bres->cfgfile);
+	
+	if(ret < 0) {
+		RETURN_FALSE;	
+	} else {
+		if (array_init(return_value) == FAILURE) {
+			RETURN_FALSE;
+		}
+		add_assoc_long(return_value, "downtime_id", svc.downtime_id);
+		add_assoc_long(return_value, "downtime_from", svc.downtime_from);
+		add_assoc_long(return_value, "downtime_to", svc.downtime_to);
+		add_assoc_long(return_value, "downtime_type", svc.downtime_type);
+		add_assoc_long(return_value, "service_id", svc.service_id);
+		add_assoc_long(return_value, "is_gone", svc.is_gone);
+		add_assoc_long(return_value, "orch_id", svc.orch_id);
+		add_assoc_string(return_value, "downtime_notice", svc.downtime_notice, 1);
+
+	}
+		
+}
+
 PHP_FUNCTION(bartlby_get_downtime) {
 
 
