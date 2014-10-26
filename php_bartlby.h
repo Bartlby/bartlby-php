@@ -122,6 +122,7 @@ PHP_FUNCTION(bartlby_get_worker);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_get_service);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_get_server);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_get_downtime);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_downtime_by_id);	/* For testing, remove later. */
 
 PHP_FUNCTION(bartlby_get_servergroup);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_get_servergroup_by_id);	/* For testing, remove later. */
