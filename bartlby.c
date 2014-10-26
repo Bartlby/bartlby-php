@@ -61,8 +61,14 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_get_worker,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_server,	NULL)		/* For testing, remove later. */
 	PHP_FE(bartlby_get_downtime,	NULL)		/* For testing, remove later. */
+	
+
 	PHP_FE(bartlby_get_servicegroup,	NULL)		/* For testing, remove later. */
+	PHP_FE(bartlby_get_servicegroup_by_id,	NULL)		/* For testing, remove later. */
+
+
 	PHP_FE(bartlby_get_servergroup,	NULL)		/* For testing, remove later. */
+	PHP_FE(bartlby_get_servergroup_by_id,	NULL)		/* For testing, remove later. */
 
 
 
@@ -3688,6 +3694,48 @@ PHP_FUNCTION(bartlby_get_downtime) {
 	add_assoc_string(return_value, "downtime_notice", dtmap[Z_LVAL_P(bartlby_downtime_id)].downtime_notice, 1);
 
 }
+
+PHP_FUNCTION(bartlby_get_servergroup_by_id) {
+	zval * zbartlby_resource;
+	zval * servergroup_id;
+	
+	char * dlmsg;
+	int ret;
+	int (*GetServerGroupById)(int,struct servergroup *, char *);
+	struct servergroup  svc;
+	
+	bartlby_res * bres;
+
+	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&servergroup_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	convert_to_long(servergroup_id);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	
+
+
+	LOAD_SYMBOL(GetServerGroupById,bres->SOHandle, "GetServergroupById");
+	ret=GetServerGroupById(Z_LVAL_P(servergroup_id),&svc, bres->cfgfile);
+	
+	if(ret < 0) {
+		RETURN_FALSE;	
+	} else {
+		if (array_init(return_value) == FAILURE) {
+			RETURN_FALSE;
+		}
+		add_assoc_long(return_value, "servergroup_id", svc.servergroup_id);
+		add_assoc_string(return_value, "servergroup_name", svc.servergroup_name,1);
+		add_assoc_long(return_value, "servergroup_active", svc.servergroup_active);
+		add_assoc_long(return_value, "servergroup_notify", svc.servergroup_notify);
+		add_assoc_string(return_value, "servergroup_members", svc.servergroup_members, 1);
+		add_assoc_long(return_value, "servergroup_dead", svc.servergroup_dead);
+		add_assoc_long(return_value, "orch_id", svc.orch_id);
+		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers,1);
+	}
+		
+}
+
 PHP_FUNCTION(bartlby_get_servergroup) {
 
 	struct shm_header * shm_hdr;
@@ -3767,6 +3815,47 @@ PHP_FUNCTION(bartlby_get_servergroup) {
 
 
 }
+PHP_FUNCTION(bartlby_get_servicegroup_by_id) {
+  zval * zbartlby_resource;
+  zval * servicegroup_id;
+  
+  char * dlmsg;
+  int ret;
+  int (*GetServicegroupById)(int,struct servicegroup *, char *);
+  struct servicegroup  svc;
+  
+  bartlby_res * bres;
+
+  if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&servicegroup_id)==FAILURE) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  convert_to_long(servicegroup_id);
+  ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+  
+
+
+  LOAD_SYMBOL(GetServicegroupById,bres->SOHandle, "GetsServicegroupById");
+  ret=GetServicegroupById(Z_LVAL_P(servicegroup_id),&svc, bres->cfgfile);
+  
+  if(ret < 0) {
+    RETURN_FALSE; 
+  } else {
+    if (array_init(return_value) == FAILURE) {
+      RETURN_FALSE;
+    }
+    add_assoc_long(return_value, "servicegroup_id", svc.servicegroup_id);
+    add_assoc_string(return_value, "servicegroup_name", svc.servicegroup_name,1);
+    add_assoc_long(return_value, "servicegroup_active", svc.servicegroup_active);
+    add_assoc_long(return_value, "servicegroup_notify", svc.servicegroup_notify);
+    add_assoc_string(return_value, "servicegroup_members", svc.servicegroup_members, 1);
+    add_assoc_long(return_value, "servicegroup_dead", svc.servicegroup_dead);
+    add_assoc_long(return_value, "orch_id", svc.orch_id);
+    add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers,1);
+  }
+    
+}
+
 PHP_FUNCTION(bartlby_get_servicegroup) {
 
 	struct shm_header * shm_hdr;
