@@ -49,6 +49,7 @@ int le_bartlby;
  
 zend_function_entry bartlby_functions[] = {
 	
+	PHP_FE(bartlby_callback_test, NULL)
 	PHP_FE(bartlby_new,NULL)
 	PHP_FE(bartlby_close,NULL)
 	PHP_FE(bartlby_get_info,	NULL)		/* For testing, remove later. */
@@ -203,6 +204,69 @@ ZEND_GET_MODULE(bartlby)
 
 
 
+void bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, long action) {
+	
+	zval **params[3];
+	zval type;
+	zval id;
+	zval act;
+	zval function_name;
+	zval *return_user_call;
+
+	zval *t;
+	zval *t2;
+	zval *t3;
+	zval *t4;
+
+	INIT_ZVAL(type);
+	INIT_ZVAL(id);
+	INIT_ZVAL(function_name);
+	INIT_ZVAL(act);
+
+
+	ZVAL_LONG(&type, audit_type);
+	ZVAL_LONG(&id, object_id);
+	ZVAL_LONG(&act, action);
+	ZVAL_STRING(&function_name, "bartlby_audit", 0);
+
+	
+	
+	params[0] = &bartlby_resource;
+	
+	t=&type;
+	params[1] = &t;
+	t2=&id;
+	params[2] = &t2;
+	t3=&act;
+	params[3] = &t3;
+	
+	
+	if (call_user_function_ex(NULL, NULL, &function_name, &return_user_call, 4, params, 0, NULL TSRMLS_CC) == FAILURE) {
+      //throw exception eventually
+		
+    }
+    return;
+
+
+}
+
+PHP_FUNCTION(bartlby_callback_test) {
+
+	zval * zbartlby_resource;
+	bartlby_res * bres;
+
+	
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
+
+	bartlby_audit(zbartlby_resource, 1, 2222, 1);
+	bartlby_audit(zbartlby_resource, 2, 3333, 2);
+	RETURN_LONG(1);
+}
 
 void xbartlby_decode(char * msg, int length) {
 	int x;
@@ -498,6 +562,8 @@ PHP_FUNCTION(bartlby_new) {
   ZEND_REGISTER_RESOURCE(return_value, res, le_bartlby);
   	
 }
+
+
 PHP_FUNCTION(bartlby_set_downtime_id) {
 	zval * zbartlby_resource;
 	zval * from;

@@ -3,7 +3,21 @@
 $cfg = "/opt/bartlby/etc/bartlby.cfg";
 $r = bartlby_new($cfg);
 $v = bartlby_notification_log_at_index($r, 511);
-var_dump($v);
+$v = bartlby_callback_test($r);
+
+
+
+
+function bartlby_audit($res, $type, $id, $action) {
+	echo "AUDIT: Type=>" . $type . " ID=>" . $id . " action=>" . $action . "\n";
+	var_dump($res);
+}
+
+function callback_btl($p1, $p2, $p3) {
+	echo "CALLBACK: p1: " . $p1 . "\n";
+	echo "CALLBACK: p1: " . $p2 . "\n";
+	echo "CALLBACK: p3:" . $p3 . "\n";
+}
 
 exit;
 $cfg = "/storage/SF.NET/BARTLBY/GIT/bartlby-core/bartlby.cfg";

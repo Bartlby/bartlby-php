@@ -141,6 +141,8 @@ PHP_FUNCTION(bartlby_modify_service);
 PHP_FUNCTION(bartlby_get_service_by_id);
 
 
+PHP_FUNCTION(bartlby_callback_test);
+
 PHP_FUNCTION(bartlby_add_worker);
 PHP_FUNCTION(bartlby_delete_worker);
 PHP_FUNCTION(bartlby_modify_worker);
