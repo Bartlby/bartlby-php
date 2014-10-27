@@ -204,7 +204,7 @@ ZEND_GET_MODULE(bartlby)
  */
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("bartlby.force_audit",      "0", PHP_INI_ALL, OnUpdateLong, force_audit, zend_bartlby_globals, bartlby_globals)
-    STD_PHP_INI_ENTRY("bartlby.audit_dir", "/tmp/bartlby/audit/", PHP_INI_ALL, OnUpdateString, audit_dir, zend_bartlby_globals, bartlby_globals)
+    
 PHP_INI_END()
 /* }}} */
 
@@ -213,7 +213,7 @@ PHP_INI_END()
 static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
 {
 	bartlby_globals->force_audit = 0;
-	bartlby_globals->audit_dir = NULL;
+	
 }
 
 /* }}} */
@@ -235,7 +235,7 @@ int bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, lon
 	zval id;
 	zval act;
 	zval function_name;
-	zval audit_dir;
+	
 	zval *return_user_call;
 
 	zval *t;
@@ -248,14 +248,12 @@ int bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, lon
 	INIT_ZVAL(id);
 	INIT_ZVAL(function_name);
 	INIT_ZVAL(act);
-	INIT_ZVAL(audit_dir);
 
 
 	ZVAL_LONG(&type, audit_type);
 	ZVAL_LONG(&id, object_id);
 	ZVAL_LONG(&act, action);
 	ZVAL_STRING(&function_name, "bartlby_audit", 0);
-	ZVAL_STRING(&audit_dir, (char *)BARTLBY_G(audit_dir), 0);
 
 	
 	
@@ -268,11 +266,9 @@ int bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, lon
 	t3=&act;
 	params[3] = &t3;
 	
-	t4=&audit_dir;
-	params[4] = &t4;
 	
 	
-	res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 5, params, 1, NULL TSRMLS_CC);
+	res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 4, params, 1, NULL TSRMLS_CC);
 	if (res == SUCCESS && return_user_call != NULL && zval_is_true(return_user_call)) {
 		return 0;
 	} else {
