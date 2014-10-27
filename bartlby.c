@@ -2029,6 +2029,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval * notify_plan;
 	zval * orch_id;
 
+	zval * api_pubkey;
+	zval * api_privkey;
+
 	zval * is_super_user;
 	zval * notification_aggregation_interval;
 	
@@ -2078,6 +2081,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	GETARRAY_EL_FROM_HASH(notification_aggregation_interval, "notification_aggregation_interval", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
+
+	GETARRAY_EL_FROM_HASH(api_pubkey, "api_pubkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(api_privkey, "api_privkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	
 	convert_to_string(enabled_triggers);
 	convert_to_string(mail);
@@ -2096,6 +2102,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	convert_to_long(notification_aggregation_interval);
 	convert_to_long(is_super_user);
 	convert_to_long(orch_id);
+
+	convert_to_string(api_pubkey);
+	convert_to_string(api_privkey);
 	
 	LOAD_SYMBOL(AddWorker,bres->SOHandle, "AddWorker");
 	
@@ -2110,6 +2119,8 @@ PHP_FUNCTION(bartlby_add_worker) {
 	strcpy(svc.visible_services, Z_STRVAL_P(visible_services));
 	strcpy(svc.notify_levels, Z_STRVAL_P(notify_levels));
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
+	strcpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey));
+	strcpy(svc.api_privkey, Z_STRVAL_P(api_privkey));
 	svc.active=Z_LVAL_P(active);
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
@@ -2168,6 +2179,9 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval * is_super_user;
 	zval * notification_aggregation_interval;
 
+	zval * api_pubkey;
+	zval * api_privkey;
+
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2206,6 +2220,8 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	GETARRAY_EL_FROM_HASH(notification_aggregation_interval, "notification_aggregation_interval", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 		
+	GETARRAY_EL_FROM_HASH(api_pubkey, "api_pubkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(api_privkey, "api_privkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		
@@ -2230,6 +2246,9 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	convert_to_long(orch_id);
 	convert_to_long(notification_aggregation_interval);
 	convert_to_long(is_super_user);
+
+	convert_to_string(api_pubkey);
+	convert_to_string(api_privkey);
 		
 	LOAD_SYMBOL(UpdateWorker,bres->SOHandle, "UpdateWorker");
 	
@@ -2245,6 +2264,10 @@ PHP_FUNCTION(bartlby_modify_worker) {
 
 	strcpy(svc.notify_levels, Z_STRVAL_P(notify_levels));
 	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
+
+	strcpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey));
+	strcpy(svc.api_privkey, Z_STRVAL_P(api_privkey));
+
 	svc.active=Z_LVAL_P(active);
 	svc.worker_id=Z_LVAL_P(worker_id);
 	
@@ -2304,6 +2327,10 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 		add_assoc_string(return_value, "name", svc.name,1);
 		add_assoc_string(return_value, "password", svc.password,1);
 		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers,1);
+
+		add_assoc_string(return_value, "api_pubkey", svc.api_pubkey,1);
+		add_assoc_string(return_value, "api_privkey", svc.api_privkey,1);
+
 		add_assoc_long(return_value, "worker_id", svc.worker_id);
 		add_assoc_long(return_value, "active", svc.active);
 		add_assoc_long(return_value, "escalation_limit", svc.escalation_limit);
@@ -4157,6 +4184,10 @@ PHP_FUNCTION(bartlby_get_worker) {
 
 	add_assoc_string(return_value, "visible_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_servers, 1);
 	add_assoc_string(return_value, "selected_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_servers, 1);
+	
+
+	add_assoc_string(return_value, "api_pubkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_pubkey, 1);
+	add_assoc_string(return_value, "api_privkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_privkey, 1);
 	
 
 	add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels,1);
