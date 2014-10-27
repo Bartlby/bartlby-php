@@ -2031,6 +2031,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 
 	zval * api_pubkey;
 	zval * api_privkey;
+	zval * api_enabled;
 
 	zval * is_super_user;
 	zval * notification_aggregation_interval;
@@ -2084,7 +2085,10 @@ PHP_FUNCTION(bartlby_add_worker) {
 
 	GETARRAY_EL_FROM_HASH(api_pubkey, "api_pubkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	GETARRAY_EL_FROM_HASH(api_privkey, "api_privkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
-	
+	GETARRAY_EL_FROM_HASH(api_enabled, "api_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+
+
+
 	convert_to_string(enabled_triggers);
 	convert_to_string(mail);
 	convert_to_string(icq);
@@ -2102,6 +2106,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	convert_to_long(notification_aggregation_interval);
 	convert_to_long(is_super_user);
 	convert_to_long(orch_id);
+	convert_to_long(api_enabled);
 
 	convert_to_string(api_pubkey);
 	convert_to_string(api_privkey);
@@ -2128,7 +2133,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 	svc.is_super_user=Z_LVAL_P(is_super_user);
 	svc.notification_aggregation_interval=Z_LVAL_P(notification_aggregation_interval);
 	svc.orch_id=Z_LVAL_P(orch_id);
-
+	svc.api_enabled=Z_LVAL_P(api_enabled);
 	ret=AddWorker(&svc, bres->cfgfile);
 	RETURN_LONG(ret);	
 }
@@ -2182,6 +2187,8 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	zval * api_pubkey;
 	zval * api_privkey;
 
+	zval * api_enabled;
+
 	zval ** temp_pp;
 	zval * options_array;
 	
@@ -2222,6 +2229,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 		
 	GETARRAY_EL_FROM_HASH(api_pubkey, "api_pubkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	GETARRAY_EL_FROM_HASH(api_privkey, "api_privkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
+	GETARRAY_EL_FROM_HASH(api_enabled, "api_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		
@@ -2246,6 +2254,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	convert_to_long(orch_id);
 	convert_to_long(notification_aggregation_interval);
 	convert_to_long(is_super_user);
+	convert_to_long(api_enabled);
 
 	convert_to_string(api_pubkey);
 	convert_to_string(api_privkey);
@@ -2270,6 +2279,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 
 	svc.active=Z_LVAL_P(active);
 	svc.worker_id=Z_LVAL_P(worker_id);
+	svc.api_enabled=Z_LVAL_P(api_enabled);
 	
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
@@ -2330,6 +2340,7 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 
 		add_assoc_string(return_value, "api_pubkey", svc.api_pubkey,1);
 		add_assoc_string(return_value, "api_privkey", svc.api_privkey,1);
+		add_assoc_long(return_value, "api_enabled", svc.api_enabled);
 
 		add_assoc_long(return_value, "worker_id", svc.worker_id);
 		add_assoc_long(return_value, "active", svc.active);
@@ -4188,7 +4199,7 @@ PHP_FUNCTION(bartlby_get_worker) {
 
 	add_assoc_string(return_value, "api_pubkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_pubkey, 1);
 	add_assoc_string(return_value, "api_privkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_privkey, 1);
-	
+	add_assoc_long(return_value, "api_enabled", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_enabled);
 
 	add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels,1);
 	add_assoc_string(return_value, "name", wrkmap[Z_LVAL_P(bartlby_worker_id)].name,1);
