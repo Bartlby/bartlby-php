@@ -513,6 +513,8 @@ struct worker {
 	
 	char api_pubkey[255];
 	char api_privkey[255];
+
+	int api_enabled;
 }sa;
 
 
