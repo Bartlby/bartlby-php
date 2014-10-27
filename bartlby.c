@@ -29,7 +29,7 @@ $Author$
 #include "ext/standard/info.h"
 #include "php_bartlby.h"
 
-
+ZEND_DECLARE_MODULE_GLOBALS(bartlby)
 
 typedef struct _bartlby_res {
     char *cfgfile;
@@ -200,34 +200,62 @@ zend_module_entry bartlby_module_entry = {
 ZEND_GET_MODULE(bartlby)
 #endif
 
+/* {{{ PHP_INI
+ */
+PHP_INI_BEGIN()
+    STD_PHP_INI_ENTRY("bartlby.force_audit",      "0", PHP_INI_ALL, OnUpdateLong, force_audit, zend_bartlby_globals, bartlby_globals)
+    STD_PHP_INI_ENTRY("bartlby.audit_dir", "/tmp/bartlby/audit/", PHP_INI_ALL, OnUpdateString, audit_dir, zend_bartlby_globals, bartlby_globals)
+PHP_INI_END()
+/* }}} */
 
+/* {{{ php_bartlby_init_globals
+ */
+static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
+{
+	bartlby_globals->force_audit = 0;
+	bartlby_globals->audit_dir = NULL;
+}
 
+/* }}} */
 
+#define BARTLBY_OBJECT_GONE(zbartlby_resource, bres, id, type, msg) if(bartlby_mark_object_gone(zbartlby_resource, bres, id, type, msg) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
 
-void bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, long action) {
+#define BARTLBY_AUDIT_IT(zbartlby_resource, id, type, action) if(bartlby_audit(zbartlby_resource, id, type, action) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+int bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, long action) {
 	
-	zval **params[3];
+	zval **params[4];
 	zval type;
 	zval id;
 	zval act;
 	zval function_name;
+	zval audit_dir;
 	zval *return_user_call;
 
 	zval *t;
 	zval *t2;
 	zval *t3;
 	zval *t4;
-
+	
+	int res;
 	INIT_ZVAL(type);
 	INIT_ZVAL(id);
 	INIT_ZVAL(function_name);
 	INIT_ZVAL(act);
+	INIT_ZVAL(audit_dir);
 
 
 	ZVAL_LONG(&type, audit_type);
 	ZVAL_LONG(&id, object_id);
 	ZVAL_LONG(&act, action);
 	ZVAL_STRING(&function_name, "bartlby_audit", 0);
+	ZVAL_STRING(&audit_dir, (char *)BARTLBY_G(audit_dir), 0);
 
 	
 	
@@ -240,13 +268,20 @@ void bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, lo
 	t3=&act;
 	params[3] = &t3;
 	
+	t4=&audit_dir;
+	params[4] = &t4;
 	
-	if (call_user_function_ex(NULL, NULL, &function_name, &return_user_call, 4, params, 0, NULL TSRMLS_CC) == FAILURE) {
-      //throw exception eventually
-		
-    }
-    return;
-
+	
+	res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 5, params, 1, NULL TSRMLS_CC);
+	if (res == SUCCESS && return_user_call != NULL && zval_is_true(return_user_call)) {
+		return 0;
+	} else {
+		if((int)BARTLBY_G(force_audit) == 1) {
+			return -1;
+		}
+	} 
+    return -1;
+    //	if((long)BARTLBY_G(force_audit) == 1)  {
 
 }
 
@@ -263,8 +298,8 @@ PHP_FUNCTION(bartlby_callback_test) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 
-	bartlby_audit(zbartlby_resource, 1, 2222, 1);
-	bartlby_audit(zbartlby_resource, 2, 3333, 2);
+	BARTLBY_AUDIT_IT(zbartlby_resource, 1, 2222, 1);
+	BARTLBY_AUDIT_IT(zbartlby_resource, 2, 3333, 2);
 	RETURN_LONG(1);
 }
 
@@ -375,7 +410,7 @@ void * bartlby_get_shm(char * cfgfile) {
 
 
 
-void bartlby_mark_object_gone(bartlby_res * bres, long id, int type, int msg) {
+int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long id, int type, int msg) {
 	
 	
 	int x;
@@ -384,42 +419,104 @@ void bartlby_mark_object_gone(bartlby_res * bres, long id, int type, int msg) {
 	struct server * srvmap;	
 	struct worker * wrkmap;
 	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
 	char * tmpstr;
 	
-	
+	int audit_type=0;
+	int audit_action=0;
+
+	int rtc;
 	
 	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
 	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
 	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
 	dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
 	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
+	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
 	
-	switch(type) {
-		case BARTLBY_SERVICE_GONE:
-			for(x=0; x<shm_hdr->svccount; x++) {
-				if(svcmap[x].service_id == id) {
-					svcmap[x].is_gone = msg;
+
+
+	//if(msg != BARTLBY_AUDIT_ACTION_ADD) {
+		switch(type) {
+			case BARTLBY_SERVICE_GONE:
+				for(x=0; x<shm_hdr->svccount; x++) {
+					if(svcmap[x].service_id == id) {
+						svcmap[x].is_gone = msg;
+					}	
 				}	
-			}	
-	
-		break;
-		case BARTLBY_SERVER_GONE:
-			for(x=0; x<shm_hdr->srvcount; x++) {
-				if(srvmap[x].server_id == id) {
-					srvmap[x].is_gone=msg;
+				audit_type=BARTLBY_AUDIT_TYPE_SERVICE;
+
+			break;
+			case BARTLBY_SERVER_GONE:
+				for(x=0; x<shm_hdr->srvcount; x++) {
+					if(srvmap[x].server_id == id) {
+						srvmap[x].is_gone=msg;
+					}	
 				}	
-			}	
-		break;
-		case BARTLBY_WORKER_GONE:
-			for(x=0; x<shm_hdr->wrkcount; x++) {
-				if(wrkmap[x].worker_id == id) {
-					wrkmap[x].is_gone = msg;
+				audit_type=BARTLBY_AUDIT_TYPE_SERVER;
+			break;
+			case BARTLBY_WORKER_GONE:
+				for(x=0; x<shm_hdr->wrkcount; x++) {
+					if(wrkmap[x].worker_id == id) {
+						wrkmap[x].is_gone = msg;
+					}	
 				}	
-			}	
-		break;
-		default:
-			return;
+				audit_type=BARTLBY_AUDIT_TYPE_WORKER;
+			break;
+
+			case BARTLBY_DOWNTIME_GONE:
+				for(x=0; x<shm_hdr->dtcount; x++) {
+					if(dtmap[x].downtime_id == id) {
+						dtmap[x].is_gone = msg;
+					}	
+				}	
+				audit_type=BARTLBY_AUDIT_TYPE_DOWNTIME;
+			break;
+			case BARTLBY_SERVICEGROUP_GONE:
+				for(x=0; x<shm_hdr->svcgroupcount; x++) {
+					if(svcgrpmap[x].servicegroup_id == id) {
+						//svcgrpmap[x].is_gone = msg;
+					}	
+				}	
+				audit_type=BARTLBY_AUDIT_TYPE_SERVICEGROUP;
+			break;
+			case BARTLBY_SERVERGROUP_GONE:
+				for(x=0; x<shm_hdr->srvgroupcount; x++) {
+					if(srvgrpmap[x].servergroup_id == id) {
+						//srvgrpmap[x].is_gone = msg;
+					}	
+				}	
+				audit_type=BARTLBY_AUDIT_TYPE_SERVERGROUP;
+			break;
+			
+				
+//		}
 	}
+
+	switch(msg) {
+		case BARTLBY_OBJECT_DELETED:
+			audit_action=BARTLBY_AUDIT_ACTION_DELETE;
+		break;
+		case BARTLBY_OBJECT_CHANGED:
+			audit_action=BARTLBY_AUDIT_ACTION_MODIFY;
+		break;
+		case BARTLBY_OBJECT_ADDED:
+			audit_action=BARTLBY_AUDIT_ACTION_ADD;
+		break;
+
+	}
+
+	rtc=bartlby_audit(zbartlby_resource, audit_type , id,  audit_action);
+
+
+	return rtc;
+	
+
+
 }
 
 
@@ -462,9 +559,10 @@ static void bartlby_res_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
  */
 PHP_MINIT_FUNCTION(bartlby)
 {
+	REGISTER_INI_ENTRIES();
 	/* If you have INI entries, uncomment these lines 
 	ZEND_INIT_MODULE_GLOBALS(bartlby, php_bartlby_init_globals, NULL);
-	REGISTER_INI_ENTRIES();
+	
 	*/
 	
 	/*
@@ -476,10 +574,41 @@ PHP_MINIT_FUNCTION(bartlby)
 	zend_declare_property_string(bartlby_ce, "foo", sizeof("foo") - 1, "bar", ZEND_ACC_PUBLIC TSRMLS_CC);
 	*/
 	
+	/*
+
+	#define BARTLBY_AUDIT_TYPE_SERVICE 1
+#define BARTLBY_AUDIT_TYPE_SERVER 2
+#define BARTLBY_AUDIT_TYPE_WORKER 3
+#define BARTLBY_AUDIT_TYPE_SERVERGROUP 4
+#define BARTLBY_AUDIT_TYPE_SERVICEGROUP 5
+#define BARTLBY_AUDIT_TYPE_DOWNTIME 6
+
+
+#define BARTLBY_AUDIT_ACTION_ADD 1
+#define BARTLBY_AUDIT_ACTION_MODIFY 2
+#define BARTLBY_AUDIT_ACTION_DELETE 3
+
+*/
 	
 	le_bartlby = zend_register_list_destructors_ex(bartlby_res_dtor, NULL, BARTLBY_RES_NAME, module_number);
 	
 	
+
+
+	//SET CONSTANTS
+
+	//REGISTER_LONG_CONSTANT(name, lval, flags);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVICE", BARTLBY_AUDIT_TYPE_SERVICE, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVER", BARTLBY_AUDIT_TYPE_SERVER, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_WORKER", BARTLBY_AUDIT_TYPE_WORKER, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVERGROUP", BARTLBY_AUDIT_TYPE_SERVERGROUP, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVICEGROUP", BARTLBY_AUDIT_TYPE_SERVICEGROUP, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_DOWNTIME", BARTLBY_AUDIT_TYPE_DOWNTIME, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_ACTION_ADD", BARTLBY_AUDIT_ACTION_ADD, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_ACTION_MODIFY", BARTLBY_AUDIT_ACTION_MODIFY, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_ACTION_DELETE", BARTLBY_AUDIT_ACTION_DELETE, CONST_CS | CONST_PERSISTENT);
+
+
 	
 	return SUCCESS;
 	
@@ -497,6 +626,7 @@ PHP_METHOD(Bartlby, testFunc) /* {{{ */
  */
 PHP_MSHUTDOWN_FUNCTION(bartlby)
 {
+	UNREGISTER_INI_ENTRIES();
 	/* uncomment this line if you have INI entries
 	UNREGISTER_INI_ENTRIES();
 	*/
@@ -530,9 +660,10 @@ PHP_MINFO_FUNCTION(bartlby)
 	php_info_print_table_row(2, "bartlby support", "enabled");
 	php_info_print_table_row(2, "php-ext version", BARTLBY_VERSION);
 	php_info_print_table_end();
+	DISPLAY_INI_ENTRIES();
 
 	/* Remove comments if you have entries in php.ini
-	DISPLAY_INI_ENTRIES();
+	
 	*/
 }
 
@@ -691,6 +822,8 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	LOAD_SYMBOL(DeleteDowntime,bres->SOHandle, "DeleteDowntime");
 	ret=DeleteDowntime(Z_LVAL_P(downtime_id),bres->cfgfile);
+
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(downtime_id), BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_DELETED);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_modify_downtime) {
@@ -757,6 +890,8 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	svc.orch_id=Z_LVAL_P(orch_id);
 	ret=UpdateDowntime(&svc, bres->cfgfile);
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.downtime_id, BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_CHANGED);
+
 	RETURN_LONG(ret);		
 }
 
@@ -825,6 +960,8 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	svc.orch_id=Z_LVAL_P(orch_id);
 	ret=AddDowntime(&svc, bres->cfgfile);
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,ret, BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_ADDED);
+
 	RETURN_LONG(ret);	
 }
 
@@ -2201,6 +2338,9 @@ PHP_FUNCTION(bartlby_add_worker) {
 	svc.orch_id=Z_LVAL_P(orch_id);
 	svc.api_enabled=Z_LVAL_P(api_enabled);
 	ret=AddWorker(&svc, bres->cfgfile);
+
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,ret, BARTLBY_WORKER_GONE, BARTLBY_OBJECT_ADDED);
+
 	RETURN_LONG(ret);	
 }
 
@@ -2224,7 +2364,7 @@ PHP_FUNCTION(bartlby_delete_worker) {
 	
 	LOAD_SYMBOL(DeleteWorker,bres->SOHandle, "DeleteWorker");
 	ret=DeleteWorker(Z_LVAL_P(worker_id),bres->cfgfile);
-	bartlby_mark_object_gone(bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_DELETED);
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_DELETED);
 
 	RETURN_LONG(ret);	
 }
@@ -2356,7 +2496,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 
 	ret=UpdateWorker(&svc, bres->cfgfile);
 	
-	bartlby_mark_object_gone(bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
 	
 	RETURN_LONG(ret);		
 }
@@ -2504,7 +2644,7 @@ PHP_FUNCTION(bartlby_delete_server) {
 	
 	LOAD_SYMBOL(DeleteServer,bres->SOHandle, "DeleteServer");
 	ret=DeleteServer(Z_LVAL_P(server_id),bres->cfgfile);
-	bartlby_mark_object_gone(bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_DELETED);
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_DELETED);
 
 	RETURN_LONG(ret);
 }
@@ -2636,7 +2776,7 @@ PHP_FUNCTION(bartlby_delete_service) {
 	
 	LOAD_SYMBOL(DeleteService,bres->SOHandle, "DeleteService");
 	ret=DeleteService(Z_LVAL_P(service_id),bres->cfgfile);
-	bartlby_mark_object_gone(bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_DELETED);
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_DELETED);
 	RETURN_LONG(ret);
 	
 }
@@ -2806,7 +2946,7 @@ PHP_FUNCTION(bartlby_modify_service) {
 	LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
 	
 	rtc=UpdateService(&svc, bres->cfgfile);
-	bartlby_mark_object_gone(bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_CHANGED);
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_CHANGED);
 
 	RETURN_LONG(rtc);
 	
@@ -3018,6 +3158,8 @@ PHP_FUNCTION(bartlby_add_service) {
 	rtc=AddService(&svc, bres->cfgfile);
 	
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,rtc, BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_ADDED);
+	
 	RETURN_LONG(rtc);
 	
 	
@@ -3130,6 +3272,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	ret=AddServer(&srv, bres->cfgfile);
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,ret, BARTLBY_SERVER_GONE, BARTLBY_OBJECT_ADDED);
 	
 	RETURN_LONG(ret);
 }
@@ -3234,7 +3377,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 
 	ret=ModifyServer(&srv, bres->cfgfile);
 	
-	bartlby_mark_object_gone(bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
 	RETURN_LONG(ret);
 }
 
@@ -4353,7 +4496,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	svc.orch_id=Z_LVAL_P(orch_id);
 	
 	ret=AddServerGroup(&svc, bres->cfgfile);
-	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,ret, BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_ADDED);
 	RETURN_LONG(ret);	
 }
 
@@ -4431,6 +4574,8 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	
 	ret=UpdateServerGroup(&svc, bres->cfgfile);
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.servergroup_id, BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_CHANGED);
+
 	RETURN_LONG(ret);		
 }
 
@@ -4465,6 +4610,9 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	
 	
 	ret=DeleteServerGroup(Z_LVAL_P(servergroup_id),bres->cfgfile);
+
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(servergroup_id), BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_DELETED);
+
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servergroup_id) {
@@ -4679,6 +4827,8 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	
 	ret=AddServiceGroup(&svc, bres->cfgfile);
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,ret, BARTLBY_SERVICEGROUP_GONE, BARTLBY_OBJECT_ADDED);
+
 	RETURN_LONG(ret);	
 }
 
@@ -4751,7 +4901,7 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	
 	ret=UpdateServiceGroup(&svc, bres->cfgfile);
 	
-	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.servicegroup_id, BARTLBY_SERVICEGROUP_GONE, BARTLBY_OBJECT_CHANGED);
 	
 	RETURN_LONG(ret);		
 }
@@ -4779,7 +4929,7 @@ PHP_FUNCTION(bartlby_delete_servicegroup) {
 	
 	LOAD_SYMBOL(DeleteServiceGroup,bres->SOHandle, "DeleteServiceGroup");
 	ret=DeleteServiceGroup(Z_LVAL_P(servicegroup_id),bres->cfgfile);
-	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(servicegroup_id), BARTLBY_SERVICEGROUP_GONE, BARTLBY_OBJECT_DELETED);
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servicegroup_id) {
