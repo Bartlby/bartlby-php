@@ -251,7 +251,6 @@ PHP_METHOD(Bartlby, testFunc);
 
 ZEND_BEGIN_MODULE_GLOBALS(bartlby)
 	long  force_audit;
-	char *audit_dir;
 ZEND_END_MODULE_GLOBALS(bartlby)
 
 
