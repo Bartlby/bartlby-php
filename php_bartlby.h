@@ -80,7 +80,7 @@ if(SUCCESS == zend_hash_find(Z_ARRVAL_P(array), element, strlen(element) + 1, (v
 } \
 if(required == 1) { \
 	if(target == NULL) { \
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Element %s is required\n", element); \
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required\n", element); \
 		RETURN_BOOL(0); \
 	} \
 	if(Z_TYPE_P(target) == IS_NULL) {\
@@ -92,7 +92,7 @@ if(required == 1) { \
 			ZVAL_LONG(target, (long)def_value);\
 		}\
 		if(def_type == BARTLBY_DEFAULT_ERROR) {\
-			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Element %s is required and has no value\n", element); \
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required and has no value\n", element); \
 			RETURN_BOOL(0); \
 		} \
 	}\
