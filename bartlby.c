@@ -817,9 +817,11 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 	convert_to_long(downtime_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	LOAD_SYMBOL(DeleteDowntime,bres->SOHandle, "DeleteDowntime");
+	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(downtime_id), BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_DELETED);
 	ret=DeleteDowntime(Z_LVAL_P(downtime_id),bres->cfgfile);
 
-	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(downtime_id), BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_DELETED);
+	
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_modify_downtime) {
@@ -884,9 +886,12 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	svc.service_id=Z_LVAL_P(downtime_service);
 	svc.downtime_id=Z_LVAL_P(downtime_id);
 	svc.orch_id=Z_LVAL_P(orch_id);
-	ret=UpdateDowntime(&svc, bres->cfgfile);
 	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.downtime_id, BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_CHANGED);
+
+	ret=UpdateDowntime(&svc, bres->cfgfile);
+	
+	
 
 	RETURN_LONG(ret);		
 }
@@ -2359,8 +2364,12 @@ PHP_FUNCTION(bartlby_delete_worker) {
 	
 	
 	LOAD_SYMBOL(DeleteWorker,bres->SOHandle, "DeleteWorker");
-	ret=DeleteWorker(Z_LVAL_P(worker_id),bres->cfgfile);
+	
+
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_DELETED);
+
+	ret=DeleteWorker(Z_LVAL_P(worker_id),bres->cfgfile);
+	
 
 	RETURN_LONG(ret);	
 }
@@ -2490,9 +2499,12 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	svc.orch_id=Z_LVAL_P(orch_id);
 	svc.notification_aggregation_interval=Z_LVAL_P(notification_aggregation_interval);
 
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
+
+
 	ret=UpdateWorker(&svc, bres->cfgfile);
 	
-	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(worker_id), BARTLBY_WORKER_GONE, BARTLBY_OBJECT_CHANGED);
+	
 	
 	RETURN_LONG(ret);		
 }
@@ -2639,8 +2651,11 @@ PHP_FUNCTION(bartlby_delete_server) {
 	
 	
 	LOAD_SYMBOL(DeleteServer,bres->SOHandle, "DeleteServer");
-	ret=DeleteServer(Z_LVAL_P(server_id),bres->cfgfile);
+	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_DELETED);
+
+	ret=DeleteServer(Z_LVAL_P(server_id),bres->cfgfile);
+	
 
 	RETURN_LONG(ret);
 }
@@ -2771,8 +2786,9 @@ PHP_FUNCTION(bartlby_delete_service) {
 	convert_to_long(service_id);
 	
 	LOAD_SYMBOL(DeleteService,bres->SOHandle, "DeleteService");
-	ret=DeleteService(Z_LVAL_P(service_id),bres->cfgfile);
+	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_DELETED);
+	ret=DeleteService(Z_LVAL_P(service_id),bres->cfgfile);
 	RETURN_LONG(ret);
 	
 }
@@ -2941,8 +2957,9 @@ PHP_FUNCTION(bartlby_modify_service) {
 	
 	LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
 	
-	rtc=UpdateService(&svc, bres->cfgfile);
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(service_id), BARTLBY_SERVICE_GONE, BARTLBY_OBJECT_CHANGED);
+	rtc=UpdateService(&svc, bres->cfgfile);
+	
 
 	RETURN_LONG(rtc);
 	
@@ -3371,9 +3388,11 @@ PHP_FUNCTION(bartlby_modify_server) {
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
 	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
 
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
+	
 	ret=ModifyServer(&srv, bres->cfgfile);
 	
-	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
+	
 	RETURN_LONG(ret);
 }
 
@@ -4568,9 +4587,10 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	svc.servergroup_dead=Z_LVAL_P(servergroup_dead);
 	svc.orch_id=Z_LVAL_P(orch_id);
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.servergroup_id, BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_CHANGED);
 	ret=UpdateServerGroup(&svc, bres->cfgfile);
 	
-	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.servergroup_id, BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_CHANGED);
+	
 
 	RETURN_LONG(ret);		
 }
@@ -4604,10 +4624,11 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	LOAD_SYMBOL(DeleteServerGroup,bres->SOHandle, "DeleteServerGroup");
 	
 	
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(servergroup_id), BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_DELETED);
 	
 	ret=DeleteServerGroup(Z_LVAL_P(servergroup_id),bres->cfgfile);
 
-	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(servergroup_id), BARTLBY_SERVERGROUP_GONE, BARTLBY_OBJECT_DELETED);
+	
 
 	RETURN_LONG(ret);	
 }
@@ -4895,9 +4916,12 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
 	svc.orch_id=Z_LVAL_P(orch_id);
 	
+
+	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.servicegroup_id, BARTLBY_SERVICEGROUP_GONE, BARTLBY_OBJECT_CHANGED);
+
 	ret=UpdateServiceGroup(&svc, bres->cfgfile);
 	
-	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.servicegroup_id, BARTLBY_SERVICEGROUP_GONE, BARTLBY_OBJECT_CHANGED);
+	
 	
 	RETURN_LONG(ret);		
 }
@@ -4924,8 +4948,9 @@ PHP_FUNCTION(bartlby_delete_servicegroup) {
 	
 	
 	LOAD_SYMBOL(DeleteServiceGroup,bres->SOHandle, "DeleteServiceGroup");
-	ret=DeleteServiceGroup(Z_LVAL_P(servicegroup_id),bres->cfgfile);
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(servicegroup_id), BARTLBY_SERVICEGROUP_GONE, BARTLBY_OBJECT_DELETED);
+	ret=DeleteServiceGroup(Z_LVAL_P(servicegroup_id),bres->cfgfile);
+	
 	RETURN_LONG(ret);	
 }
 PHP_FUNCTION(bartlby_set_servicegroup_id) {
