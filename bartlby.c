@@ -219,16 +219,77 @@ static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
 /* }}} */
 
 #define BARTLBY_OBJECT_GONE(zbartlby_resource, bres, id, type, msg) if(bartlby_mark_object_gone(zbartlby_resource, bres, id, type, msg) < 0) { \
-																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_audit() Callback failed - and force_audit is enabled via INI"); \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_mark_object_gone() Callback failed - and force_audit is enabled via INI"); \
 															   			RETURN_BOOL(0); \
 																	}
 
-#define BARTLBY_AUDIT_IT(zbartlby_resource, id, type, action) if(bartlby_audit(zbartlby_resource, id, type, action) < 0) { \
-																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_audit() Callback failed - and force_audit is enabled via INI"); \
+#define BARTLBY_OBJECT_AUDIT(zbartlby_resource, id, type, action) if(bartlby_object_audit(zbartlby_resource, id, type, action) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_object_audit() Callback failed - and force_audit is enabled via INI"); \
 															   			RETURN_BOOL(0); \
 																	}
 
-int bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, long action) {
+#define BARTLBY_GENERIC_AUDIT(zbartlby_resource, id, type, logl) if(bartlby_generic_audit(zbartlby_resource, id, type, logl) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_generic_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+
+
+int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_type, char * logline) {
+	
+	zval **params[4];
+	zval type;
+	zval id;
+	zval act;
+	zval function_name;
+	zval log_line;
+	
+	zval *return_user_call;
+
+	zval *t;
+	zval *t2;
+	zval *t3;
+	zval *t4;
+	
+	int res;
+	INIT_ZVAL(type);
+	INIT_ZVAL(id);
+	INIT_ZVAL(function_name);
+	INIT_ZVAL(act);
+
+
+	ZVAL_LONG(&type, audit_type);
+	ZVAL_LONG(&id, object_id);
+	ZVAL_STRING(&log_line, logline, 0);
+	ZVAL_STRING(&function_name, "bartlby_generic_audit", 0);
+
+	
+	
+	params[0] = &bartlby_resource;
+	
+	t=&type;
+	params[1] = &t;
+	t2=&id;
+	params[2] = &t2;
+	t3=&log_line;
+	params[3] = &t3;
+	
+	
+	
+	res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 4, params, 1, NULL TSRMLS_CC);
+	if (res == SUCCESS && return_user_call != NULL && zval_is_true(return_user_call)) {
+		return 0;
+	} else {
+		if((int)BARTLBY_G(force_audit) == 1) {
+			return -1;
+		}
+	} 
+    return -1;
+    //	if((long)BARTLBY_G(force_audit) == 1)  {
+
+}
+
+int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_id, long action) {
 	
 	zval **params[4];
 	zval type;
@@ -253,7 +314,7 @@ int bartlby_audit(zval * bartlby_resource,  long audit_type, long object_id, lon
 	ZVAL_LONG(&type, audit_type);
 	ZVAL_LONG(&id, object_id);
 	ZVAL_LONG(&act, action);
-	ZVAL_STRING(&function_name, "bartlby_audit", 0);
+	ZVAL_STRING(&function_name, "bartlby_object_audit", 0);
 
 	
 	
@@ -294,8 +355,8 @@ PHP_FUNCTION(bartlby_callback_test) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 
-	BARTLBY_AUDIT_IT(zbartlby_resource, 1, 2222, 1);
-	BARTLBY_AUDIT_IT(zbartlby_resource, 2, 3333, 2);
+	BARTLBY_OBJECT_AUDIT(zbartlby_resource, 1, 2222, 1);
+	BARTLBY_OBJECT_AUDIT(zbartlby_resource, 2, 3333, 2);
 	RETURN_LONG(1);
 }
 
@@ -506,7 +567,7 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 
 	}
 
-	rtc=bartlby_audit(zbartlby_resource, audit_type , id,  audit_action);
+	rtc=bartlby_object_audit(zbartlby_resource, audit_type , id,  audit_action);
 
 
 	return rtc;
@@ -1634,6 +1695,7 @@ PHP_FUNCTION(bartlby_check_force) {
 	}
 	svcmap[Z_LVAL_P(bartlby_service_id)].do_force = 1;	
 	r=1;
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id, BARTLBY_AUDIT_TYPE_SERVICE, "Forced a Check");
 	RETURN_LONG(r);
 		
 }

@@ -6,14 +6,20 @@ $r = bartlby_new($cfg);
 $v = bartlby_notification_log_at_index($r, 511);
 $v = bartlby_callback_test($r);
 
+bartlby_check_force($r, 0);
+
 echo "Constant Test:" . BARTLBY_AUDIT_TYPE_SERVICE . "\n";
 
 
 
+function bartlby_generic_audit($res, $id, $type, $line) {
+	echo "GENERIC AUDIT: $id $type $line \n";
+	return true;
+}
 
-function bartlby_audit($res, $type, $id, $action, $folder, $a) {
-	echo "AUDIT: Type=>" . $type . " ID=>" . $id . " action=>" . $action . " folder: " . $folder . "\n";
-	var_dump($res);
+function bartlby_object_audit($res, $type, $id, $action) {
+	echo "AUDIT: Type=>" . $type . " ID=>" . $id . " action=>" . $action  . "\n";
+	
 	return true;
 }
 
