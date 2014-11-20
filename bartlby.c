@@ -2818,6 +2818,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_long(return_value, "escalate_divisor",svc.escalate_divisor);
 		add_assoc_long(return_value, "fires_events",svc.fires_events);
 		add_assoc_long(return_value, "orch_id",svc.orch_id);
+		add_assoc_long(return_value, "notify_last_state",svc.notify_last_state);
 		
 		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers, 1);
 		
@@ -3833,6 +3834,8 @@ PHP_FUNCTION(bartlby_get_service) {
 
 
 	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
+	
+	add_assoc_long(return_value, "notify_last_state",svcmap[Z_LVAL_P(bartlby_service_id)].notify_last_state);
 	
 		
 	//Downtime 060120
