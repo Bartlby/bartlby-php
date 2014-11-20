@@ -557,19 +557,22 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 	switch(msg) {
 		case BARTLBY_OBJECT_DELETED:
 			audit_action=BARTLBY_AUDIT_ACTION_DELETE;
+			bartlby_generic_audit(zbartlby_resource, id, audit_type, "Deleted");
 		break;
 		case BARTLBY_OBJECT_CHANGED:
 			audit_action=BARTLBY_AUDIT_ACTION_MODIFY;
+			bartlby_generic_audit(zbartlby_resource, id,audit_type, "Edited");
 		break;
 		case BARTLBY_OBJECT_ADDED:
 			audit_action=BARTLBY_AUDIT_ACTION_ADD;
+			bartlby_generic_audit(zbartlby_resource, id, audit_type, "Added");
 		break;
 
 	}
 
 	rtc=bartlby_object_audit(zbartlby_resource, audit_type , id,  audit_action);
 
-
+	
 	return rtc;
 	
 
@@ -657,6 +660,7 @@ PHP_MINIT_FUNCTION(bartlby)
 	//REGISTER_LONG_CONSTANT(name, lval, flags);
 	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVICE", BARTLBY_AUDIT_TYPE_SERVICE, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVER", BARTLBY_AUDIT_TYPE_SERVER, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_GENERIC", BARTLBY_AUDIT_TYPE_GENERIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_WORKER", BARTLBY_AUDIT_TYPE_WORKER, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVERGROUP", BARTLBY_AUDIT_TYPE_SERVERGROUP, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("BARTLBY_AUDIT_TYPE_SERVICEGROUP", BARTLBY_AUDIT_TYPE_SERVICEGROUP, CONST_CS | CONST_PERSISTENT);
@@ -949,6 +953,8 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	svc.orch_id=Z_LVAL_P(orch_id);
 	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.downtime_id, BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_CHANGED);
+	
+	
 
 	ret=UpdateDowntime(&svc, bres->cfgfile);
 	
@@ -1023,6 +1029,8 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	ret=AddDowntime(&svc, bres->cfgfile);
 	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,ret, BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_ADDED);
+
+	
 
 	RETURN_LONG(ret);	
 }
@@ -1207,6 +1215,8 @@ PHP_FUNCTION(bartlby_set_passive) {
 	//svcmap[Z_LVAL_P(bartlby_service_id)].notify_last_state=svcmap[Z_LVAL_P(bartlby_service_id)].current_state; //Reset Retain counter
 	
 	r=1;
+
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Submitted Passive Result via UI");
 	RETURN_LONG(r);
 	
 }
@@ -1237,7 +1247,9 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	}
 		
 	svcmap[Z_LVAL_P(bartlby_service_id)].service_ack_current = 1;	
-		
+	
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Acknowledged Problem");
+
 	r=1;
 	RETURN_LONG(r);
 		
@@ -1370,6 +1382,7 @@ PHP_FUNCTION(bartlby_service_set_interval) {
 	}
 	r=1;
 
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Changed Interval");
 	RETURN_LONG(r);
 		
 }
@@ -1419,7 +1432,7 @@ PHP_FUNCTION(bartlby_toggle_service_active) {
 		LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
 		UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
 	}
-		
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Toggled Service active state");	
 	RETURN_LONG(r);
 		
 	
@@ -1476,7 +1489,9 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 		LOAD_SYMBOL(ModifyServer,bres->SOHandle, "ModifyServer");
 		ModifyServer(&srvmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
 	}
-		
+	
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, srvmap[Z_LVAL_P(bartlby_service_id)].server_id ,BARTLBY_AUDIT_TYPE_SERVER, "Toggled Server notify state");	
+
 	RETURN_LONG(r);
 	
 }
@@ -1531,6 +1546,8 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 		LOAD_SYMBOL(ModifyServer,bres->SOHandle, "ModifyServer");
 		ModifyServer(&srvmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
 	}
+
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, srvmap[Z_LVAL_P(bartlby_service_id)].server_id ,BARTLBY_AUDIT_TYPE_SERVER, "Toggled Server active state");	
 		
 	RETURN_LONG(r);
 	
@@ -1576,6 +1593,10 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	
 	LOAD_SYMBOL(UpdateWorker,bres->SOHandle, "UpdateWorker");
 	UpdateWorker(&wrkmap[Z_LVAL_P(bartlby_worker_id)], bres->cfgfile);
+
+
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, wrkmap[Z_LVAL_P(bartlby_worker_id)].worker_id ,BARTLBY_AUDIT_TYPE_WORKER, "Changed Worker State");	
+
 	RETURN_LONG(r);
 			
 }
@@ -1619,6 +1640,8 @@ PHP_FUNCTION(bartlby_toggle_service_handled) {
 		UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
 		
 	}
+
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "toggled HANDLE State");	
 		
 	RETURN_LONG(r);
 		
@@ -1664,7 +1687,7 @@ PHP_FUNCTION(bartlby_toggle_service_notify) {
 		UpdateService(&svcmap[Z_LVAL_P(bartlby_service_id)], bres->cfgfile);
 		
 	}
-		
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[Z_LVAL_P(bartlby_service_id)].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "toggled Service Notification state");		
 	RETURN_LONG(r);
 		
 }
@@ -1758,6 +1781,7 @@ PHP_FUNCTION(bartlby_bulk_force_services) {
 	for(x=0; x<shm_hdr->svccount; x++) {
 		if(btl_is_array(bartlby_service_ids, svcmap[x].service_id) == 1)	 {
 			svcmap[x].do_force=1;
+			BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[x].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Forced a check");		
 			r++;
 		}
 	}
@@ -1805,6 +1829,7 @@ PHP_FUNCTION(bartlby_bulk_service_notify) {
 				UpdateService(&svcmap[x], bres->cfgfile);
 					
 			}
+			BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[x].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Toggled service notify state");		
 			r++;
 				
 					
@@ -1858,6 +1883,7 @@ PHP_FUNCTION(bartlby_bulk_service_active) {
 				UpdateService(&svcmap[x], bres->cfgfile);
 				
 			}
+			BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcmap[x].service_id ,BARTLBY_AUDIT_TYPE_SERVICE, "Toggled service active state");		
 			r++;
 			
 				
@@ -2270,7 +2296,7 @@ PHP_FUNCTION(bartlby_reload) {
 	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
 	shm_hdr->do_reload=1;
 		
-		
+					
 		
 		
 	RETURN_TRUE;	
@@ -4780,7 +4806,7 @@ PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
 		UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], bres->cfgfile);
 		
 	}
-	
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_id ,BARTLBY_AUDIT_TYPE_SERVERGROUP, "Toggled servergroup notify state");		
 	RETURN_LONG(r);
 	
 }
@@ -4840,6 +4866,8 @@ PHP_FUNCTION(bartlby_toggle_servergroup_active) {
 		UpdateServerGroup(&srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)], bres->cfgfile);
 		
 	}
+
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_id ,BARTLBY_AUDIT_TYPE_SERVERGROUP, "Toggled servergroup active state");		
 	
 	RETURN_LONG(r);
 	
@@ -5102,7 +5130,7 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_notify) {
 		UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)],bres->cfgfile);
 		
 	}
-	
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_id ,BARTLBY_AUDIT_TYPE_SERVICEGROUP, "Toggled servicegroup notification state");		
 	RETURN_LONG(r);
 	
 }
@@ -5162,6 +5190,7 @@ PHP_FUNCTION(bartlby_toggle_servicegroup_active) {
 		UpdateServiceGroup(&svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)], bres->cfgfile);
 		
 	}
+	BARTLBY_GENERIC_AUDIT(zbartlby_resource, svcgrpmap[Z_LVAL_P(bartlby_servicegroup_id)].servicegroup_id ,BARTLBY_AUDIT_TYPE_SERVICEGROUP, "Toggled servicegroup active state");		
 	
 	RETURN_LONG(r);
 		
