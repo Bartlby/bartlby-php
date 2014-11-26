@@ -3,10 +3,7 @@ ini_set("bartlby.force_audit", 1);
 //testing 1231
 $cfg = "/opt/bartlby/etc/bartlby.cfg";
 $r = bartlby_new($cfg);
-$v = bartlby_notification_log_at_index($r, 511);
-$v = bartlby_callback_test($r);
-
-bartlby_check_force($r, 0);
+bartlby_toggle_server_active($r, 1, 1);
 
 echo "Constant Test:" . BARTLBY_AUDIT_TYPE_SERVICE . "\n";
 

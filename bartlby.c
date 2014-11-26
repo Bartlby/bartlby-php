@@ -256,6 +256,7 @@ int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_t
 	INIT_ZVAL(id);
 	INIT_ZVAL(function_name);
 	INIT_ZVAL(act);
+	INIT_ZVAL(log_line);
 
 
 	ZVAL_LONG(&type, audit_type);
