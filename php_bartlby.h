@@ -29,6 +29,7 @@
 #define BARTLBY_AUDIT_TYPE_SERVICEGROUP 5
 #define BARTLBY_AUDIT_TYPE_DOWNTIME 6
 #define BARTLBY_AUDIT_TYPE_GENERIC 7
+#define BARTLBY_AUDIT_TYPE_TRAP 7
 
 
 #define BARTLBY_AUDIT_ACTION_ADD 1
@@ -41,9 +42,9 @@
 #define BARTLBY_SERVER_GONE 2
 #define BARTLBY_WORKER_GONE 3
 #define BARTLBY_DOWNTIME_GONE 4
-
 #define BARTLBY_SERVICEGROUP_GONE 5
 #define BARTLBY_SERVERGROUP_GONE 6
+#define BARTLBY_TRAP_GONE 7
 
 
 #define BARTLBY_OBJECT_CHANGED 1
@@ -233,6 +234,13 @@ PHP_FUNCTION(bartlby_get_core_extension_info);
 PHP_FUNCTION(bartlby_new);
 PHP_FUNCTION(bartlby_close);
 
+
+
+PHP_FUNCTION(bartlby_get_trap);
+PHP_FUNCTION(bartlby_add_trap);
+PHP_FUNCTION(bartlby_modify_trap);
+PHP_FUNCTION(bartlby_delete_trap);
+PHP_FUNCTION(bartlby_set_trap_id);
 
 //Notitification Log
 
