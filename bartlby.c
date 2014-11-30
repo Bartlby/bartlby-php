@@ -1155,7 +1155,7 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 	}
 	
 	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup);
+	my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup)+sizeof(struct trap);
 	if(my_size != shm_hdr->size_of_structs) {	
 		RETURN_FALSE;
 	} else {
