@@ -281,6 +281,7 @@ struct shm_counter {
 	long servers;	
 	long servergroups;
 	long servicegroups;
+	long traps;
 };
 
 struct perf_statistic {
