@@ -341,6 +341,7 @@ struct shm_header {
 	long srvcount;
 	long srvgroupcount;
 	long svcgroupcount;
+	long trapcount;
 	long current_running;
 	char  version[50];
 	int do_reload;
@@ -389,6 +390,22 @@ struct server {
 	char exec_plan[2048];
 } xxyz;
 
+
+struct trap {
+    long trap_id;
+    char trap_name[512];
+    char trap_catcher[512];
+    char trap_status_text[512];
+    char trap_status_ok[512];
+    char trap_status_warning[512];
+    char trap_status_critical[512];
+    long trap_service_id;
+    long service_shm_place;
+    int trap_fixed_status;
+    int trap_prio;
+    int trap_is_final;
+    int orch_id;
+} zzk;
 
 
 struct service {
