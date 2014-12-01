@@ -5275,6 +5275,7 @@ PHP_FUNCTION(bartlby_get_trap) {
 	add_assoc_long(return_value, "trap_prio", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_prio);
 	add_assoc_long(return_value, "trap_is_final", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_is_final);
 	add_assoc_long(return_value, "orch_id", trapmap[Z_LVAL_P(bartlby_trap_id)].orch_id);
+	add_assoc_long(return_value, "service_shm_place", trapmap[Z_LVAL_P(bartlby_trap_id)].service_shm_place);
 
 }
 
