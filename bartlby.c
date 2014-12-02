@@ -2721,6 +2721,7 @@ PHP_FUNCTION(bartlby_get_info) {
 	add_assoc_long(return_value, "downtimes", shm_hdr->dtcount);
 	add_assoc_long(return_value, "servergroups", shm_hdr->srvgroupcount);
 	add_assoc_long(return_value, "servicegroups", shm_hdr->svcgroupcount);
+	add_assoc_long(return_value, "traps", shm_hdr->trapcount);
 
 	add_assoc_long(return_value, "current_running", shm_hdr->current_running);
 	add_assoc_long(return_value, "do_reload", shm_hdr->do_reload);
