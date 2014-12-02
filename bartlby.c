@@ -177,6 +177,7 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_modify_trap, NULL)
 	PHP_FE(bartlby_delete_trap, NULL)
 	PHP_FE(bartlby_set_trap_id, NULL)
+	PHP_FE(bartlby_get_trap_by_id, NULL)
 
 	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
