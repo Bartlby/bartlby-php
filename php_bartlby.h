@@ -415,6 +415,8 @@ struct trap {
     int trap_prio;
     int trap_is_final;
     int orch_id;
+    int is_gone;
+    int matched;    
 } zzk;
 
 
