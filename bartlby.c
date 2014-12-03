@@ -563,7 +563,7 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 			case BARTLBY_TRAP_GONE:
 				for(x=0; x<shm_hdr->trapcount; x++) {
 					if(trapmap[x].trap_id == id) {
-						//srvgrpmap[x].is_gone = msg;
+						trapmap[x].is_gone = msg;
 					}	
 				}	
 				audit_type=BARTLBY_AUDIT_TYPE_TRAP;
