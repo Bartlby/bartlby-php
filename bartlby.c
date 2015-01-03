@@ -5362,8 +5362,7 @@ PHP_FUNCTION(bartlby_add_trap) {
 	zval * trap_prio;
 	zval * trap_is_final;
 	zval * orch_id;
-	zval * trap_last_match;
-	zval * trap_last_data;
+	
 	
 	
 	zval ** temp_pp;
@@ -5399,9 +5398,7 @@ PHP_FUNCTION(bartlby_add_trap) {
 	GETARRAY_EL_FROM_HASH(trap_is_final, "trap_is_final", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 
-	GETARRAY_EL_FROM_HASH(trap_last_match, "trap_last_match", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
-	GETARRAY_EL_FROM_HASH(trap_last_data, "trap_last_data", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, " ");
-
+	
 
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -5412,7 +5409,7 @@ PHP_FUNCTION(bartlby_add_trap) {
 	convert_to_string(trap_status_ok);
 	convert_to_string(trap_status_warning);
 	convert_to_string(trap_status_critical);
-	convert_to_string(trap_last_data);
+	
 
 
 	convert_to_long(trap_service_id);
@@ -5421,7 +5418,6 @@ PHP_FUNCTION(bartlby_add_trap) {
 	convert_to_long(trap_is_final);
 	convert_to_long(orch_id);
 	
-	convert_to_long(trap_last_match);	
 	
 	
 	
@@ -5433,14 +5429,14 @@ PHP_FUNCTION(bartlby_add_trap) {
 	strcpy(svc.trap_status_ok, Z_STRVAL_P(trap_status_ok));
 	strcpy(svc.trap_status_warning, Z_STRVAL_P(trap_status_warning));
 	strcpy(svc.trap_status_critical, Z_STRVAL_P(trap_status_critical));
-	strcpy(svc.trap_last_data, Z_STRVAL_P(trap_last_data));
+	
 
 	svc.trap_service_id=Z_LVAL_P(trap_service_id);
 	svc.trap_fixed_status=Z_LVAL_P(trap_fixed_status);
 	svc.trap_prio=Z_LVAL_P(trap_prio);
 	svc.trap_is_final=Z_LVAL_P(trap_is_final);
 	svc.orch_id=Z_LVAL_P(orch_id);
-	svc.trap_last_match=Z_LVAL_P(trap_last_match);
+	
 
 	
 	ret=AddTrap(&svc, bres->cfgfile);
@@ -5464,9 +5460,7 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	zval * trap_is_final;
 	zval * orch_id;	
 	zval * trap_id;
-	zval * trap_last_match;
-	zval * trap_last_data;
-
+	
 
 
 	zval ** temp_pp;
@@ -5502,8 +5496,6 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	GETARRAY_EL_FROM_HASH(trap_prio, "trap_prio", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(trap_is_final, "trap_is_final", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
-	GETARRAY_EL_FROM_HASH(trap_last_match, "trap_last_match", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
-	GETARRAY_EL_FROM_HASH(trap_last_data, "trap_last_data", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, " ");
 	
 	
 	
@@ -5515,14 +5507,14 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	convert_to_string(trap_status_ok);
 	convert_to_string(trap_status_warning);
 	convert_to_string(trap_status_critical);
-	convert_to_string(trap_last_data);
+	
 
 	convert_to_long(trap_service_id);
 	convert_to_long(trap_fixed_status);
 	convert_to_long(trap_prio);
 	convert_to_long(trap_is_final);
 	convert_to_long(orch_id);
-	convert_to_long(trap_last_match);
+	
 		
 	
 	convert_to_long(trap_id);
@@ -5538,7 +5530,7 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	strcpy(svc.trap_status_ok, Z_STRVAL_P(trap_status_ok));
 	strcpy(svc.trap_status_warning, Z_STRVAL_P(trap_status_warning));
 	strcpy(svc.trap_status_critical, Z_STRVAL_P(trap_status_critical));
-	strcpy(svc.trap_last_data, Z_STRVAL_P(trap_last_data));
+	
 
 	svc.trap_service_id=Z_LVAL_P(trap_service_id);
 	svc.trap_fixed_status=Z_LVAL_P(trap_fixed_status);
@@ -5546,7 +5538,7 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	svc.trap_is_final=Z_LVAL_P(trap_is_final);
 	svc.orch_id=Z_LVAL_P(orch_id);	
 	svc.trap_id=Z_LVAL_P(trap_id);	
-	svc.trap_last_match=Z_LVAL_P(trap_last_match);	
+	
 	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,svc.trap_id, BARTLBY_TRAP_GONE, BARTLBY_OBJECT_CHANGED);
 	ret=UpdateTrap(&svc, bres->cfgfile);
