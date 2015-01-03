@@ -3310,6 +3310,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval * orch_id;
 	zval * exec_plan;
 	zval * web_hooks;
+	zval * json_endpoint;
 
 	zval ** temp_pp;
 	zval * options_array;
@@ -3352,6 +3353,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	GETARRAY_EL_FROM_HASH(exec_plan, "exec_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(web_hooks, "web_hooks", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(json_endpoint, "json_endpoint", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -3369,6 +3371,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_string(enabled_triggers);
 	convert_to_string(exec_plan);
 	convert_to_string(web_hooks);
+	convert_to_string(json_endpoint);
 	
 	convert_to_string(server_ssh_keyfile);
 	convert_to_string(server_ssh_passphrase);
@@ -3396,6 +3399,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
 	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
 	strcpy(srv.web_hooks, Z_STRVAL_P(web_hooks));
+	strcpy(srv.json_endpoint, Z_STRVAL_P(json_endpoint));
 	
 	ret=AddServer(&srv, bres->cfgfile);
 	
@@ -3424,6 +3428,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval * orch_id;
 	zval * exec_plan;
 	zval * web_hooks;
+	zval * json_endpoint;
 
 	zval ** temp_pp;
 	zval * options_array;
@@ -3462,6 +3467,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 
 	GETARRAY_EL_FROM_HASH(exec_plan, "exec_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(web_hooks, "web_hooks", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(json_endpoint, "json_endpoint", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -3482,6 +3488,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	convert_to_string(server_ssh_passphrase);
 	convert_to_string(server_ssh_username);
 	convert_to_string(web_hooks);
+	convert_to_string(json_endpoint);
 	
 	
 	
@@ -3506,6 +3513,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
 	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
 	strcpy(srv.web_hooks, Z_STRVAL_P(web_hooks));
+	strcpy(srv.json_endpoint, Z_STRVAL_P(json_endpoint));
 
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
 	
@@ -3569,6 +3577,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		add_assoc_string(return_value, "server_ip", svc.client_ip, 1);
 		add_assoc_string(return_value, "exec_plan", svc.exec_plan, 1);
 		add_assoc_string(return_value, "web_hooks", svc.web_hooks, 1);
+		add_assoc_string(return_value, "json_endpoint", svc.json_endpoint, 1);
 		
 		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile, 1);
 		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase, 1);
@@ -4430,6 +4439,7 @@ PHP_FUNCTION(bartlby_get_server) {
 	add_assoc_string(return_value, "server_icon", srvmap[Z_LVAL_P(bartlby_server_id)].server_icon, 1);
 	add_assoc_string(return_value, "exec_plan", srvmap[Z_LVAL_P(bartlby_server_id)].exec_plan, 1);
 	add_assoc_string(return_value, "web_hooks", srvmap[Z_LVAL_P(bartlby_server_id)].web_hooks, 1);
+	add_assoc_string(return_value, "json_endpoint", srvmap[Z_LVAL_P(bartlby_server_id)].json_endpoint, 1);
 
 
 	add_assoc_long(return_value, "server_port",srvmap[Z_LVAL_P(bartlby_server_id)].client_port);
