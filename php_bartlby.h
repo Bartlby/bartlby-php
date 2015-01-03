@@ -398,6 +398,7 @@ struct server {
 	int default_service_type;
 	int orch_id;
 	char exec_plan[2048];
+	char web_hooks[1024];
 } xxyz;
 
 
@@ -416,7 +417,9 @@ struct trap {
     int trap_is_final;
     int orch_id;
     int is_gone;
-    int matched;    
+    int matched;
+    int trap_last_match;
+    char trap_last_data[2048];
 } zzk;
 
 
