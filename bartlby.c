@@ -3311,6 +3311,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	zval * exec_plan;
 	zval * web_hooks;
 	zval * json_endpoint;
+	zval * web_hooks_level;
 
 	zval ** temp_pp;
 	zval * options_array;
@@ -3354,7 +3355,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	GETARRAY_EL_FROM_HASH(exec_plan, "exec_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(web_hooks, "web_hooks", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(json_endpoint, "json_endpoint", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
-
+	GETARRAY_EL_FROM_HASH(web_hooks_level, "web_hooks_level", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -3368,6 +3369,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	convert_to_long(server_notify);
 	convert_to_long(server_dead);
 	convert_to_long(orch_id);
+	convert_to_long(web_hooks_level);
 	convert_to_string(enabled_triggers);
 	convert_to_string(exec_plan);
 	convert_to_string(web_hooks);
@@ -3393,7 +3395,8 @@ PHP_FUNCTION(bartlby_add_server) {
 	srv.server_dead=Z_LVAL_P(server_dead);
 	srv.default_service_type=Z_LVAL_P(default_service_type);
 	srv.orch_id=Z_LVAL_P(orch_id);
-	
+	srv.web_hooks_level=Z_LVAL_P(web_hooks_level);
+
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
@@ -3429,6 +3432,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	zval * exec_plan;
 	zval * web_hooks;
 	zval * json_endpoint;
+	zval * web_hooks_level;
 
 	zval ** temp_pp;
 	zval * options_array;
@@ -3465,6 +3469,8 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	GETARRAY_EL_FROM_HASH(default_service_type, "default_service_type", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,1);
 
+	GETARRAY_EL_FROM_HASH(web_hooks_level, "web_hooks_level", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
+
 	GETARRAY_EL_FROM_HASH(exec_plan, "exec_plan", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(web_hooks, "web_hooks", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(json_endpoint, "json_endpoint", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
@@ -3483,6 +3489,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	convert_to_long(server_notify);
 	convert_to_long(orch_id);
 	convert_to_long(server_dead);
+	convert_to_long(web_hooks_level);
 	
 	convert_to_string(server_ssh_keyfile);
 	convert_to_string(server_ssh_passphrase);
@@ -3508,6 +3515,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	srv.server_dead=Z_LVAL_P(server_dead);
 	srv.default_service_type=Z_LVAL_P(default_service_type);
 	srv.orch_id=Z_LVAL_P(orch_id);
+	srv.web_hooks_level=Z_LVAL_P(web_hooks_level);
 	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
 	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
 	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
@@ -3588,6 +3596,8 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		add_assoc_long(return_value, "server_port",svc.client_port);
 		add_assoc_long(return_value, "orch_id",svc.orch_id);
 		add_assoc_long(return_value, "server_id",Z_LVAL_P(server_id));
+
+		add_assoc_long(return_value, "web_hooks_level",svc.web_hooks_level);
 
 		
 		add_assoc_long(return_value, "default_service_type",svc.default_service_type);
@@ -4441,7 +4451,7 @@ PHP_FUNCTION(bartlby_get_server) {
 	add_assoc_string(return_value, "web_hooks", srvmap[Z_LVAL_P(bartlby_server_id)].web_hooks, 1);
 	add_assoc_string(return_value, "json_endpoint", srvmap[Z_LVAL_P(bartlby_server_id)].json_endpoint, 1);
 
-
+	add_assoc_long(return_value, "web_hooks_level",srvmap[Z_LVAL_P(bartlby_server_id)].web_hooks_level);
 	add_assoc_long(return_value, "server_port",srvmap[Z_LVAL_P(bartlby_server_id)].client_port);
 	add_assoc_long(return_value, "server_id",srvmap[Z_LVAL_P(bartlby_server_id)].server_id);
 		

@@ -400,6 +400,7 @@ struct server {
 	char exec_plan[2048];
 	char web_hooks[1024];
 	char json_endpoint[256];
+	int web_hooks_level;
 } xxyz;
 
 
