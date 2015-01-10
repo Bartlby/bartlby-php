@@ -783,8 +783,8 @@ PHP_FUNCTION(bartlby_set_downtime_id) {
 	zval * mig;
 	
 	char * dlmsg;
-	int ret;
-	int (*DowntimeChangeId)(int, int, char*);
+	long ret;
+	long (*DowntimeChangeId)(long, long, char*);
 	
 	bartlby_res * bres;
 
@@ -813,9 +813,9 @@ PHP_FUNCTION(bartlby_set_worker_id) {
 	
 	char * dlmsg;
 	
-	int ret;
+	long ret;
 	
-	int (*WorkerChangeId)(int, int,  char*);
+	long (*WorkerChangeId)(long, long,  char*);
 	bartlby_res * bres;	
 	
 	
@@ -838,9 +838,9 @@ PHP_FUNCTION(bartlby_set_service_id) {
 	
 	char * dlmsg;
 	
-	int ret;
+	long ret;
 	
-	int (*ServiceChangeId)(int, int,  char*);
+	long (*ServiceChangeId)(long, long,  char*);
 	bartlby_res * bres;
 	
 	
@@ -864,9 +864,9 @@ PHP_FUNCTION(bartlby_set_server_id) {
 	void * SOHandle;
 	char * dlmsg;
 	
-	int ret;
+	long ret;
 	
-	int (*ServerChangeId)(int, int, int, char*);
+	long (*ServerChangeId)(long, long, int, char*);
 	bartlby_res * bres;
 
 	
@@ -891,7 +891,7 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 	
 	char * dlmsg;
 	int ret;
-	int (*DeleteDowntime)(int, char*);
+	int (*DeleteDowntime)(long, char*);
 	struct service svc;
 	bartlby_res * bres;
 
@@ -999,8 +999,8 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	zval * options_array;
 	
 	char * dlmsg;
-	int ret;
-	int (*AddDowntime)(struct downtime *,char *);
+	long ret;
+	long (*AddDowntime)(struct downtime *,char *);
 	struct downtime svc;
 	bartlby_res * bres;	
 
@@ -2352,8 +2352,8 @@ PHP_FUNCTION(bartlby_add_worker) {
 	zval * options_array;
 	
 	char * dlmsg;
-	int ret;
-	int (*AddWorker)(struct worker *,char *);
+	long ret;
+	long (*AddWorker)(struct worker *,char *);
 	struct worker svc;
 	bartlby_res * bres;
 
@@ -2460,7 +2460,7 @@ PHP_FUNCTION(bartlby_delete_worker) {
 	
 	char * dlmsg;
 	int ret;
-	int (*DeleteWorker)(int, char*);
+	int (*DeleteWorker)(long, char*);
 	bartlby_res * bres;
 
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&worker_id)==FAILURE) {
@@ -2623,7 +2623,7 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 	
 	char * dlmsg;
 	int ret;
-	int (*GetWorkerById)(int,struct worker *, char *);
+	int (*GetWorkerById)(long,struct worker *, char *);
 	struct worker  svc;
 	
 	bartlby_res * bres;
@@ -2748,7 +2748,7 @@ PHP_FUNCTION(bartlby_delete_server) {
 	
 	char * dlmsg;
 	int ret;
-	int (*DeleteServer)(int, char*);
+	int (*DeleteServer)(long, char*);
 	bartlby_res * bres;
 	
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
@@ -2778,7 +2778,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 	int ret;
 	bartlby_res * bres;
 	
-	int (*GetServiceById)(int,struct service *, char *);
+	int (*GetServiceById)(long,struct service *, char *);
 	
 	struct service  svc;
 	
@@ -2885,7 +2885,7 @@ PHP_FUNCTION(bartlby_delete_service) {
 	
 	char * dlmsg;
 	int ret;
-	int (*DeleteService)(int, char*);
+	int (*DeleteService)(long, char*);
 	bartlby_res * bres;
 
 	
@@ -3128,7 +3128,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	int ret;
 	int rtc;
 	
-	int (*AddService)(struct service *, char *);
+	long (*AddService)(struct service *, char *);
 	
 	zval * server_id , * zbartlby_resource, * plugin, * service_name , * plugin_arguments, * notify_enabled, *exec_plan, *check_interval, *service_type, *service_passive_timeout, *service_var, * service_check_timeout, * service_ack_enabled, * service_retain;
 	zval * snmp_community, * snmp_objid, *snmp_version, *snmp_warning, *snmp_critical, *snmp_type;
@@ -3319,9 +3319,9 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	char * dlmsg;
 	
-	int ret;
+	long ret;
 	
-	int (*AddServer)(struct server *,char *);
+	long (*AddServer)(struct server *,char *);
 	
 	struct server srv;
 	bartlby_res * bres;
@@ -3558,7 +3558,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	int u;
 	int dtmapindex;
 	
-	int (*GetServerById)(int,struct server *, char *);
+	int (*GetServerById)(long,struct server *, char *);
 	struct server  svc;
 	bartlby_res * bres;
 
@@ -4047,7 +4047,7 @@ PHP_FUNCTION(bartlby_get_downtime_by_id) {
 	
 	char * dlmsg;
 	int ret;
-	int (*GetDowntimeById)(int,struct downtime *, char *);
+	int (*GetDowntimeById)(long,struct downtime *, char *);
 	struct downtime  svc;
 	
 	bartlby_res * bres;
@@ -4148,7 +4148,7 @@ PHP_FUNCTION(bartlby_get_servergroup_by_id) {
 	
 	char * dlmsg;
 	int ret;
-	int (*GetServerGroupById)(int,struct servergroup *, char *);
+	int (*GetServerGroupById)(long,struct servergroup *, char *);
 	struct servergroup  svc;
 	
 	bartlby_res * bres;
@@ -4268,7 +4268,7 @@ PHP_FUNCTION(bartlby_get_servicegroup_by_id) {
   
   char * dlmsg;
   int ret;
-  int (*GetServicegroupById)(int,struct servicegroup *, char *);
+  int (*GetServicegroupById)(long,struct servicegroup *, char *);
   struct servicegroup  svc;
   
   bartlby_res * bres;
@@ -4607,9 +4607,9 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	
 	char * dlmsg;
 	
-	int ret;
+	long ret;
 	
-	int (*AddServerGroup)(struct servergroup *,char *);
+	long (*AddServerGroup)(struct servergroup *,char *);
 	
 	struct servergroup svc;
 	bartlby_res * bres;
@@ -4750,7 +4750,7 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	
 	int ret;
 	
-	int (*DeleteServerGroup)(int, char*);
+	int (*DeleteServerGroup)(long, char*);
 	
 	struct service svc;
 	bartlby_res * bres;
@@ -4785,8 +4785,8 @@ PHP_FUNCTION(bartlby_set_servergroup_id) {
 	
 	
 	char * dlmsg;
-	int ret;
-	int (*ServerGroupChangeId)(int, int, char*);
+	long ret;
+	long (*ServerGroupChangeId)(long, long, char*);
 	bartlby_res * bres;
 	
 	
@@ -4941,8 +4941,8 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	zval * options_array;
 	
 	char * dlmsg;
-	int ret;
-	int (*AddServiceGroup)(struct servicegroup *,char *);
+	long ret;
+	long (*AddServiceGroup)(struct servicegroup *,char *);
 	struct servicegroup svc;
 	bartlby_res * bres;
 
@@ -5081,7 +5081,7 @@ PHP_FUNCTION(bartlby_delete_servicegroup) {
 	
 	char * dlmsg;
 	int ret;
-	int (*DeleteServiceGroup)(int, char*);
+	int (*DeleteServiceGroup)(long, char*);
 	struct service svc;
 	bartlby_res * bres;
 
@@ -5108,8 +5108,8 @@ PHP_FUNCTION(bartlby_set_servicegroup_id) {
 	
 	
 	char * dlmsg;
-	int ret;
-	int (*ServiceGroupChangeId)(int, int, char*);
+	long ret;
+	long (*ServiceGroupChangeId)(long, long, char*);
 	bartlby_res * bres;
 	
 	
@@ -5327,7 +5327,7 @@ PHP_FUNCTION(bartlby_get_trap_by_id) {
 	
 	char * dlmsg;
 	int ret;
-	int (*GetTrapById)(int,struct trap *, char *);
+	int (*GetTrapById)(long,struct trap *, char *);
 	struct trap  svc;
 	
 	bartlby_res * bres;
@@ -5392,7 +5392,7 @@ PHP_FUNCTION(bartlby_add_trap) {
 	
 	int ret;
 	
-	int (*AddTrap)(struct trap *,char *);
+	long (*AddTrap)(struct trap *,char *);
 	
 	struct trap svc;
 	bartlby_res * bres;
@@ -5578,7 +5578,7 @@ PHP_FUNCTION(bartlby_delete_trap) {
 	
 	int ret;
 	
-	int (*DeleteTrap)(int, char*);
+	int (*DeleteTrap)(long, char*);
 	
 	struct trap svc;
 	bartlby_res * bres;
@@ -5613,8 +5613,8 @@ PHP_FUNCTION(bartlby_set_trap_id) {
 	
 	
 	char * dlmsg;
-	int ret;
-	int (*TrapChangeId)(int, int, char*);
+	long ret;
+	long (*TrapChangeId)(long, long, char*);
 	bartlby_res * bres;
 	
 	
@@ -5626,7 +5626,7 @@ PHP_FUNCTION(bartlby_set_trap_id) {
 	convert_to_long(to);
 	
 	
-	
+
 	LOAD_SYMBOL(TrapChangeId,bres->SOHandle, "TrapChangeId");
 	
 	
