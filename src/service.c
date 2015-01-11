@@ -186,14 +186,14 @@ PHP_FUNCTION(bartlby_get_service) {
 	
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
+	wrkmap=bartlby_SHM_WorkerMap(bres->bartlby_address);
+	dtmap=bartlby_SHM_DowntimeMap(bres->bartlby_address);
+	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
+	evntmap=bartlby_SHM_EventMap(bres->bartlby_address);
+	srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
+	svcgrpmap=bartlby_SHM_ServiceGroupMap(bres->bartlby_address);
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
 		php_error(E_WARNING, "Service id out of bounds");	
@@ -871,8 +871,8 @@ PHP_FUNCTION(bartlby_service_set_interval) {
 	convert_to_long(do_writeback);
 	
 
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -918,8 +918,8 @@ PHP_FUNCTION(bartlby_toggle_service_active) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -964,8 +964,8 @@ PHP_FUNCTION(bartlby_toggle_service_handled) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1011,8 +1011,8 @@ PHP_FUNCTION(bartlby_toggle_service_notify) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -1081,8 +1081,8 @@ PHP_FUNCTION(bartlby_bulk_force_services) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 	r=0;
 	for(x=0; x<shm_hdr->svccount; x++) {
@@ -1124,8 +1124,8 @@ PHP_FUNCTION(bartlby_bulk_service_notify) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 	r=0;
 	for(x=0; x<shm_hdr->svccount; x++) {
@@ -1178,8 +1178,8 @@ PHP_FUNCTION(bartlby_bulk_service_active) {
 		
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 	r=0;
 	for(x=0; x<shm_hdr->svccount; x++) {

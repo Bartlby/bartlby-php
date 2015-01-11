@@ -168,15 +168,15 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 
 	int rtc;
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-	dtmap=(struct downtime *)(void *)&wrkmap[shm_hdr->wrkcount+1];
-	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
-	trapmap=(struct trap *)(void *)&svcgrpmap[shm_hdr->svcgroupcount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
+	wrkmap=bartlby_SHM_WorkerMap(bres->bartlby_address);
+	dtmap=bartlby_SHM_DowntimeMap(bres->bartlby_address);
+	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
+	evntmap=bartlby_SHM_EventMap(bres->bartlby_address);
+	srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
+	svcgrpmap=bartlby_SHM_ServiceGroupMap(bres->bartlby_address);
+	trapmap=bartlby_SHM_TrapMap(bres->bartlby_address);
 	
 
 

@@ -39,15 +39,10 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	
 	char * dlmsg;
 	struct shm_header * shm_hdr;
-	struct service * svcmap;
-	struct worker * wrkmap;
 	struct downtime * dtmap;
 	struct server * srvmap;
-	struct servicegroup * grp;
 	struct service * sv;
-	struct btl_event * evntmap;
 	struct servergroup * srvgrpmap;
-	struct servicegroup * svcgrpmap;
 	int x;
 	int z;
 	int y;
@@ -103,14 +98,12 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		
 		add_assoc_long(return_value, "default_service_type",svc.default_service_type);
 		
-		shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-		svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-		wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-		dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-		srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-		evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-		srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-		svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+		shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+		
+		dtmap=bartlby_SHM_DowntimeMap(bres->bartlby_address);
+		srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
+		srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
+		
 			
 		current_time=time(NULL);
 		is_down=0;
@@ -482,13 +475,9 @@ PHP_FUNCTION(bartlby_delete_server) {
 
 PHP_FUNCTION(bartlby_get_server) {
 	struct shm_header * shm_hdr;
-	struct service * svcmap;
-	struct worker * wrkmap;
 	struct downtime * dtmap;
-	struct btl_event * evntmap;
 	struct server * srvmap;	
 	struct servergroup * srvgrpmap;
-	struct servicegroup * svcgrpmap;
 	int is_down;
 	int current_time;
 	int dtmapindex;
@@ -512,14 +501,10 @@ PHP_FUNCTION(bartlby_get_server) {
 		RETURN_FALSE;
 	}
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
-	srvgrpmap=(struct servergroup *)(void *)&evntmap[EVENT_QUEUE_MAX+1];
-	svcgrpmap=(struct servicegroup *)(void *)&srvgrpmap[shm_hdr->srvgroupcount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	dtmap=bartlby_SHM_DowntimeMap(bres->bartlby_address);
+	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
+	srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
 	
 	if(Z_LVAL_P(bartlby_server_id) > shm_hdr->srvcount-1) {
 		php_error(E_WARNING, "Server id out of bounds");	
@@ -658,9 +643,6 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 	int r;
 	char * dlmsg;
 	
-	struct service * svcmap;
-	struct worker * wrkmap;
-	struct downtime * dtmap;
 	struct server * srvmap;
 		
 	int (*ModifyServer)(struct server *, char *);
@@ -675,11 +657,8 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 	convert_to_long(do_writeback);
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {
@@ -715,9 +694,6 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 	int r;
 	char * dlmsg;
 	
-	struct service * svcmap;
-	struct worker * wrkmap;
-	struct downtime * dtmap;
 	struct server * srvmap;
 		
 	int (*ModifyServer)(struct server *, char *);
@@ -732,11 +708,8 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 	convert_to_long(do_writeback);
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
 	
 	
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->srvcount-1) {

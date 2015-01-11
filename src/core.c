@@ -79,7 +79,7 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 		RETURN_FALSE;
 	}
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup)+sizeof(struct trap);
 	if(my_size != shm_hdr->size_of_structs) {	
 		RETURN_FALSE;
@@ -104,7 +104,7 @@ PHP_FUNCTION(bartlby_toggle_sirene) {
 		RETURN_FALSE;
 	}
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	if(shm_hdr->sirene_mode== 1) {
 		shm_hdr->sirene_mode = 0;
 		r=0;
@@ -141,8 +141,8 @@ PHP_FUNCTION(bartlby_set_passive) {
 		RETURN_FALSE;
 	}
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 	
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -180,8 +180,8 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -204,17 +204,7 @@ PHP_FUNCTION(bartlby_notification_log_at_index) {
 		zval * idx;
 		struct shm_header * shm_hdr;
 		bartlby_res * bres;
-		/*
-int notification_valid; //-1 invalid == end of list
-	long worker_id; //Worker id
-	long service_id; //Service_id
-	int state; //State
-	int aggregated; //Default -1 > 0 - this notification has already been aggregated
-	char trigger_name[512];
-	int type; // 0 if it was a normal notification, 1 = it was a escalation notification to the standby's
-	time_t time;
-	int aggregation_interval;
-		*/
+
 
 		if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &idx)==FAILURE) {
 			WRONG_PARAM_COUNT;
@@ -230,7 +220,7 @@ int notification_valid; //-1 invalid == end of list
 		if (array_init(return_value) == FAILURE) {
 			RETURN_FALSE;
 		}
-		shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+		shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 
 		add_assoc_long(return_value, "notification_valid", shm_hdr->notification_log[Z_LVAL_P(idx)].notification_valid);
 		add_assoc_long(return_value, "worker_id", shm_hdr->notification_log[Z_LVAL_P(idx)].worker_id);
@@ -300,8 +290,8 @@ PHP_FUNCTION(bartlby_check_force) {
 	convert_to_long(bartlby_service_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
 		
 		
 	if(Z_LVAL_P(bartlby_service_id) > shm_hdr->svccount-1) {
@@ -395,7 +385,7 @@ PHP_FUNCTION(bartlby_reload) {
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	shm_hdr->do_reload=1;
 		
 					
@@ -447,7 +437,7 @@ PHP_FUNCTION(bartlby_get_info) {
 		RETURN_FALSE;
 	}
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	
 	add_assoc_long(return_value, "services", shm_hdr->svccount);
 	add_assoc_long(return_value, "workers", shm_hdr->wrkcount);
