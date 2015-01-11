@@ -312,6 +312,19 @@ int btl_is_array(zval * ar, long service_id);
 static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals);
 
 
+//SHM HANDLE STUFF
+struct service * bartlby_SHM_ServiceMap(void *);
+struct btl_event * bartlby_SHM_EventMap(void * shm_addr);
+struct downtime * bartlby_SHM_DowntimeMap(void * shm_addr);
+struct shm_header * bartlby_SHM_GetHDR(void *);
+struct worker * bartlby_SHM_WorkerMap(void * shm_addr);
+struct server * bartlby_SHM_ServerMap(void * shm_addr);
+struct trap * bartlby_SHM_TrapMap(void * shm_addr);
+struct servicegroup * bartlby_SHM_ServiceGroupMap(void * shm_addr);
+struct servergroup * bartlby_SHM_ServerGroupMap(void * shm_addr);
+
+
+
 
 /*
  * Local variables:
