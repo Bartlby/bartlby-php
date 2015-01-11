@@ -248,15 +248,18 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 	switch(msg) {
 		case BARTLBY_OBJECT_DELETED:
 			audit_action=BARTLBY_AUDIT_ACTION_DELETE;
-			bartlby_generic_audit(zbartlby_resource, id, audit_type, "Deleted");
+			
+			BARTLBY_GENERIC_AUDIT_INT(zbartlby_resource, id, audit_type, "Deleted");
 		break;
 		case BARTLBY_OBJECT_CHANGED:
 			audit_action=BARTLBY_AUDIT_ACTION_MODIFY;
-			bartlby_generic_audit(zbartlby_resource, id,audit_type, "Edited");
+			BARTLBY_GENERIC_AUDIT_INT(zbartlby_resource, id, audit_type, "Edited");
+			
 		break;
 		case BARTLBY_OBJECT_ADDED:
 			audit_action=BARTLBY_AUDIT_ACTION_ADD;
-			bartlby_generic_audit(zbartlby_resource, id, audit_type, "Added");
+			
+			BARTLBY_GENERIC_AUDIT_INT(zbartlby_resource, id, audit_type, "Added");
 		break;
 
 	}

@@ -294,7 +294,10 @@ ZEND_END_MODULE_GLOBALS(bartlby)
 																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_generic_audit() Callback failed - and force_audit is enabled via INI"); \
 															   			RETURN_BOOL(0); \
 																	}
-
+#define BARTLBY_GENERIC_AUDIT_INT(zbartlby_resource, id, type, logl) if(bartlby_generic_audit(zbartlby_resource, id, type, logl) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_generic_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			return -1; \
+																	}
 
 
 

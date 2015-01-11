@@ -257,6 +257,7 @@ PHP_FUNCTION(bartlby_get_core_extension_info) {
 	SOHandle=dlopen(Z_STRVAL_P(extensions_path), RTLD_LAZY);
 	if((dlmsg=dlerror()) != NULL) {
 				php_error(E_ERROR, "DL Error: %s", dlmsg);
+				dlclose(SOHandle);
         	return;
    }	
    

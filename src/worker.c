@@ -135,19 +135,19 @@ PHP_FUNCTION(bartlby_add_worker) {
 	
 	LOAD_SYMBOL(AddWorker,bres->SOHandle, "AddWorker");
 	
-	strcpy(svc.password, Z_STRVAL_P(password));
-	strcpy(svc.name, Z_STRVAL_P(name));
-	strcpy(svc.notify_plan, Z_STRVAL_P(notify_plan));
-	strcpy(svc.mail, Z_STRVAL_P(mail));
-	strcpy(svc.icq, Z_STRVAL_P(icq));
-	strcpy(svc.selected_services, Z_STRVAL_P(selected_services));
-	strcpy(svc.selected_servers, Z_STRVAL_P(selected_servers));
-	strcpy(svc.visible_servers, Z_STRVAL_P(visible_servers));
-	strcpy(svc.visible_services, Z_STRVAL_P(visible_services));
-	strcpy(svc.notify_levels, Z_STRVAL_P(notify_levels));
-	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
-	strcpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey));
-	strcpy(svc.api_privkey, Z_STRVAL_P(api_privkey));
+	strncpy(svc.password, Z_STRVAL_P(password), 2047);
+	strncpy(svc.name, Z_STRVAL_P(name), 2047);
+	strncpy(svc.notify_plan, Z_STRVAL_P(notify_plan), 2047);
+	strncpy(svc.mail, Z_STRVAL_P(mail), 2047);
+	strncpy(svc.icq, Z_STRVAL_P(icq), 2047);
+	strncpy(svc.selected_services, Z_STRVAL_P(selected_services), 2047);
+	strncpy(svc.selected_servers, Z_STRVAL_P(selected_servers), 2047);
+	strncpy(svc.visible_servers, Z_STRVAL_P(visible_servers), 2047);
+	strncpy(svc.visible_services, Z_STRVAL_P(visible_services), 2047);
+	strncpy(svc.notify_levels, Z_STRVAL_P(notify_levels), 2047);
+	strncpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers), 2047);
+	strncpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey), 254);
+	strncpy(svc.api_privkey, Z_STRVAL_P(api_privkey), 254);
 	svc.active=Z_LVAL_P(active);
 	svc.escalation_limit=Z_LVAL_P(escalation_limit);
 	svc.escalation_minutes=Z_LVAL_P(escalation_minutes);
@@ -290,21 +290,21 @@ PHP_FUNCTION(bartlby_modify_worker) {
 		
 	LOAD_SYMBOL(UpdateWorker,bres->SOHandle, "UpdateWorker");
 	
-	strcpy(svc.notify_plan, Z_STRVAL_P(notify_plan));
-	strcpy(svc.password, Z_STRVAL_P(password));
-	strcpy(svc.name, Z_STRVAL_P(name));
-	strcpy(svc.mail, Z_STRVAL_P(mail));
-	strcpy(svc.icq, Z_STRVAL_P(icq));
-	strcpy(svc.selected_services, Z_STRVAL_P(selected_services));
-	strcpy(svc.selected_servers, Z_STRVAL_P(selected_servers));
-	strcpy(svc.visible_servers, Z_STRVAL_P(visible_servers));
-	strcpy(svc.visible_services, Z_STRVAL_P(visible_services));
+	strncpy(svc.notify_plan, Z_STRVAL_P(notify_plan), 2047);
+	strncpy(svc.password, Z_STRVAL_P(password), 2047);
+	strncpy(svc.name, Z_STRVAL_P(name), 2047);
+	strncpy(svc.mail, Z_STRVAL_P(mail), 2047);
+	strncpy(svc.icq, Z_STRVAL_P(icq), 2047);
+	strncpy(svc.selected_services, Z_STRVAL_P(selected_services), 2047);
+	strncpy(svc.selected_servers, Z_STRVAL_P(selected_servers), 2047);
+	strncpy(svc.visible_servers, Z_STRVAL_P(visible_servers), 2047);
+	strncpy(svc.visible_services, Z_STRVAL_P(visible_services), 2047);
 
-	strcpy(svc.notify_levels, Z_STRVAL_P(notify_levels));
-	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
+	strncpy(svc.notify_levels, Z_STRVAL_P(notify_levels), 2047);
+	strncpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers), 2047);
 
-	strcpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey));
-	strcpy(svc.api_privkey, Z_STRVAL_P(api_privkey));
+	strncpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey), 254);
+	strncpy(svc.api_privkey, Z_STRVAL_P(api_privkey), 254);
 
 	svc.active=Z_LVAL_P(active);
 	svc.worker_id=Z_LVAL_P(worker_id);

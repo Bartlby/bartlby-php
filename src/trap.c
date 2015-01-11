@@ -208,12 +208,12 @@ PHP_FUNCTION(bartlby_add_trap) {
 	
 	LOAD_SYMBOL(AddTrap,bres->SOHandle, "AddTrap");
 	
-	strcpy(svc.trap_name, Z_STRVAL_P(trap_name));
-	strcpy(svc.trap_catcher, Z_STRVAL_P(trap_catcher));
-	strcpy(svc.trap_status_text, Z_STRVAL_P(trap_status_text));
-	strcpy(svc.trap_status_ok, Z_STRVAL_P(trap_status_ok));
-	strcpy(svc.trap_status_warning, Z_STRVAL_P(trap_status_warning));
-	strcpy(svc.trap_status_critical, Z_STRVAL_P(trap_status_critical));
+	strncpy(svc.trap_name, Z_STRVAL_P(trap_name), 512);
+	strncpy(svc.trap_catcher, Z_STRVAL_P(trap_catcher), 512);
+	strncpy(svc.trap_status_text, Z_STRVAL_P(trap_status_text), 512);
+	strncpy(svc.trap_status_ok, Z_STRVAL_P(trap_status_ok), 512);
+	strncpy(svc.trap_status_warning, Z_STRVAL_P(trap_status_warning),512);
+	strncpy(svc.trap_status_critical, Z_STRVAL_P(trap_status_critical),512);
 	
 
 	svc.trap_service_id=Z_LVAL_P(trap_service_id);
@@ -309,12 +309,12 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	
 	LOAD_SYMBOL(UpdateTrap,bres->SOHandle, "UpdateTrap");
 
-	strcpy(svc.trap_name, Z_STRVAL_P(trap_name));
-	strcpy(svc.trap_catcher, Z_STRVAL_P(trap_catcher));
-	strcpy(svc.trap_status_text, Z_STRVAL_P(trap_status_text));
-	strcpy(svc.trap_status_ok, Z_STRVAL_P(trap_status_ok));
-	strcpy(svc.trap_status_warning, Z_STRVAL_P(trap_status_warning));
-	strcpy(svc.trap_status_critical, Z_STRVAL_P(trap_status_critical));
+	strncpy(svc.trap_name, Z_STRVAL_P(trap_name),512);
+	strncpy(svc.trap_catcher, Z_STRVAL_P(trap_catcher),512);
+	strncpy(svc.trap_status_text, Z_STRVAL_P(trap_status_text),512);
+	strncpy(svc.trap_status_ok, Z_STRVAL_P(trap_status_ok), 512);
+	strncpy(svc.trap_status_warning, Z_STRVAL_P(trap_status_warning),512);
+	strncpy(svc.trap_status_critical, Z_STRVAL_P(trap_status_critical),512);
 	
 
 	svc.trap_service_id=Z_LVAL_P(trap_service_id);
