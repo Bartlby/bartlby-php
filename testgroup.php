@@ -3,6 +3,9 @@ ini_set("bartlby.force_audit", 1);
 //testing 1231
 $cfg = "/opt/bartlby/etc/bartlby.cfg";
 $r = bartlby_new($cfg);
+$s = bartlby_get_service_by_id($r, 1);
+var_dump($s);
+exit;
 bartlby_toggle_server_active($r, 1, 1);
 
 echo "Constant Test:" . BARTLBY_AUDIT_TYPE_SERVICE . "\n";
