@@ -82,6 +82,16 @@ extern zend_module_entry bartlby_module_entry;
 #include <sys/shm.h>
 #include <sys/times.h> 
 
+
+typedef struct _bartlby_res {
+    char *cfgfile;
+    void * bartlby_address;
+    void * SOHandle;
+    
+    
+} bartlby_res;
+#define BARTLBY_RES_NAME "Bartlby Resource"
+
 #define LOAD_SYMBOL(x,y,z) 	x=dlsym(y, z); \
     	if((dlmsg=dlerror()) != NULL) { \
         	php_error(E_WARNING, "dl error: %s", dlmsg);	\
@@ -268,6 +278,38 @@ ZEND_END_MODULE_GLOBALS(bartlby)
 
 
 
+
+
+#define BARTLBY_OBJECT_GONE(zbartlby_resource, bres, id, type, msg) if(bartlby_mark_object_gone(zbartlby_resource, bres, id, type, msg) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_mark_object_gone() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+#define BARTLBY_OBJECT_AUDIT(zbartlby_resource, id, type, action) if(bartlby_object_audit(zbartlby_resource, id, type, action) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_object_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+#define BARTLBY_GENERIC_AUDIT(zbartlby_resource, id, type, logl) if(bartlby_generic_audit(zbartlby_resource, id, type, logl) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_generic_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+
+
+
+
+
+//FUNCTIONS INSIDE EXTENSION
+char * getConfigValue(char * key, char * fname);
+void xbartlby_encode(char * msg, int length);
+void xbartlby_decode(char * msg, int length);
+void * bartlby_get_sohandle(char * cfgfile);
+void * bartlby_get_shm(char * cfgfile);
+int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long id, int type, int msg);
+int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_type, char * logline);
+int btl_is_array(zval * ar, long service_id);
+static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals);
 
 
 

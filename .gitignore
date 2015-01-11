@@ -1,6 +1,8 @@
+tmp-php.ini
 Makefile
 config.h.in~
 co
+*.lo
 *.deb
 *.tgz
 Makefile.global
