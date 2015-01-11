@@ -300,7 +300,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	strncpy(svc.visible_servers, Z_STRVAL_P(visible_servers), 2047);
 	strncpy(svc.visible_services, Z_STRVAL_P(visible_services), 2047);
 
-	strncpy(svc.notify_levels, Z_STRVAL_P(notify_levels), 2047);
+	strncpy(svc.notify_levels, Z_STRVAL_P(notify_levels), 19);
 	strncpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers), 2047);
 
 	strncpy(svc.api_pubkey, Z_STRVAL_P(api_pubkey), 254);

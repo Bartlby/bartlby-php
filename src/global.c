@@ -142,6 +142,7 @@ void * bartlby_get_sohandle(char * cfgfile) {
 	
 	if((dlmsg=dlerror()) != NULL) {
 		php_error(E_WARNING, "DL Error: %s", dlmsg);
+			dlclose(SOHandle);
         	return NULL;
     	}	
     	
