@@ -294,13 +294,13 @@ PHP_FUNCTION(bartlby_modify_server) {
 	
 	LOAD_SYMBOL(ModifyServer,bres->SOHandle, "ModifyServer");
 	
-	strcpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers));
-	strcpy(srv.server_name, Z_STRVAL_P(server_name));
+	strncpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers),511);
+	strncpy(srv.server_name, Z_STRVAL_P(server_name),2047);
 	srv.client_port=Z_LVAL_P(server_port);
 	srv.server_id=Z_LVAL_P(server_id);
 	
-	strcpy(srv.client_ip, Z_STRVAL_P(server_ip));
-	strcpy(srv.server_icon, Z_STRVAL_P(server_icon));
+	strncpy(srv.client_ip, Z_STRVAL_P(server_ip),2047);
+	strncpy(srv.server_icon, Z_STRVAL_P(server_icon), 1023);
 	srv.server_enabled=Z_LVAL_P(server_enabled);
 	srv.server_flap_seconds=Z_LVAL_P(server_flap_seconds);
 	srv.server_notify=Z_LVAL_P(server_notify);
@@ -308,12 +308,12 @@ PHP_FUNCTION(bartlby_modify_server) {
 	srv.default_service_type=Z_LVAL_P(default_service_type);
 	srv.orch_id=Z_LVAL_P(orch_id);
 	srv.web_hooks_level=Z_LVAL_P(web_hooks_level);
-	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
-	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
-	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
-	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
-	strcpy(srv.web_hooks, Z_STRVAL_P(web_hooks));
-	strcpy(srv.json_endpoint, Z_STRVAL_P(json_endpoint));
+	strncpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile),511);
+	strncpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase),511);
+	strncpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username),511);
+	strncpy(srv.exec_plan, Z_STRVAL_P(exec_plan),2047);
+	strncpy(srv.web_hooks, Z_STRVAL_P(web_hooks), 1023);
+	strncpy(srv.json_endpoint, Z_STRVAL_P(json_endpoint),255);
 
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(server_id), BARTLBY_SERVER_GONE, BARTLBY_OBJECT_CHANGED);
 	
@@ -416,11 +416,11 @@ PHP_FUNCTION(bartlby_add_server) {
 	
 	LOAD_SYMBOL(AddServer,bres->SOHandle, "AddServer");
 	
-	strcpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers));
-	strcpy(srv.server_name, Z_STRVAL_P(server_name));
+	strncpy(srv.enabled_triggers, Z_STRVAL_P(enabled_triggers), 511);
+	strncpy(srv.server_name, Z_STRVAL_P(server_name), 2047);
 	srv.client_port=Z_LVAL_P(server_port);
-	strcpy(srv.client_ip, Z_STRVAL_P(server_ip));
-	strcpy(srv.server_icon, Z_STRVAL_P(server_icon));
+	strncpy(srv.client_ip, Z_STRVAL_P(server_ip), 2047);
+	strncpy(srv.server_icon, Z_STRVAL_P(server_icon),1023);
 	srv.server_enabled=Z_LVAL_P(server_enabled);
 	srv.server_flap_seconds=Z_LVAL_P(server_flap_seconds);
 	srv.server_notify=Z_LVAL_P(server_notify);
@@ -429,12 +429,12 @@ PHP_FUNCTION(bartlby_add_server) {
 	srv.orch_id=Z_LVAL_P(orch_id);
 	srv.web_hooks_level=Z_LVAL_P(web_hooks_level);
 
-	strcpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile));
-	strcpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase));
-	strcpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username));
-	strcpy(srv.exec_plan, Z_STRVAL_P(exec_plan));
-	strcpy(srv.web_hooks, Z_STRVAL_P(web_hooks));
-	strcpy(srv.json_endpoint, Z_STRVAL_P(json_endpoint));
+	strncpy(srv.server_ssh_keyfile, Z_STRVAL_P(server_ssh_keyfile), 511);
+	strncpy(srv.server_ssh_passphrase, Z_STRVAL_P(server_ssh_passphrase),511);
+	strncpy(srv.server_ssh_username, Z_STRVAL_P(server_ssh_username),511);
+	strncpy(srv.exec_plan, Z_STRVAL_P(exec_plan), 2047);
+	strncpy(srv.web_hooks, Z_STRVAL_P(web_hooks), 1023);
+	strncpy(srv.json_endpoint, Z_STRVAL_P(json_endpoint),254);
 	
 	ret=AddServer(&srv, bres->cfgfile);
 	

@@ -205,7 +205,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	
 	LOAD_SYMBOL(UpdateDowntime,bres->SOHandle, "UpdateDowntime");
 	
-	strcpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice));
+	strncpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice),2047);
 	svc.downtime_from=Z_LVAL_P(downtime_from);
 	svc.downtime_to=Z_LVAL_P(downtime_to);
 	svc.downtime_type=Z_LVAL_P(downtime_type);
@@ -281,7 +281,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	
 	LOAD_SYMBOL(AddDowntime,bres->SOHandle, "AddDowntime");
 	
-	strcpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice));
+	strncpy(svc.downtime_notice, Z_STRVAL_P(downtime_notice), 2047);
 	svc.downtime_from=Z_LVAL_P(downtime_from);
 	svc.downtime_to=Z_LVAL_P(downtime_to);
 	svc.downtime_type=Z_LVAL_P(downtime_type);

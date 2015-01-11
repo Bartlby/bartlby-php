@@ -67,6 +67,7 @@ char * getConfigValue(char * key, char * fname) {
 				if(strcmp(tok, key) == 0) {
 						tok=strtok(NULL, "=");
 						if(tok == NULL) {
+								fclose(fp);
 								return NULL;
 						}
 						if(tok[strlen(tok)-1] == '\r') {
@@ -133,14 +134,17 @@ void * bartlby_get_sohandle(char * cfgfile) {
 	data_lib=getConfigValue("data_library", cfgfile);
 	if(data_lib == NULL) {
 		php_error(E_WARNING, "cannot find data_lib key in %s", cfgfile);	
+		
 		return NULL;
 	}
 	SOHandle=dlopen(data_lib, RTLD_LAZY);
+	free(data_lib);
+	
 	if((dlmsg=dlerror()) != NULL) {
 		php_error(E_WARNING, "DL Error: %s", dlmsg);
         	return NULL;
     	}	
-    	free(data_lib);
+    	
     	return SOHandle;
 } 
 

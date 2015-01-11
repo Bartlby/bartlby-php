@@ -201,11 +201,11 @@ PHP_FUNCTION(bartlby_add_servicegroup) {
 	
 	LOAD_SYMBOL(AddServiceGroup,bres->SOHandle, "AddServiceGroup");
 	
-	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
+	strncpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name), 1023);
 	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
 	svc.servicegroup_active=Z_LVAL_P(servicegroup_active);
-	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
-	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
+	strncpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members), GROUP_MEMBER_STR_LENGTH-1);
+	strncpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers),511);
 	svc.servicegroup_dead=Z_LVAL_P(servicegroup_dead);
 	svc.orch_id=Z_LVAL_P(orch_id);
 	
@@ -274,9 +274,9 @@ PHP_FUNCTION(bartlby_modify_servicegroup) {
 	
 	LOAD_SYMBOL(UpdateServiceGroup,bres->SOHandle, "UpdateServiceGroup");
 	
-	strcpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers));
-	strcpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name));
-	strcpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members));
+	strncpy(svc.enabled_triggers, Z_STRVAL_P(enabled_triggers), 511);
+	strncpy(svc.servicegroup_name, Z_STRVAL_P(servicegroup_name), 1023);
+	strncpy(svc.servicegroup_members, Z_STRVAL_P(servicegroup_members), GROUP_MEMBER_STR_LENGTH-1);
 	svc.servicegroup_active=Z_LVAL_P(servicegroup_active);
 	svc.servicegroup_notify=Z_LVAL_P(servicegroup_notify);
 	svc.servicegroup_id=Z_LVAL_P(servicegroup_id);
