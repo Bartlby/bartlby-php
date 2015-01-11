@@ -389,8 +389,8 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 PHP_FUNCTION(bartlby_get_worker) {
 	struct shm_header * shm_hdr;
 	
+	
 	struct worker * wrkmap;
-	struct service * svcmap;
 	
 	zval * zbartlby_resource;
 	zval * bartlby_worker_id;
@@ -407,9 +407,8 @@ PHP_FUNCTION(bartlby_get_worker) {
 		RETURN_FALSE;
 	}
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	wrkmap=bartlby_SHM_WorkerMap(bres->bartlby_address);
 		
 	if(Z_LVAL_P(bartlby_worker_id) > shm_hdr->wrkcount-1) {
 		php_error(E_WARNING, "Worker id out of bounds");	
@@ -458,7 +457,7 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	struct shm_header * shm_hdr;
 	int r;
 	struct worker * wrkmap;
-	struct service * svcmap;
+	
 	char * dlmsg;
 	int (*UpdateWorker)(struct worker *, char *);
 	bartlby_res * bres;
@@ -473,9 +472,8 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	wrkmap=bartlby_SHM_WorkerMap(bres->bartlby_address);
 		
 	
 		

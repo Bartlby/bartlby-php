@@ -35,9 +35,6 @@ PHP_FUNCTION(bartlby_event_tick) {
 	zval * zbartlby_resource;
 
 	struct shm_header * shm_hdr;
-	struct service * svcmap;
-	struct worker * wrkmap;
-	struct downtime * dtmap;
 	
 	int idx;
 
@@ -53,7 +50,7 @@ PHP_FUNCTION(bartlby_event_tick) {
 		RETURN_FALSE;
 	}
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	idx=shm_hdr->cur_event_index;
 	RETURN_LONG(idx);
 		
@@ -65,12 +62,8 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	zval * bartlby_service_id;
 	zval * event_index;
 	
-	struct shm_header * shm_hdr;
-	struct service * svcmap;
-	struct worker * wrkmap;
-	struct downtime * dtmap;
+	
 	struct btl_event * evntmap;
-	struct server * srvmap;	
 	
 	bartlby_res * bres;
 
@@ -92,12 +85,7 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	
 	
 	
-	shm_hdr=(struct shm_header *)(void *)bres->bartlby_address;
-	svcmap=(struct service *)(void *)(bres->bartlby_address+sizeof(struct shm_header));
-	wrkmap=(struct worker *)(void*)&svcmap[shm_hdr->svccount+1];
-	dtmap=(struct downtime *)(void*)&wrkmap[shm_hdr->wrkcount+1];
-	srvmap=(struct server *)(void*)&dtmap[shm_hdr->dtcount+1];
-	evntmap=(struct btl_event *)(void *)&srvmap[shm_hdr->srvcount+1];
+	evntmap=bartlby_SHM_EventMap(bres->bartlby_address);
 	
 	if(Z_LVAL_P(event_index) < EVENT_QUEUE_MAX) {
 		add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message, 1);
