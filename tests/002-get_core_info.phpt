@@ -3,10 +3,11 @@ get core info
 --SKIPIF--
 --POST--
 --GET--
+--ENV--
 --INI--
 --FILE--
 <?php 
-$r = bartlby_new("/opt/bartlby/etc/bartlby.cfg");
+$r = bartlby_new(getcwd() . "/bartlby.cfg");
 $i = bartlby_get_info($r);
 if($i) echo "OK";
 ?>
