@@ -44,11 +44,14 @@ if($ret == 999) {
 	echo "WORKER id changed to " . $ret . "\n";
 }
 
+$orig = bartlby_get_worker($r, 0);
 bartlby_set_worker_state($r, 0, 1);
 $get = bartlby_get_worker($r, 0);
 if($get["active"] == 1) {
 	echo "WORKER activated\n";
 }
+//Recover orig state
+bartlby_set_worker_state($r, 0, $orig["active"]);
 
 $ret = bartlby_delete_worker($r, 999);
 if($ret >= 0) {
