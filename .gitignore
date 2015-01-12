@@ -1,3 +1,5 @@
+*.html
+*.txt
 tmp-php.ini
 Makefile
 config.h.in~
