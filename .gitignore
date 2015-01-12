@@ -32,4 +32,5 @@ config.nice
 config.status
 libtool
 modules/
+bartlby.cfg
 .deps
