@@ -1,12 +1,5 @@
 --TEST--
 Worker Functions
-	bartlby_get_worker - done
-	bartlby_add_worker - done
-	bartlby_delete_worker - done
-	bartlby_modify_worker - done
-	bartlby_get_worker_by_id - done
-	bartlby_set_worker_id - done
-	bartlby_set_worker_state - done
 --SKIPIF--
 --POST--
 --GET--
