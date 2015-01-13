@@ -51,7 +51,7 @@ if($ret >= 0) {
 	echo "WORKER DEL OK\n";
 }
 
-
+bartlby_close($r);
 
 ?>
 --EXPECT--
