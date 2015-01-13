@@ -32,12 +32,15 @@ if($shm) {
 	echo "WORKER FROM SHM OK " . $shm["name"] . "\n";
 }
 
-$ret = bartlby_set_worker_id($r, $worker_id, 999);
+$NN=$worker_id+999;
+$ret = bartlby_set_worker_id($r, $worker_id, $NN);
 $get = bartlby_get_worker_by_id($r, $ret);
-if($ret == 999) {
-	echo "WORKER id changed to " . $ret . "\n";
+if($ret == $NN) {
+	echo "WORKER id changed to\n";
 }
-
+bartlby_reload($r);
+sleep(2);
+$r = bartlby_new("/opt/bartlby/etc/bartlby.cfg");
 $orig = bartlby_get_worker($r, 0);
 bartlby_set_worker_state($r, 0, 1);
 $get = bartlby_get_worker($r, 0);
@@ -47,10 +50,13 @@ if($get["active"] == 1) {
 //Recover orig state
 bartlby_set_worker_state($r, 0, $orig["active"]);
 
-$ret = bartlby_delete_worker($r, 999);
+$ret = bartlby_delete_worker($r, $NN);
 if($ret >= 0) {
 	echo "WORKER DEL OK\n";
 }
+
+
+
 
 bartlby_close($r);
 
@@ -59,7 +65,7 @@ bartlby_close($r);
 WORKER ADD OK
 WORKER MODIFIED AND FETCHED
 WORKER FROM SHM OK admin
-WORKER id changed to 999
+WORKER id changed to
 WORKER activated
 WORKER DEL OK
 
