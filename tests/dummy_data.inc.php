@@ -58,7 +58,74 @@ $worker_dummy = array(
 					"usid" => "unitusid",
 					"orch_id" => 999
 				);
+				$server_dummy = array(
+					"server_name" => "unit-test",
+					"server_ip" => "localhost",
+					"server_port" => 9030,
+					"server_icon" => "linux.gif",
+					"server_enabled" => 0,
+					"server_notify" => 0,
+					"server_flap_seconds" => 122,
+					"server_ssh_keyfile" => "",
+					"server_ssh_passphrase" => "",
+					"server_ssh_username" => "",
+					"server_dead" => 0,
+					"exec_plan" => "",
+					"enabled_triggers" => "",
+					"default_service_type" => 1,
+					"orch_id" => 999,
+					"web_hooks" => "",
+					'json_endpoint' => "",
+					'web_hooks_level' => 0
+					
+				);
+			$servergroup_dummy = array(
+				"servergroup_name" => "unit-test",
+				"servergroup_active" => 0,
+				"servergroup_notify" => 0,
+				"enabled_triggers" => "",
+				"servergroup_members" => "|1|",
+				"servergroup_dead" => 0,
+				"orch_id" => 999
+						
+			);
+			$servicegroup_dummy = array(
+				"servicegroup_name" => "unit-test",
+				"servicegroup_active" => 0,
+				"servicegroup_notify" => 0,
+				"enabled_triggers" => "",
+				"servicegroup_members" => "|1|",
+				"servicegroup_dead" => 0,
+				"orch_id" => 999
+						
+			);
+
+			$trap_dummy = array(
+				"trap_name" => "unit-test",
+				"trap_catcher" => ".*",
+				"trap_status_text" => ".*",
+				"trap_status_ok" => ".*",
+				"trap_status_warning" => ".*",
+				"trap_status_critical" => ".*",
+				"trap_service_id" => -1,
+				"trap_fixed_status" => -2,
+				"trap_is_final" => 1,
+				"trap_prio" => 100,
+				"orch_id" => 999,
 				
+			
+			);					
+
+			$downtime_dummy = array(
+				"downtime_from" => 0,
+				"downtime_to" => 0,
+				"downtime_type" => 1,
+				"downtime_notice" => "unit-test",
+				"downtime_service" => 1,
+				"orch_id" => 999
+
+			);
+
 
 function bartlby_generic_audit($res, $type,  $id, $line) {
 		

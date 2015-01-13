@@ -61,16 +61,7 @@ bartlby_bulk_force_services($r, array(0=>0));
 
 
 
-$orig = bartlby_get_service($r, 0);
-//IF HANDLED state gets 0 because of toggle re-toggle it to get it at 1
-if($orig["handled"] == 0) {
-	bartlby_toggle_service_handled($r, 1, 0);
-	$orig = bartlby_get_service($r, 0);
-}
-echo $orig["notify_enabled"] . "\n";
-echo $orig["handled"] . "\n";
-echo $orig["service_active"] . "\n";
-echo $orig["check_interval"] . "\n";
+
 
 bartlby_close($r);
 
@@ -81,8 +72,4 @@ SERVICE MODIFIED AND FETCHED
 SERVICE FROM SHM OK
 SERVICE id changed to
 SERVICE DEL OK
-0
-1
-0
-100
 
