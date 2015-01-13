@@ -1,6 +1,7 @@
 --TEST--
 Worker Functions
 --SKIPIF--
+<? include "skipif.php"; ?>
 --POST--
 --GET--
 --ENV--

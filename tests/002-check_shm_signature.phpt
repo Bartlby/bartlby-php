@@ -1,6 +1,7 @@
 --TEST--
 get SHM Signature
 --SKIPIF--
+<? include "skipif.php"; ?>
 --POST--
 --GET--
 --ENV--
