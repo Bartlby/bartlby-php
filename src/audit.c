@@ -63,8 +63,8 @@ int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_t
 
 	ZVAL_LONG(&type, audit_type);
 	ZVAL_LONG(&id, object_id);
-	ZVAL_STRING(&log_line, logline, 0);
-	ZVAL_STRING(&function_name, "bartlby_generic_audit", 0);
+	ZVAL_STRING(&log_line, logline);
+	ZVAL_STRING(&function_name, "bartlby_generic_audit");
 
 	
 	
@@ -117,7 +117,7 @@ int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_
 	ZVAL_LONG(&type, audit_type);
 	ZVAL_LONG(&id, object_id);
 	ZVAL_LONG(&act, action);
-	ZVAL_STRING(&function_name, "bartlby_object_audit", 0);
+	ZVAL_STRING(&function_name, "bartlby_object_audit");
 
 	
 	

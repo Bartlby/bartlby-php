@@ -42,7 +42,7 @@ PHP_FUNCTION(bartlby_cleanup_tests) {
 		WRONG_PARAM_COUNT;
 	}
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	LOAD_SYMBOL(CleanupTestData,bres->SOHandle, "CleanupTestData");
 	ret=CleanupTestData(bres->cfgfile);
@@ -60,7 +60,7 @@ PHP_FUNCTION(bartlby_callback_test) {
 		WRONG_PARAM_COUNT;
 	}
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 
 	BARTLBY_OBJECT_AUDIT(zbartlby_resource, 1, 2222, 1);
@@ -73,7 +73,7 @@ PHP_FUNCTION(bartlby_callback_test) {
 PHP_METHOD(Bartlby, testFunc) /* {{{ */
 {
    
-    RETURN_STRING("Hello World\n", 1);
+    RETURN_STRING("Hello World\n");
 }
 
 
@@ -120,7 +120,7 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 		WRONG_PARAM_COUNT;
 	}	
 	//convert_to_long(howmuch);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
@@ -162,22 +162,22 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 			
 		add_assoc_long(subarray, "client_port", srvmap[svcmap[x].srv_place].client_port);
 				
-		add_assoc_string(subarray, "new_server_text", svcmap[x].new_server_text, 1);
-		add_assoc_string(subarray, "service_name", svcmap[x].service_name, 1);
-		add_assoc_string(subarray, "server_name", srvmap[svcmap[x].srv_place].server_name, 1);
-		add_assoc_string(subarray, "client_ip", srvmap[svcmap[x].srv_place].client_ip, 1);
-		add_assoc_string(subarray, "server_ssh_keyfile", srvmap[svcmap[x].srv_place].server_ssh_keyfile, 1);
-		add_assoc_string(subarray, "server_ssh_passphrase", srvmap[svcmap[x].srv_place].server_ssh_passphrase, 1);
-		add_assoc_string(subarray, "server_ssh_username", srvmap[svcmap[x].srv_place].server_ssh_username, 1);
-		add_assoc_string(subarray, "server_enabled_triggers", srvmap[svcmap[x].srv_place].enabled_triggers, 1);
-		add_assoc_string(subarray, "plugin", svcmap[x].plugin, 1);
-		add_assoc_string(subarray, "plugin_arguments", svcmap[x].plugin_arguments, 1);
+		add_assoc_string(subarray, "new_server_text", svcmap[x].new_server_text);
+		add_assoc_string(subarray, "service_name", svcmap[x].service_name);
+		add_assoc_string(subarray, "server_name", srvmap[svcmap[x].srv_place].server_name);
+		add_assoc_string(subarray, "client_ip", srvmap[svcmap[x].srv_place].client_ip);
+		add_assoc_string(subarray, "server_ssh_keyfile", srvmap[svcmap[x].srv_place].server_ssh_keyfile);
+		add_assoc_string(subarray, "server_ssh_passphrase", srvmap[svcmap[x].srv_place].server_ssh_passphrase);
+		add_assoc_string(subarray, "server_ssh_username", srvmap[svcmap[x].srv_place].server_ssh_username);
+		add_assoc_string(subarray, "server_enabled_triggers", srvmap[svcmap[x].srv_place].enabled_triggers);
+		add_assoc_string(subarray, "plugin", svcmap[x].plugin);
+		add_assoc_string(subarray, "plugin_arguments", svcmap[x].plugin_arguments);
 	
 		add_assoc_long(subarray, "check_interval", svcmap[x].check_interval);
 		add_assoc_long(subarray, "check_interval_original", svcmap[x].check_interval_original);
 		add_assoc_long(subarray, "last_check", svcmap[x].last_check);
 		
-		add_assoc_string(subarray, "exec_plan", svcmap[x].service_exec_plan, 1);
+		add_assoc_string(subarray, "exec_plan", svcmap[x].service_exec_plan);
 		
 		add_assoc_long(subarray, "notify_enabled", svcmap[x].notify_enabled);
 		add_assoc_long(subarray, "last_notify_send", svcmap[x].last_notify_send);
@@ -190,8 +190,8 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 		add_assoc_long(subarray, "service_passive_timeout", svcmap[x].service_passive_timeout);
 		
 		
-		add_assoc_string(subarray, "service_var", svcmap[x].service_var, 1);
-		add_assoc_string(subarray, "server_icon", srvmap[svcmap[x].srv_place].server_icon, 1);
+		add_assoc_string(subarray, "service_var", svcmap[x].service_var);
+		add_assoc_string(subarray, "server_icon", srvmap[svcmap[x].srv_place].server_icon);
 		add_assoc_long(subarray, "service_check_timeout", svcmap[x].service_check_timeout);
 		add_assoc_long(subarray, "service_ack_enabled", svcmap[x].service_ack_enabled);
 		add_assoc_long(subarray, "service_ack_current", svcmap[x].service_ack_current);
@@ -210,9 +210,9 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 		
 		//bartlby_get_service_by_id
 		
-		add_assoc_string(subarray, "service_snmp_community", svcmap[x].snmp_info.community, 1);
-		add_assoc_string(subarray, "service_snmp_textmatch", svcmap[x].snmp_info.textmatch, 1);
-		add_assoc_string(subarray, "service_snmp_objid", svcmap[x].snmp_info.objid, 1);
+		add_assoc_string(subarray, "service_snmp_community", svcmap[x].snmp_info.community);
+		add_assoc_string(subarray, "service_snmp_textmatch", svcmap[x].snmp_info.textmatch);
+		add_assoc_string(subarray, "service_snmp_objid", svcmap[x].snmp_info.objid);
 		
 		add_assoc_long(subarray, "service_snmp_warning",svcmap[x].snmp_info.warn);
 		add_assoc_long(subarray, "service_snmp_critical",svcmap[x].snmp_info.crit);
@@ -234,7 +234,7 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 		add_assoc_long(subarray, "escalate_divisor",svcmap[x].escalate_divisor);
 		add_assoc_long(subarray, "fires_events",svcmap[x].fires_events);
 		
-		add_assoc_string(subarray, "enabled_triggers", svcmap[x].enabled_triggers, 1);
+		add_assoc_string(subarray, "enabled_triggers", svcmap[x].enabled_triggers);
 		
 		add_assoc_long(subarray, "server_gone",srvmap[svcmap[x].srv_place].is_gone);
 		
@@ -289,7 +289,7 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 					add_assoc_long(subarray, "is_downtime", 1);
 					add_assoc_long(subarray, "downtime_from", dtmap[y].downtime_from);
 					add_assoc_long(subarray, "downtime_to", dtmap[y].downtime_to);
-					add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice, 1);
+					add_assoc_string(subarray, "downtime_notice", dtmap[y].downtime_notice);
 					add_assoc_long(subarray, "downtime_service", dtmap[y].service_id);
 					add_assoc_long(subarray, "downtime_type", dtmap[y].downtime_type);
 					break;
@@ -317,14 +317,14 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 								
 								z=srvmap[svcmap[x].srv_place].servergroup_place[y];
 								add_assoc_long(groupinfo,"servergroup_place", y);
-								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
-								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
+								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
 								
 								add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
 								add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
 								add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 								add_assoc_long(groupinfo,"servergroup_dead", srvgrpmap[z].servergroup_dead);
-								add_assoc_string(groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers,1);
+								add_assoc_string(groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers);
 									
 									
 									
@@ -363,14 +363,14 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 					
 					z=svcmap[x].servicegroup_place[y];
 					add_assoc_long(groupinfo,"servicegroup_place", y);
-					add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[z].servicegroup_name,1);
-					add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[z].servicegroup_members,1);
+					add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[z].servicegroup_name);
+					add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[z].servicegroup_members);
 					
 					add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[z].servicegroup_active);
 					add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[z].servicegroup_notify);
 					add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[z].servicegroup_id);
 					add_assoc_long(groupinfo,"servicegroup_dead", svcgrpmap[z].servicegroup_dead);
-					add_assoc_string(groupinfo,"enabled_triggers", svcgrpmap[z].enabled_triggers,1);
+					add_assoc_string(groupinfo,"enabled_triggers", svcgrpmap[z].enabled_triggers);
 					
 					add_next_index_zval(groups, groupinfo);
 					

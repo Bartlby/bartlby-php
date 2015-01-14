@@ -47,7 +47,7 @@ PHP_FUNCTION(bartlby_get_downtime_by_id) {
 	}
 	
 	convert_to_long(downtime_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 
@@ -67,7 +67,7 @@ PHP_FUNCTION(bartlby_get_downtime_by_id) {
 		add_assoc_long(return_value, "service_id", svc.service_id);
 		add_assoc_long(return_value, "is_gone", svc.is_gone);
 		add_assoc_long(return_value, "orch_id", svc.orch_id);
-		add_assoc_string(return_value, "downtime_notice", svc.downtime_notice, 1);
+		add_assoc_string(return_value, "downtime_notice", svc.downtime_notice);
 
 	}
 		
@@ -92,7 +92,7 @@ PHP_FUNCTION(bartlby_get_downtime) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_downtime_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	if (array_init(return_value) == FAILURE) {
@@ -122,7 +122,7 @@ PHP_FUNCTION(bartlby_get_downtime) {
 	add_assoc_long(return_value, "service_id", dtmap[Z_LVAL_P(bartlby_downtime_id)].service_id);
 	add_assoc_long(return_value, "is_gone", dtmap[Z_LVAL_P(bartlby_downtime_id)].is_gone);
 	add_assoc_long(return_value, "orch_id", dtmap[Z_LVAL_P(bartlby_downtime_id)].orch_id);
-	add_assoc_string(return_value, "downtime_notice", dtmap[Z_LVAL_P(bartlby_downtime_id)].downtime_notice, 1);
+	add_assoc_string(return_value, "downtime_notice", dtmap[Z_LVAL_P(bartlby_downtime_id)].downtime_notice);
 
 }
 
@@ -141,7 +141,7 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(downtime_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	LOAD_SYMBOL(DeleteDowntime,bres->SOHandle, "DeleteDowntime");
 	
 	BARTLBY_OBJECT_GONE(zbartlby_resource, bres,Z_LVAL_P(downtime_id), BARTLBY_DOWNTIME_GONE, BARTLBY_OBJECT_DELETED);
@@ -182,7 +182,7 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 	}
 
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	GETARRAY_EL_FROM_HASH(downtime_from, "downtime_from", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
@@ -255,7 +255,7 @@ PHP_FUNCTION(bartlby_add_downtime) {
 		RETURN_BOOL(0);
 	}
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	GETARRAY_EL_FROM_HASH(downtime_from, "downtime_from", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
@@ -314,7 +314,7 @@ PHP_FUNCTION(bartlby_set_downtime_id) {
 		WRONG_PARAM_COUNT;
 	}
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	convert_to_long(from);
 	convert_to_long(to);

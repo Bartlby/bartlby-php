@@ -77,7 +77,7 @@ PHP_FUNCTION(bartlby_add_worker) {
 		RETURN_BOOL(0);
 	}
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	GETARRAY_EL_FROM_HASH(name, "name", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"default");
@@ -176,7 +176,7 @@ PHP_FUNCTION(bartlby_delete_worker) {
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&worker_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(worker_id);
 	
 	
@@ -260,7 +260,7 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	GETARRAY_EL_FROM_HASH(api_privkey, "api_privkey", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING,"");
 	GETARRAY_EL_FROM_HASH(api_enabled, "api_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		
 	
 	convert_to_string(enabled_triggers);
@@ -343,7 +343,7 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 	}
 	
 	convert_to_long(worker_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 
@@ -356,22 +356,22 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 		if (array_init(return_value) == FAILURE) {
 			RETURN_FALSE;
 		}
-		add_assoc_string(return_value, "mail", svc.mail, 1);
-		add_assoc_string(return_value, "icq", svc.icq, 1);
-		add_assoc_string(return_value, "notify_plan", svc.notify_plan, 1);
-		add_assoc_string(return_value, "selected_services", svc.selected_services, 1);
-		add_assoc_string(return_value, "selected_servers", svc.selected_servers, 1);
-		add_assoc_string(return_value, "visible_servers", svc.visible_servers, 1);
-		add_assoc_string(return_value, "visible_services", svc.visible_services, 1);
+		add_assoc_string(return_value, "mail", svc.mail);
+		add_assoc_string(return_value, "icq", svc.icq);
+		add_assoc_string(return_value, "notify_plan", svc.notify_plan);
+		add_assoc_string(return_value, "selected_services", svc.selected_services);
+		add_assoc_string(return_value, "selected_servers", svc.selected_servers);
+		add_assoc_string(return_value, "visible_servers", svc.visible_servers);
+		add_assoc_string(return_value, "visible_services", svc.visible_services);
 
 
-		add_assoc_string(return_value, "notify_levels", svc.notify_levels,1);
-		add_assoc_string(return_value, "name", svc.name,1);
-		add_assoc_string(return_value, "password", svc.password,1);
-		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers,1);
+		add_assoc_string(return_value, "notify_levels", svc.notify_levels);
+		add_assoc_string(return_value, "name", svc.name);
+		add_assoc_string(return_value, "password", svc.password);
+		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers);
 
-		add_assoc_string(return_value, "api_pubkey", svc.api_pubkey,1);
-		add_assoc_string(return_value, "api_privkey", svc.api_privkey,1);
+		add_assoc_string(return_value, "api_pubkey", svc.api_pubkey);
+		add_assoc_string(return_value, "api_privkey", svc.api_privkey);
 		add_assoc_long(return_value, "api_enabled", svc.api_enabled);
 
 		add_assoc_long(return_value, "worker_id", svc.worker_id);
@@ -400,7 +400,7 @@ PHP_FUNCTION(bartlby_get_worker) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_worker_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	if (array_init(return_value) == FAILURE) {
@@ -416,30 +416,30 @@ PHP_FUNCTION(bartlby_get_worker) {
 	}
 		
 		
-	add_assoc_string(return_value, "mail", wrkmap[Z_LVAL_P(bartlby_worker_id)].mail, 1);
-	add_assoc_string(return_value, "icq", wrkmap[Z_LVAL_P(bartlby_worker_id)].icq, 1);
-	add_assoc_string(return_value, "notify_plan", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_plan, 1);
-	add_assoc_string(return_value, "visible_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_services, 1);
-	add_assoc_string(return_value, "selected_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_services, 1);
+	add_assoc_string(return_value, "mail", wrkmap[Z_LVAL_P(bartlby_worker_id)].mail);
+	add_assoc_string(return_value, "icq", wrkmap[Z_LVAL_P(bartlby_worker_id)].icq);
+	add_assoc_string(return_value, "notify_plan", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_plan);
+	add_assoc_string(return_value, "visible_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_services);
+	add_assoc_string(return_value, "selected_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_services);
 	
 
-	add_assoc_string(return_value, "visible_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_servers, 1);
-	add_assoc_string(return_value, "selected_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_servers, 1);
+	add_assoc_string(return_value, "visible_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_servers);
+	add_assoc_string(return_value, "selected_servers", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_servers);
 	
 
-	add_assoc_string(return_value, "api_pubkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_pubkey, 1);
-	add_assoc_string(return_value, "api_privkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_privkey, 1);
+	add_assoc_string(return_value, "api_pubkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_pubkey);
+	add_assoc_string(return_value, "api_privkey", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_privkey);
 	add_assoc_long(return_value, "api_enabled", wrkmap[Z_LVAL_P(bartlby_worker_id)].api_enabled);
 
-	add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels,1);
-	add_assoc_string(return_value, "name", wrkmap[Z_LVAL_P(bartlby_worker_id)].name,1);
-	add_assoc_string(return_value, "password", wrkmap[Z_LVAL_P(bartlby_worker_id)].password,1);
+	add_assoc_string(return_value, "notify_levels", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_levels);
+	add_assoc_string(return_value, "name", wrkmap[Z_LVAL_P(bartlby_worker_id)].name);
+	add_assoc_string(return_value, "password", wrkmap[Z_LVAL_P(bartlby_worker_id)].password);
 	add_assoc_long(return_value, "worker_id", wrkmap[Z_LVAL_P(bartlby_worker_id)].worker_id);
 	
 	add_assoc_long(return_value, "escalation_limit", wrkmap[Z_LVAL_P(bartlby_worker_id)].escalation_limit);
 	add_assoc_long(return_value, "escalation_minutes", wrkmap[Z_LVAL_P(bartlby_worker_id)].escalation_minutes);
 	
-	add_assoc_string(return_value, "enabled_triggers", wrkmap[Z_LVAL_P(bartlby_worker_id)].enabled_triggers,1);
+	add_assoc_string(return_value, "enabled_triggers", wrkmap[Z_LVAL_P(bartlby_worker_id)].enabled_triggers);
 	add_assoc_long(return_value, "active", wrkmap[Z_LVAL_P(bartlby_worker_id)].active);
 	add_assoc_long(return_value, "is_gone", wrkmap[Z_LVAL_P(bartlby_worker_id)].is_gone);		
 
@@ -469,7 +469,7 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	convert_to_long(bartlby_worker_id);
 	convert_to_long(new_state);
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
@@ -516,7 +516,7 @@ PHP_FUNCTION(bartlby_set_worker_id) {
 	
 	convert_to_long(from);
 	convert_to_long(to);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	LOAD_SYMBOL(WorkerChangeId,bres->SOHandle, "WorkerChangeId");
 	ret=WorkerChangeId(Z_LVAL_P(from),Z_LVAL_P(to),bres->cfgfile);
 	RETURN_LONG(ret);	

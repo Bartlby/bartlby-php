@@ -106,11 +106,7 @@ typedef struct _bartlby_res {
 #define BARTLBY_FIELD_OPTIONAL 0
 
 #define GETARRAY_EL_FROM_HASH(target, element,temp,  array, required, def_type, def_value) \
-if(SUCCESS == zend_hash_find(Z_ARRVAL_P(array), element, strlen(element) + 1, (void**) &temp)) { \
-	target = *temp; \
-}  else { \
-	target = NULL; \
-} \
+target = zend_hash_str_find(Z_ARRVAL_P(target), element, strlen(element) + 1); \
 if(required == 1) { \
 	if(target == NULL) { \
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required\n", element); \
@@ -119,7 +115,7 @@ if(required == 1) { \
 	if(Z_TYPE_P(target) == IS_NULL) {\
 		MAKE_STD_ZVAL(target); \
 		if(def_type == BARTLBY_DEFAULT_STRING) { \
-			ZVAL_STRING(target, (char*)def_value, 1); \
+			ZVAL_STRING(target, (char*)def_value); \
 		} \
 		if(def_type == BARTLBY_DEFAULT_LONG) { \
 			ZVAL_LONG(target, (long)def_value);\
@@ -699,5 +695,4 @@ typedef struct port_packet_struct{
 	
 	 
 } portier_packet;
-
 

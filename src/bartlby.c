@@ -240,13 +240,13 @@ PHP_FUNCTION(bartlby_close)
         RETURN_FALSE;
     }
 
-    zend_list_delete(Z_LVAL_P(zbartlby));
+    zend_list_delete(Z_RES_P(zbartlby));
     RETURN_TRUE;
 }
 
 
 
-static void bartlby_res_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
+static void bartlby_res_dtor(zend_resource *rsrc TSRMLS_DC)
 {
     bartlby_res *res = (bartlby_res*)rsrc->ptr;
     if (res) {

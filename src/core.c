@@ -33,7 +33,7 @@ extern int le_bartlby;
 
 
 PHP_FUNCTION(bartlby_version) {
-	RETURN_STRING(BARTLBY_VERSION,1);	
+	RETURN_STRING(BARTLBY_VERSION);	
 	
 }
 
@@ -72,7 +72,7 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	if (array_init(return_value) == FAILURE) {
@@ -99,7 +99,7 @@ PHP_FUNCTION(bartlby_toggle_sirene) {
 	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
@@ -132,7 +132,7 @@ PHP_FUNCTION(bartlby_set_passive) {
 	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource, &bartlby_service_id, &bartlby_new_state, &bartlby_new_output)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(bartlby_new_state);
 	convert_to_string(bartlby_new_output);
@@ -177,7 +177,7 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
@@ -210,7 +210,7 @@ PHP_FUNCTION(bartlby_notification_log_at_index) {
 			WRONG_PARAM_COUNT;
 		}
 
-		ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+		ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		convert_to_long(idx);
 
 
@@ -231,7 +231,7 @@ PHP_FUNCTION(bartlby_notification_log_at_index) {
 		add_assoc_long(return_value, "time", shm_hdr->notification_log[Z_LVAL_P(idx)].time);
 		add_assoc_long(return_value, "aggregation_interval", shm_hdr->notification_log[Z_LVAL_P(idx)].aggregation_interval);
 		add_assoc_long(return_value, "received_via", shm_hdr->notification_log[Z_LVAL_P(idx)].received_via);
-		add_assoc_string(return_value, "trigger_name", shm_hdr->notification_log[Z_LVAL_P(idx)].trigger_name, 1);
+		add_assoc_string(return_value, "trigger_name", shm_hdr->notification_log[Z_LVAL_P(idx)].trigger_name);
 		
 
 }
@@ -267,9 +267,9 @@ PHP_FUNCTION(bartlby_get_core_extension_info) {
   LOAD_SYMBOL(GetAutor,SOHandle, "GetAutor");
   LOAD_SYMBOL(GetVersion,SOHandle, "GetVersion");
   
-  add_assoc_string(return_value, "name", GetName(), 1);
-  add_assoc_string(return_value, "autor", GetAutor(), 1);
-  add_assoc_string(return_value, "version", GetVersion(), 1); 
+  add_assoc_string(return_value, "name", GetName());
+  add_assoc_string(return_value, "autor", GetAutor());
+  add_assoc_string(return_value, "version", GetVersion()); 
 	
 	dlclose(SOHandle);
 	
@@ -289,7 +289,7 @@ PHP_FUNCTION(bartlby_check_force) {
 		WRONG_PARAM_COUNT;
 	}
 	convert_to_long(bartlby_service_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
@@ -318,7 +318,7 @@ PHP_FUNCTION(bartlby_encode) {
 	convert_to_string(instr);
 	xbartlby_encode(Z_STRVAL_P(instr), strlen(Z_STRVAL_P(instr)));
 	
-	RETURN_STRING(Z_STRVAL_P(instr),1);
+	RETURN_STRING(Z_STRVAL_P(instr));
 	
 	
 }
@@ -332,7 +332,7 @@ PHP_FUNCTION(bartlby_decode) {
 	convert_to_string(instr);
 	xbartlby_decode(Z_STRVAL_P(instr), strlen(Z_STRVAL_P(instr)));
 	
-	RETURN_STRING(Z_STRVAL_P(instr),1);	
+	RETURN_STRING(Z_STRVAL_P(instr));	
 }
 PHP_FUNCTION(bartlby_shm_destroy) {
 	//FIXME RESOURCE?
@@ -384,7 +384,7 @@ PHP_FUNCTION(bartlby_reload) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	shm_hdr->do_reload=1;
@@ -414,7 +414,7 @@ PHP_FUNCTION(bartlby_config) {
 		
 		RETURN_FALSE;
 	} else {
-		RETURN_STRING(k,1);	
+		RETURN_STRING(k);	
 	}
 	
 	
@@ -431,7 +431,7 @@ PHP_FUNCTION(bartlby_get_info) {
 		WRONG_PARAM_COUNT;
 	}	
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	if (array_init(return_value) == FAILURE) {
@@ -450,7 +450,7 @@ PHP_FUNCTION(bartlby_get_info) {
 
 	add_assoc_long(return_value, "current_running", shm_hdr->current_running);
 	add_assoc_long(return_value, "do_reload", shm_hdr->do_reload);
-	add_assoc_string(return_value, "version", shm_hdr->version, 1);
+	add_assoc_string(return_value, "version", shm_hdr->version);
 	add_assoc_long(return_value, "last_replication", shm_hdr->last_replication);
 	add_assoc_long(return_value, "startup_time", shm_hdr->startup_time);
 	add_assoc_long(return_value, "downtimes", shm_hdr->dtcount);
@@ -486,7 +486,7 @@ PHP_FUNCTION(bartlby_lib_info) {
 	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	LOAD_SYMBOL(GetAutor,bres->SOHandle, "GetAutor");
     LOAD_SYMBOL(GetVersion,bres->SOHandle, "GetVersion");
@@ -499,9 +499,9 @@ PHP_FUNCTION(bartlby_lib_info) {
     if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	add_assoc_string(return_value, "Autor", GetAutorStr, 1);
-	add_assoc_string(return_value, "Version", GetVersionStr, 1);
-	add_assoc_string(return_value, "Name", GetNameStr, 1);
+	add_assoc_string(return_value, "Autor", GetAutorStr);
+	add_assoc_string(return_value, "Version", GetVersionStr);
+	add_assoc_string(return_value, "Name", GetNameStr);
 	
 	free(GetAutorStr);
 	free(GetVersionStr);

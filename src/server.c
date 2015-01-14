@@ -61,7 +61,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	convert_to_long(server_id);
@@ -77,18 +77,18 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 		if (array_init(return_value) == FAILURE) {
 			RETURN_FALSE;
 		}
-		add_assoc_string(return_value, "server_name", svc.server_name, 1);
-		add_assoc_string(return_value, "server_ip", svc.client_ip, 1);
-		add_assoc_string(return_value, "exec_plan", svc.exec_plan, 1);
-		add_assoc_string(return_value, "web_hooks", svc.web_hooks, 1);
-		add_assoc_string(return_value, "json_endpoint", svc.json_endpoint, 1);
+		add_assoc_string(return_value, "server_name", svc.server_name);
+		add_assoc_string(return_value, "server_ip", svc.client_ip);
+		add_assoc_string(return_value, "exec_plan", svc.exec_plan);
+		add_assoc_string(return_value, "web_hooks", svc.web_hooks);
+		add_assoc_string(return_value, "json_endpoint", svc.json_endpoint);
 		
-		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile, 1);
-		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase, 1);
-		add_assoc_string(return_value, "server_ssh_username", svc.server_ssh_username, 1);
-		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers, 1);
+		add_assoc_string(return_value, "server_ssh_keyfile", svc.server_ssh_keyfile);
+		add_assoc_string(return_value, "server_ssh_passphrase", svc.server_ssh_passphrase);
+		add_assoc_string(return_value, "server_ssh_username", svc.server_ssh_username);
+		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers);
 		
-		add_assoc_string(return_value, "server_icon", svc.server_icon, 1);
+		add_assoc_string(return_value, "server_icon", svc.server_icon);
 		add_assoc_long(return_value, "server_port",svc.client_port);
 		add_assoc_long(return_value, "orch_id",svc.orch_id);
 		add_assoc_long(return_value, "server_id",Z_LVAL_P(server_id));
@@ -128,8 +128,8 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 									
 								z=srvmap[x].servergroup_place[y];
 								add_assoc_long(groupinfo,"servergroup_place", y);
-								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
-								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
+								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
 								
 								add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
 								add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
@@ -183,7 +183,7 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 							add_assoc_long(return_value, "is_downtime", 1);
 							add_assoc_long(return_value, "downtime_from", dtmap[dtmapindex].downtime_from);
 							add_assoc_long(return_value, "downtime_to", dtmap[dtmapindex].downtime_to);
-							add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice, 1);
+							add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice);
 							add_assoc_long(return_value, "downtime_service", dtmap[dtmapindex].service_id);
 							add_assoc_long(return_value, "downtime_type", dtmap[dtmapindex].downtime_type);
 							
@@ -267,7 +267,7 @@ PHP_FUNCTION(bartlby_modify_server) {
 	GETARRAY_EL_FROM_HASH(web_hooks, "web_hooks", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(json_endpoint, "json_endpoint", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_long(default_service_type);
 	convert_to_long(server_id);
@@ -389,7 +389,7 @@ PHP_FUNCTION(bartlby_add_server) {
 	GETARRAY_EL_FROM_HASH(json_endpoint, "json_endpoint", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(web_hooks_level, "web_hooks_level", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_long(default_service_type);
 	convert_to_string(server_name);
@@ -456,7 +456,7 @@ PHP_FUNCTION(bartlby_delete_server) {
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(server_id);
 	
 	
@@ -494,7 +494,7 @@ PHP_FUNCTION(bartlby_get_server) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_server_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	if (array_init(return_value) == FAILURE) {
@@ -515,21 +515,21 @@ PHP_FUNCTION(bartlby_get_server) {
 	current_time=time(NULL);
 	is_down=0;
 			
-	add_assoc_string(return_value, "server_name", srvmap[Z_LVAL_P(bartlby_server_id)].server_name, 1);
-	add_assoc_string(return_value, "server_ip", srvmap[Z_LVAL_P(bartlby_server_id)].client_ip, 1);
+	add_assoc_string(return_value, "server_name", srvmap[Z_LVAL_P(bartlby_server_id)].server_name);
+	add_assoc_string(return_value, "server_ip", srvmap[Z_LVAL_P(bartlby_server_id)].client_ip);
 		
-	add_assoc_string(return_value, "server_ssh_keyfile", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_keyfile, 1);
-	add_assoc_string(return_value, "server_ssh_passphrase", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_passphrase, 1);
-	add_assoc_string(return_value, "server_ssh_username", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_username, 1);
-	add_assoc_string(return_value, "enabled_triggers", srvmap[Z_LVAL_P(bartlby_server_id)].enabled_triggers, 1);
+	add_assoc_string(return_value, "server_ssh_keyfile", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_keyfile);
+	add_assoc_string(return_value, "server_ssh_passphrase", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_passphrase);
+	add_assoc_string(return_value, "server_ssh_username", srvmap[Z_LVAL_P(bartlby_server_id)].server_ssh_username);
+	add_assoc_string(return_value, "enabled_triggers", srvmap[Z_LVAL_P(bartlby_server_id)].enabled_triggers);
 
 	add_assoc_long(return_value, "default_service_type",srvmap[Z_LVAL_P(bartlby_server_id)].default_service_type);
 	
 		
-	add_assoc_string(return_value, "server_icon", srvmap[Z_LVAL_P(bartlby_server_id)].server_icon, 1);
-	add_assoc_string(return_value, "exec_plan", srvmap[Z_LVAL_P(bartlby_server_id)].exec_plan, 1);
-	add_assoc_string(return_value, "web_hooks", srvmap[Z_LVAL_P(bartlby_server_id)].web_hooks, 1);
-	add_assoc_string(return_value, "json_endpoint", srvmap[Z_LVAL_P(bartlby_server_id)].json_endpoint, 1);
+	add_assoc_string(return_value, "server_icon", srvmap[Z_LVAL_P(bartlby_server_id)].server_icon);
+	add_assoc_string(return_value, "exec_plan", srvmap[Z_LVAL_P(bartlby_server_id)].exec_plan);
+	add_assoc_string(return_value, "web_hooks", srvmap[Z_LVAL_P(bartlby_server_id)].web_hooks);
+	add_assoc_string(return_value, "json_endpoint", srvmap[Z_LVAL_P(bartlby_server_id)].json_endpoint);
 
 	add_assoc_long(return_value, "web_hooks_level",srvmap[Z_LVAL_P(bartlby_server_id)].web_hooks_level);
 	add_assoc_long(return_value, "server_port",srvmap[Z_LVAL_P(bartlby_server_id)].client_port);
@@ -552,8 +552,8 @@ PHP_FUNCTION(bartlby_get_server) {
 								
 			z=srvmap[Z_LVAL_P(bartlby_server_id)].servergroup_place[y];
 			add_assoc_long(groupinfo,"servergroup_place", y);
-			add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name,1);
-			add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members,1);
+			add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
+			add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
 							
 			add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
 			add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
@@ -593,7 +593,7 @@ PHP_FUNCTION(bartlby_get_server) {
 		add_assoc_long(return_value, "is_downtime", 1);
 		add_assoc_long(return_value, "downtime_from", dtmap[dtmapindex].downtime_from);
 		add_assoc_long(return_value, "downtime_to", dtmap[dtmapindex].downtime_to);
-		add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice, 1);
+		add_assoc_string(return_value, "downtime_notice", dtmap[dtmapindex].downtime_notice);
 		add_assoc_long(return_value, "downtime_service", dtmap[dtmapindex].service_id);
 		add_assoc_long(return_value, "downtime_type", dtmap[dtmapindex].downtime_type);
 	} else {
@@ -628,7 +628,7 @@ PHP_FUNCTION(bartlby_set_server_id) {
 	convert_to_long(to);
 	convert_to_long(mig);
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	LOAD_SYMBOL(ServerChangeId,bres->SOHandle, "ServerChangeId");
 	ret=ServerChangeId(Z_LVAL_P(from),Z_LVAL_P(to),Z_LVAL_P(mig),bres->cfgfile);
 	RETURN_LONG(ret);	
@@ -656,7 +656,7 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
 		
@@ -703,7 +703,7 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
 	

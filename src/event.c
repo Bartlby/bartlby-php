@@ -49,7 +49,7 @@ PHP_FUNCTION(bartlby_event_tick) {
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	idx=shm_hdr->cur_event_index;
 	RETURN_LONG(idx);
@@ -74,7 +74,7 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	}
 	
 	convert_to_long(event_index);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 	if (array_init(return_value) == FAILURE) {
@@ -88,7 +88,7 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	evntmap=bartlby_SHM_EventMap(bres->bartlby_address);
 	
 	if(Z_LVAL_P(event_index) < EVENT_QUEUE_MAX) {
-		add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message, 1);
+		add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message);
 		add_assoc_long(return_value, "id", evntmap[Z_LVAL_P(event_index)].evnt_id);
 		add_assoc_long(return_value, "time", evntmap[Z_LVAL_P(event_index)].evnt_time);
 	} else {
