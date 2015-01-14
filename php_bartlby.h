@@ -253,6 +253,8 @@ PHP_FUNCTION(bartlby_delete_trap);
 PHP_FUNCTION(bartlby_set_trap_id);
 PHP_FUNCTION(bartlby_get_trap_by_id);
 
+
+PHP_FUNCTION(bartlby_cleanup_tests);
 //Notitification Log
 
 PHP_FUNCTION(bartlby_notification_log_at_index);

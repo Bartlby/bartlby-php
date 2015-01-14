@@ -31,7 +31,25 @@ $Author$
 
 extern int le_bartlby;
 
+PHP_FUNCTION(bartlby_cleanup_tests) {
+	zval * zbartlby_resource;
+	bartlby_res * bres;
+	char * dlmsg;
+	int ret;
+	int (*CleanupTestData)(char *);
+	
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
+	LOAD_SYMBOL(CleanupTestData,bres->SOHandle, "CleanupTestData");
+	ret=CleanupTestData(bres->cfgfile);
+
+	RETURN_LONG(ret);
+
+}
 PHP_FUNCTION(bartlby_callback_test) {
 
 	zval * zbartlby_resource;
