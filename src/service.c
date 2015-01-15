@@ -159,8 +159,8 @@ PHP_FUNCTION(bartlby_get_service) {
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
 	
-	zval * groups;
-	zval * groupinfo;
+	zval  groups;
+	zval  groupinfo;
 	
 	int u;
 	char * group_has_server;
@@ -373,60 +373,59 @@ PHP_FUNCTION(bartlby_get_service) {
 	//is member of following servergroups
 
 	if(srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter > 0) {
-		ALLOC_INIT_ZVAL(groups);
-		array_init(groups);
+		array_init(&groups);
 		for(y=0; y<srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_counter; y++){
-			ALLOC_INIT_ZVAL(groupinfo);
-			array_init(groupinfo);
+			
+			array_init(&groupinfo);
 								
 			z=srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].servergroup_place[y];
-			add_assoc_long(groupinfo,"servergroup_place", y);
-			add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
-			add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
+			add_assoc_long(&groupinfo,"servergroup_place", y);
+			add_assoc_string(&groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
+			add_assoc_string(&groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
 								
-			add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
-			add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
-			add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
-			add_assoc_long(groupinfo,"servergroup_dead", srvgrpmap[z].servergroup_dead);
-			add_assoc_string(groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers);
+			add_assoc_long(&groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+			add_assoc_long(&groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+			add_assoc_long(&groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
+			add_assoc_long(&groupinfo,"servergroup_dead", srvgrpmap[z].servergroup_dead);
+			add_assoc_string(&groupinfo,"enabled_triggers", srvgrpmap[z].enabled_triggers);
 									
 									
-									
-			add_next_index_zval(groups, groupinfo);
+
+			add_next_index_zval(&groups, &groupinfo);
 		
 					
 		}
-		add_assoc_zval(return_value, "servergroups", groups);
+		add_assoc_zval(return_value, "servergroups", &groups);
 	}		
 
 
 	//is member of following groups #SERVICEGROUP
 	if(svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter > 0) {
-		ALLOC_INIT_ZVAL(groups);
-		array_init(groups);
+		
+		array_init(&groups);
 		for(y=0; y<svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_counter; y++){
 				
 				
-				ALLOC_INIT_ZVAL(groupinfo);
-				array_init(groupinfo);
+				
+				array_init(&groupinfo);
 				
 				x=svcmap[Z_LVAL_P(bartlby_service_id)].servicegroup_place[y];
-				add_assoc_long(groupinfo,"servicegroup_place", y);
-				add_assoc_string(groupinfo,"servicegroup_name", svcgrpmap[x].servicegroup_name);
-				add_assoc_string(groupinfo,"servicegroup_member", svcgrpmap[x].servicegroup_members);
+				add_assoc_long(&groupinfo,"servicegroup_place", y);
+				add_assoc_string(&groupinfo,"servicegroup_name", svcgrpmap[x].servicegroup_name);
+				add_assoc_string(&groupinfo,"servicegroup_member", svcgrpmap[x].servicegroup_members);
 				
-				add_assoc_long(groupinfo,"servicegroup_active", svcgrpmap[x].servicegroup_active);
-				add_assoc_long(groupinfo,"servicegroup_notify", svcgrpmap[x].servicegroup_notify);
-				add_assoc_long(groupinfo,"servicegroup_id", svcgrpmap[x].servicegroup_id);
+				add_assoc_long(&groupinfo,"servicegroup_active", svcgrpmap[x].servicegroup_active);
+				add_assoc_long(&groupinfo,"servicegroup_notify", svcgrpmap[x].servicegroup_notify);
+				add_assoc_long(&groupinfo,"servicegroup_id", svcgrpmap[x].servicegroup_id);
 				
 				
-				add_next_index_zval(groups, groupinfo);
+				add_next_index_zval(&groups, &groupinfo);
 				
 		}		
 		
 		
 		
-		add_assoc_zval(return_value, "servicegroups", groups);
+		add_assoc_zval(return_value, "servicegroups", &groups);
 	}
 
 	

@@ -173,6 +173,7 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_set_trap_id, NULL)
 	PHP_FE(bartlby_get_trap_by_id, NULL)
 	PHP_FE(bartlby_cleanup_tests, NULL)
+	PHP_FE(bartlby_in_array_test, NULL)
 
 	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
@@ -230,6 +231,28 @@ static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
 
 
 
+PHP_FUNCTION(bartlby_new) {
+	bartlby_res * res;
+	
+	zval * bartlby_config;
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+	//FIXME return NULL if SHM or DL error
+		convert_to_string(bartlby_config);
+	  res = emalloc(sizeof(bartlby_res));
+	  res->cfgfile = estrndup(Z_STRVAL_P(bartlby_config), strlen(Z_STRVAL_P(bartlby_config)));
+	  res->SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	  res->bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
+	  
+  if(res->bartlby_address == NULL || res->SOHandle == NULL) {
+  	RETURN_FALSE;
+  }
+  
+  ZEND_REGISTER_RESOURCE(return_value, res, le_bartlby);
+  	
+}
+
 
 PHP_FUNCTION(bartlby_close)
 {
@@ -239,8 +262,8 @@ PHP_FUNCTION(bartlby_close)
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby) == FAILURE) {
         RETURN_FALSE;
     }
-
-    zend_list_delete(Z_RES_P(zbartlby));
+    
+    zend_list_close(Z_RES_P(zbartlby));
     RETURN_TRUE;
 }
 
@@ -249,6 +272,7 @@ PHP_FUNCTION(bartlby_close)
 static void bartlby_res_dtor(zend_resource *rsrc TSRMLS_DC)
 {
     bartlby_res *res = (bartlby_res*)rsrc->ptr;
+    
     if (res) {
     	//FIXME
     	//shmdt

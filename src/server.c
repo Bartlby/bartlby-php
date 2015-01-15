@@ -49,8 +49,8 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	int current_time;
 	int is_down;
 	int ret;
-	zval * groups;
-	zval * groupinfo;
+	zval  groups;
+	zval  groupinfo;
 	int u;
 	int dtmapindex;
 	
@@ -118,22 +118,22 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 				add_assoc_long(return_value, "server_shm_place",x);
 			
 					if(srvmap[x].servergroup_counter > 0) {
-						ALLOC_INIT_ZVAL(groups);
-						array_init(groups);
+						
+						array_init(&groups);
 						for(y=0; y<srvmap[x].servergroup_counter; y++){
 						
 						
-								ALLOC_INIT_ZVAL(groupinfo);
-								array_init(groupinfo);
+								
+								array_init(&groupinfo);
 									
 								z=srvmap[x].servergroup_place[y];
-								add_assoc_long(groupinfo,"servergroup_place", y);
-								add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
-								add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
+								add_assoc_long(&groupinfo,"servergroup_place", y);
+								add_assoc_string(&groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
+								add_assoc_string(&groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
 								
-								add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
-								add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
-								add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
+								add_assoc_long(&groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+								add_assoc_long(&groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+								add_assoc_long(&groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 								
 								
 								for(u=0; u<shm_hdr->dtcount; u++) {
@@ -150,13 +150,13 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 										}
 								}	
 									
-								add_next_index_zval(groups, groupinfo);
+								add_next_index_zval(&groups, &groupinfo);
 					
 					}		
 				
 				
 				
-					add_assoc_zval(return_value, "groups", groups);
+					add_assoc_zval(return_value, "groups", &groups);
 				}
 					
 					
@@ -486,8 +486,8 @@ PHP_FUNCTION(bartlby_get_server) {
 	int y, z, u;
 	zval * zbartlby_resource;
 	zval * bartlby_server_id;
-	zval * groups;
-	zval * groupinfo;
+	zval  groups;
+	zval  groupinfo;
 	bartlby_res * bres;
 	
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_server_id)==FAILURE) {
@@ -544,20 +544,20 @@ PHP_FUNCTION(bartlby_get_server) {
 	add_assoc_long(return_value, "server_shm_place",Z_LVAL_P(bartlby_server_id));
 		
 	if(srvmap[Z_LVAL_P(bartlby_server_id)].servergroup_counter > 0) {
-		ALLOC_INIT_ZVAL(groups);
-		array_init(groups);
+		
+		array_init(&groups);
 		for(y=0; y<srvmap[Z_LVAL_P(bartlby_server_id)].servergroup_counter; y++){
-			ALLOC_INIT_ZVAL(groupinfo);
-			array_init(groupinfo);
+			
+			array_init(&groupinfo);
 								
 			z=srvmap[Z_LVAL_P(bartlby_server_id)].servergroup_place[y];
-			add_assoc_long(groupinfo,"servergroup_place", y);
-			add_assoc_string(groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
-			add_assoc_string(groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
+			add_assoc_long(&groupinfo,"servergroup_place", y);
+			add_assoc_string(&groupinfo,"servergroup_name", srvgrpmap[z].servergroup_name);
+			add_assoc_string(&groupinfo,"servergroup_members", srvgrpmap[z].servergroup_members);
 							
-			add_assoc_long(groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
-			add_assoc_long(groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
-			add_assoc_long(groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
+			add_assoc_long(&groupinfo,"servergroup_active", srvgrpmap[z].servergroup_active);
+			add_assoc_long(&groupinfo,"servergroup_notify", srvgrpmap[z].servergroup_notify);
+			add_assoc_long(&groupinfo,"servergroup_id", srvgrpmap[z].servergroup_id);
 			for(u=0; u<shm_hdr->dtcount; u++) {
 				if(current_time >= dtmap[u].downtime_from && current_time <= dtmap[u].downtime_to) {
 					if(dtmap[u].downtime_type ==  DT_SERVERGROUP) {
@@ -570,11 +570,11 @@ PHP_FUNCTION(bartlby_get_server) {
 				}
 			}	
 								
-			add_next_index_zval(groups, groupinfo);
+			add_next_index_zval(&groups, &groupinfo);
 				
 		}
 		
-		add_assoc_zval(return_value, "groups", groups);
+		add_assoc_zval(return_value, "groups", &groups);
 	}		
 		
 

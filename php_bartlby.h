@@ -106,7 +106,7 @@ typedef struct _bartlby_res {
 #define BARTLBY_FIELD_OPTIONAL 0
 
 #define GETARRAY_EL_FROM_HASH(target, element,temp,  array, required, def_type, def_value) \
-target = zend_hash_str_find(Z_ARRVAL_P(target), element, strlen(element) + 1); \
+target = zend_hash_str_find(Z_ARRVAL_P(array), element, strlen(element)); \
 if(required == 1) { \
 	if(target == NULL) { \
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required\n", element); \
@@ -256,7 +256,7 @@ PHP_FUNCTION(bartlby_cleanup_tests);
 PHP_FUNCTION(bartlby_notification_log_at_index);
 
 PHP_METHOD(Bartlby, testFunc);
-
+PHP_FUNCTION(bartlby_in_array_test);
 
 
 

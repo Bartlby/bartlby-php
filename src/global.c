@@ -110,11 +110,10 @@ int btl_is_array(zval * ar, long service_id) {
 	
 	arr_hash = Z_ARRVAL_P(ar);
 	ZEND_HASH_FOREACH_KEY_VAL(arr_hash, num_key, key, val) {
-		if(Z_TYPE_PP(val) == IS_STRING) {
+		if(Z_TYPE_P(val) == IS_STRING) {
 			
-		} else if(Z_TYPE_PP(val) == IS_LONG) {
-            //printf("Long: %d\n", Z_LVAL_PP(data));    
-                	if(Z_LVAL_PP(val) == service_id) {
+		} else if(Z_TYPE_P(val) == IS_LONG) {
+                	if(Z_LVAL_P(val) == service_id) {
                         	return 1;
                 	}
 		}

@@ -37,27 +37,6 @@ PHP_FUNCTION(bartlby_version) {
 	
 }
 
-PHP_FUNCTION(bartlby_new) {
-	bartlby_res * res;
-	
-	zval * bartlby_config;
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
-	//FIXME return NULL if SHM or DL error
-	convert_to_string(bartlby_config);
-	  res = emalloc(sizeof(bartlby_res));
-	  res->cfgfile = estrndup(Z_STRVAL_P(bartlby_config), strlen(Z_STRVAL_P(bartlby_config)));
-	  res->SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
-	  res->bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
-	  
-  if(res->bartlby_address == NULL || res->SOHandle == NULL) {
-  	RETURN_FALSE;
-  }
-  
-  ZEND_REGISTER_RESOURCE(return_value, res, le_bartlby);
-  	
-}
 
 
 PHP_FUNCTION(bartlby_check_shm_size) {
