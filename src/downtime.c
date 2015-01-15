@@ -42,9 +42,12 @@ PHP_FUNCTION(bartlby_get_downtime_by_id) {
 	
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&downtime_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(downtime_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	convert_to_long(downtime_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -88,9 +91,12 @@ PHP_FUNCTION(bartlby_get_downtime) {
 	zval * bartlby_downtime_id;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_downtime_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_downtime_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	convert_to_long(bartlby_downtime_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
@@ -137,9 +143,13 @@ PHP_FUNCTION(bartlby_delete_downtime) {
 	bartlby_res * bres;
 
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&downtime_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(downtime_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	convert_to_long(downtime_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	LOAD_SYMBOL(DeleteDowntime,bres->SOHandle, "DeleteDowntime");
@@ -172,9 +182,13 @@ PHP_FUNCTION(bartlby_modify_downtime) {
 
 
 	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&downtime_id, &options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(downtime_id)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -246,9 +260,11 @@ PHP_FUNCTION(bartlby_add_downtime) {
 	bartlby_res * bres;	
 
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -310,9 +326,13 @@ PHP_FUNCTION(bartlby_set_downtime_id) {
 	bartlby_res * bres;
 
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(from)		
+		Z_PARAM_ZVAL(to)
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 

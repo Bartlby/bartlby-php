@@ -235,9 +235,12 @@ PHP_FUNCTION(bartlby_new) {
 	bartlby_res * res;
 	
 	zval * bartlby_config;
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_ZVAL(bartlby_config)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
+
 	//FIXME return NULL if SHM or DL error
 		convert_to_string(bartlby_config);
 	  res = emalloc(sizeof(bartlby_res));
@@ -259,10 +262,14 @@ PHP_FUNCTION(bartlby_close)
 	
 		//FIXME check resource type BARTLBY
     zval *zbartlby;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby) == FAILURE) {
-        RETURN_FALSE;
-    }
     
+    ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
+
+
+
     zend_list_close(Z_RES_P(zbartlby));
     RETURN_TRUE;
 }

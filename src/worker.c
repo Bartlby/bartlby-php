@@ -68,10 +68,13 @@ PHP_FUNCTION(bartlby_add_worker) {
 	bartlby_res * bres;
 
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
 	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END();
+
+
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
 		RETURN_BOOL(0);
@@ -173,9 +176,12 @@ PHP_FUNCTION(bartlby_delete_worker) {
 	int (*DeleteWorker)(long, char*);
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&worker_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(worker_id)		
+	ZEND_PARSE_PARAMETERS_END();
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(worker_id);
 	
@@ -229,9 +235,13 @@ PHP_FUNCTION(bartlby_modify_worker) {
 	
 	bartlby_res * bres;
 
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&worker_id, &options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(worker_id)		
+		Z_PARAM_ARRAY(options_array)
+	ZEND_PARSE_PARAMETERS_END();
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -338,9 +348,12 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 	
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&worker_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(worker_id)		
+	ZEND_PARSE_PARAMETERS_END();
+
 	
 	convert_to_long(worker_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -396,9 +409,13 @@ PHP_FUNCTION(bartlby_get_worker) {
 	zval * bartlby_worker_id;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_worker_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_worker_id)		
+	ZEND_PARSE_PARAMETERS_END();
+
+
 	convert_to_long(bartlby_worker_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -463,9 +480,16 @@ PHP_FUNCTION(bartlby_set_worker_state) {
 	bartlby_res * bres;
 
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_worker_id, &new_state)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_worker_id)
+		Z_PARAM_ZVAL(new_state)		
+	ZEND_PARSE_PARAMETERS_END();
+
+
+
 	convert_to_long(bartlby_worker_id);
 	convert_to_long(new_state);
 	
@@ -510,9 +534,14 @@ PHP_FUNCTION(bartlby_set_worker_id) {
 	bartlby_res * bres;	
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(from)		
+		Z_PARAM_ZVAL(to)
+	ZEND_PARSE_PARAMETERS_END();
+
+
 	
 	convert_to_long(from);
 	convert_to_long(to);

@@ -48,9 +48,10 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 	struct service * svcmap;	
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
@@ -75,9 +76,10 @@ PHP_FUNCTION(bartlby_toggle_sirene) {
 	
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
@@ -108,9 +110,14 @@ PHP_FUNCTION(bartlby_set_passive) {
 	bartlby_res * bres;
 
 
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource, &bartlby_service_id, &bartlby_new_state, &bartlby_new_output)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	ZEND_PARSE_PARAMETERS_START(4,4)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_service_id)
+		Z_PARAM_ZVAL(bartlby_new_state)
+		Z_PARAM_ZVAL(bartlby_new_output)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(bartlby_new_state);
@@ -153,9 +160,12 @@ PHP_FUNCTION(bartlby_ack_problem) {
 	struct service * svcmap;	
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_service_id)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	
@@ -185,9 +195,11 @@ PHP_FUNCTION(bartlby_notification_log_at_index) {
 		bartlby_res * bres;
 
 
-		if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &idx)==FAILURE) {
-			WRONG_PARAM_COUNT;
-		}
+
+		ZEND_PARSE_PARAMETERS_START(2,2)
+			Z_PARAM_RESOURCE(zbartlby_resource)
+			Z_PARAM_ZVAL(idx)
+		ZEND_PARSE_PARAMETERS_END(); 			
 
 		ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 		convert_to_long(idx);
@@ -224,9 +236,11 @@ PHP_FUNCTION(bartlby_get_core_extension_info) {
 	char * (*GetAutor)();
 	char * (*GetVersion)();
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &extensions_path)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_ZVAL(extensions_path)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	convert_to_string(extensions_path);
 	
 	if (array_init(return_value) == FAILURE) {
@@ -264,9 +278,12 @@ PHP_FUNCTION(bartlby_check_force) {
 	struct service * svcmap; 
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_service_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_service_id)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	convert_to_long(bartlby_service_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -291,9 +308,11 @@ PHP_FUNCTION(bartlby_check_force) {
 PHP_FUNCTION(bartlby_encode) {
 	zval * instr;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &instr)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_ZVAL(instr)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	convert_to_string(instr);
 	xbartlby_encode(Z_STRVAL_P(instr), strlen(Z_STRVAL_P(instr)));
 	
@@ -305,9 +324,12 @@ PHP_FUNCTION(bartlby_encode) {
 PHP_FUNCTION(bartlby_decode) {
 	zval * instr;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &instr)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_ZVAL(instr)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	convert_to_string(instr);
 	xbartlby_decode(Z_STRVAL_P(instr), strlen(Z_STRVAL_P(instr)));
 	
@@ -322,20 +344,22 @@ PHP_FUNCTION(bartlby_shm_destroy) {
 	struct shmid_ds shm_desc;
 	
 	
-	zval * bartlby_config;
+	zval * zbartlby_resource;
+	bartlby_res * bres;
 	
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bartlby_config)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
-	
-	convert_to_string(bartlby_config);
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
 	
-	shmtok = getConfigValue("shm_key", Z_STRVAL_P(bartlby_config));
+	shmtok = getConfigValue("shm_key", bres->cfgfile);
 	if(shmtok == NULL) {
 		RETURN_FALSE;
 	}		
@@ -359,9 +383,10 @@ PHP_FUNCTION(bartlby_reload) {
 	zval * zbartlby_resource;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 	
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -381,9 +406,12 @@ PHP_FUNCTION(bartlby_config) {
 	zval * bartlby_config;
 	zval * bartlby_key;
 	char * k;
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &bartlby_config, &bartlby_key)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+		
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_ZVAL(bartlby_config)
+		Z_PARAM_ZVAL(bartlby_key)
+	ZEND_PARSE_PARAMETERS_END(); 	
 	
 	convert_to_string(bartlby_config);	
 	convert_to_string(bartlby_key);	
@@ -406,9 +434,10 @@ PHP_FUNCTION(bartlby_get_info) {
 	bartlby_res * bres;
 
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 	
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -462,9 +491,11 @@ PHP_FUNCTION(bartlby_lib_info) {
 	char * GetNameStr;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+	
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	LOAD_SYMBOL(GetAutor,bres->SOHandle, "GetAutor");

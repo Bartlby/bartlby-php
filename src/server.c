@@ -58,9 +58,13 @@ PHP_FUNCTION(bartlby_get_server_by_id) {
 	struct server  svc;
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(server_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
@@ -235,9 +239,13 @@ PHP_FUNCTION(bartlby_modify_server) {
 	bartlby_res * bres;
 	struct server srv;
 
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&server_id, &options_array)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(server_id)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -359,9 +367,12 @@ PHP_FUNCTION(bartlby_add_server) {
 	bartlby_res * bres;
 
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -453,9 +464,13 @@ PHP_FUNCTION(bartlby_delete_server) {
 	int (*DeleteServer)(long, char*);
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&server_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(server_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(server_id);
 	
@@ -490,9 +505,13 @@ PHP_FUNCTION(bartlby_get_server) {
 	zval  groupinfo;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_server_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_server_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	convert_to_long(bartlby_server_id);
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
@@ -620,9 +639,13 @@ PHP_FUNCTION(bartlby_set_server_id) {
 
 	
 	
-	if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzzz", &zbartlby_resource,&from, &to, &mig)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	ZEND_PARSE_PARAMETERS_START(4,4)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(from)
+		Z_PARAM_ZVAL(to)
+		Z_PARAM_ZVAL(mig)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	convert_to_long(from);
 	convert_to_long(to);
@@ -650,9 +673,15 @@ PHP_FUNCTION(bartlby_toggle_server_notify) {
 	bartlby_res * bres;
 
 
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_service_id)
+		Z_PARAM_ZVAL(do_writeback)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
 	
@@ -700,9 +729,14 @@ PHP_FUNCTION(bartlby_toggle_server_active) {
 
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_service_id, &do_writeback)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_service_id)		
+		Z_PARAM_ZVAL(do_writeback)
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(bartlby_service_id);
 	convert_to_long(do_writeback);
