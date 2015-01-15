@@ -113,7 +113,6 @@ if(required == 1) { \
 		RETURN_BOOL(0); \
 	} \
 	if(Z_TYPE_P(target) == IS_NULL) {\
-		MAKE_STD_ZVAL(target); \
 		if(def_type == BARTLBY_DEFAULT_STRING) { \
 			ZVAL_STRING(target, (char*)def_value); \
 		} \
