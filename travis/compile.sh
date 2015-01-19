@@ -1,6 +1,6 @@
 phpize
 
-./configure
+./configure --enable-maintainer-zts
 make
 EX=$?;
 if [ $EX != 0 ];
