@@ -53,6 +53,9 @@ int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_t
 	zval *t3;
 	zval *t4;
 	
+
+	TSRMLS_FETCH();
+
 	int res;
 	INIT_ZVAL(type);
 	INIT_ZVAL(id);
@@ -99,6 +102,8 @@ int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_
 	zval id;
 	zval act;
 	zval function_name;
+
+        TSRMLS_FETCH();
 	
 	zval *return_user_call;
 
@@ -167,6 +172,7 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 	int audit_action=0;
 
 	int rtc;
+	TSRMLS_FETCH();
 	
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
