@@ -523,12 +523,8 @@ PHP_FUNCTION(bartlby_lib_info) {
 PHP_FUNCTION(bartlby_get_object_by_id) {
 
 	zval params[4];
-	zval type;
-	zval id;
-	zval act;
-	zval function_name;
-	zval log_line;
 	
+	zval function_name;
 	zval return_user_call;
 
 	zval * zbartlby_resource;
@@ -555,9 +551,13 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 	
 	
 
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &object_type, &object_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+	
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(object_type)
+		Z_PARAM_ZVAL(object_id)
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 
