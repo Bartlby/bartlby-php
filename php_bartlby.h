@@ -18,7 +18,7 @@
 
   $Id: php_bartlby.h,v 1.48 2008/03/14 01:11:19 hjanuschka Exp $ 
 */
-#define BARTLBY_VERSION "1.5.0"
+#define BARTLBY_VERSION "1.6.0"
 
 #define BARTLBY_OBJECT_SERVICE 1
 #define BARTLBY_OBJECT_SERVER 2
