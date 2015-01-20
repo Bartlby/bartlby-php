@@ -522,19 +522,15 @@ PHP_FUNCTION(bartlby_lib_info) {
 
 PHP_FUNCTION(bartlby_get_object_by_id) {
 
-	zval **params[4];
+	zval params[4];
 	zval type;
 	zval id;
 	zval act;
 	zval function_name;
 	zval log_line;
 	
-	zval *return_user_call;
+	zval return_user_call;
 
-	zval *t;
-	zval *t2;
-	zval *t3;
-	zval *t4;
 	zval * zbartlby_resource;
 	zval * object_type;
 	zval * object_id;
@@ -562,10 +558,9 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &object_type, &object_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
-	INIT_ZVAL(function_name);
-	INIT_ZVAL(id);
+
 	
 
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
@@ -587,7 +582,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_service", 1);
+		ZVAL_STRING(&function_name, "bartlby_get_service");
 		break;
 		case BARTLBY_OBJECT_SERVER:
 				for(x=0; x<shm_hdr->srvcount; x++) {
@@ -596,7 +591,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_server", 1);				
+		ZVAL_STRING(&function_name, "bartlby_get_server");				
 		break;
 		case BARTLBY_OBJECT_WORKER:
 				for(x=0; x<shm_hdr->wrkcount; x++) {
@@ -605,7 +600,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_worker", 1);				
+		ZVAL_STRING(&function_name, "bartlby_get_worker");				
 		break;
 		case BARTLBY_OBJECT_DOWNTIME:
 				for(x=0; x<shm_hdr->dtcount; x++) {
@@ -614,7 +609,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_downtime", 1);				
+		ZVAL_STRING(&function_name, "bartlby_get_downtime");				
 		break;		
 		case BARTLBY_OBJECT_TRAP:
 				for(x=0; x<shm_hdr->trapcount; x++) {
@@ -623,7 +618,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_trap", 1);				
+		ZVAL_STRING(&function_name, "bartlby_get_trap");				
 		break;		
 		case BARTLBY_OBJECT_SERVERGROUP:
 				for(x=0; x<shm_hdr->srvgroupcount; x++) {
@@ -632,7 +627,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_servergroup", 1);				
+		ZVAL_STRING(&function_name, "bartlby_get_servergroup");				
 		break;	
 		case BARTLBY_OBJECT_SERVICEGROUP:
 				for(x=0; x<shm_hdr->svcgroupcount; x++) {
@@ -641,7 +636,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_servicegroup", 1);
+		ZVAL_STRING(&function_name, "bartlby_get_servicegroup");
 		break;				
 	}
 
@@ -649,20 +644,18 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 	if(use_idx < 0) RETURN_FALSE;
 
 
+	ZVAL_COPY_VALUE(&params[0], zbartlby_resource);
+	ZVAL_LONG(&params[1], use_idx);
 	
-	ZVAL_LONG(&id, use_idx);
 	
 	
-	params[0] = &zbartlby_resource;
-	t=&id;
-	params[1] = &t;
-	
+	 
 	
 	res=call_user_function_ex(NULL, NULL, &function_name, &return_user_call, 2, params, 0, NULL TSRMLS_CC);
 	
 	
 
-	RETVAL_ZVAL(return_user_call, 1,1);
+	RETVAL_ZVAL(&return_user_call, 1,1);
 
 	
 
