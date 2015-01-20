@@ -20,19 +20,54 @@
 */
 #define BARTLBY_VERSION "1.5.0"
 
+#define BARTLBY_OBJECT_SERVICE 1
+#define BARTLBY_OBJECT_SERVER 2
+#define BARTLBY_OBJECT_DOWNTIME 3
+#define BARTLBY_OBJECT_WORKER 4
+#define BARTLBY_OBJECT_TRAP 5
+#define BARTLBY_OBJECT_SERVICEGROUP 6
+#define BARTLBY_OBJECT_SERVERGROUP 7
+
+
+#define BARTLBY_AUDIT_TYPE_SERVICE 1
+#define BARTLBY_AUDIT_TYPE_SERVER 2
+#define BARTLBY_AUDIT_TYPE_WORKER 3
+#define BARTLBY_AUDIT_TYPE_SERVERGROUP 4
+#define BARTLBY_AUDIT_TYPE_SERVICEGROUP 5
+#define BARTLBY_AUDIT_TYPE_DOWNTIME 6
+#define BARTLBY_AUDIT_TYPE_GENERIC 7
+#define BARTLBY_AUDIT_TYPE_TRAP 7
+
+
+#define BARTLBY_AUDIT_ACTION_ADD 1
+#define BARTLBY_AUDIT_ACTION_MODIFY 2
+#define BARTLBY_AUDIT_ACTION_DELETE 3
+
+
+
 #define BARTLBY_SERVICE_GONE 1
 #define BARTLBY_SERVER_GONE 2
 #define BARTLBY_WORKER_GONE 3
 #define BARTLBY_DOWNTIME_GONE 4
+#define BARTLBY_SERVICEGROUP_GONE 5
+#define BARTLBY_SERVERGROUP_GONE 6
+#define BARTLBY_TRAP_GONE 7
+
 
 #define BARTLBY_OBJECT_CHANGED 1
 #define BARTLBY_OBJECT_DELETED 2
+#define BARTLBY_OBJECT_OUT_OF_SYNC 3
+#define BARTLBY_OBJECT_ADDED  4
+
 
 
 #define DT_SERVICE 1
 #define DT_SERVER 2
 #define DT_SERVERGROUP 3
 #define DT_SERVICEGROUP 4
+
+#define SERVICE_UNHANDLED 0;
+#define SERVICE_HANDLED 1;
 
 #ifndef PHP_BARTLBY_H
 #define PHP_BARTLBY_H
@@ -52,6 +87,17 @@ extern zend_module_entry bartlby_module_entry;
 
 #include <sys/types.h>
 #include <sys/shm.h>
+#include <sys/times.h> 
+
+
+typedef struct _bartlby_res {
+    char *cfgfile;
+    void * bartlby_address;
+    void * SOHandle;
+    
+    
+} bartlby_res;
+#define BARTLBY_RES_NAME "Bartlby Resource"
 
 #define LOAD_SYMBOL(x,y,z) 	x=dlsym(y, z); \
     	if((dlmsg=dlerror()) != NULL) { \
@@ -60,6 +106,38 @@ extern zend_module_entry bartlby_module_entry;
     	}
     	
 
+#define BARTLBY_DEFAULT_STRING 1
+#define BARTLBY_DEFAULT_LONG 2
+#define BARTLBY_DEFAULT_ERROR 3
+#define BARTLBY_FIELD_REQUIRED 1
+#define BARTLBY_FIELD_OPTIONAL 0
+
+#define GETARRAY_EL_FROM_HASH(target, element,temp,  array, required, def_type, def_value) \
+if(SUCCESS == zend_hash_find(Z_ARRVAL_P(array), element, strlen(element) + 1, (void**) &temp)) { \
+	target = *temp; \
+}  else { \
+	target = NULL; \
+} \
+if(required == 1) { \
+	if(target == NULL) { \
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required\n", element); \
+		RETURN_BOOL(0); \
+	} \
+	if(Z_TYPE_P(target) == IS_NULL) {\
+		MAKE_STD_ZVAL(target); \
+		if(def_type == BARTLBY_DEFAULT_STRING) { \
+			ZVAL_STRING(target, (char*)def_value, 1); \
+		} \
+		if(def_type == BARTLBY_DEFAULT_LONG) { \
+			ZVAL_LONG(target, (long)def_value);\
+		}\
+		if(def_type == BARTLBY_DEFAULT_ERROR) {\
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required and has no value\n", element); \
+			RETURN_BOOL(0); \
+		} \
+	}\
+}
+	
 
 #define EVENT_QUEUE_MAX 128
 
@@ -71,8 +149,6 @@ PHP_RSHUTDOWN_FUNCTION(bartlby);
 PHP_MINFO_FUNCTION(bartlby);
 
 PHP_FUNCTION(confirm_bartlby_compiled);	/* For testing, remove later. */
-PHP_FUNCTION(bartlby_get_worker);	/* For testing, remove later. */
-PHP_FUNCTION(bartlby_get_service);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_get_info);	/* For testing, remove later. */
 PHP_FUNCTION(bartlby_version);
 PHP_FUNCTION(bartlby_config);
@@ -82,14 +158,30 @@ PHP_FUNCTION(bartlby_delete_server);
 PHP_FUNCTION(bartlby_modify_server);
 PHP_FUNCTION(bartlby_get_server_by_id);
 
+PHP_FUNCTION(bartlby_get_worker);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_service);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_server);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_downtime);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_downtime_by_id);	/* For testing, remove later. */
+
+PHP_FUNCTION(bartlby_get_servergroup);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_servergroup_by_id);	/* For testing, remove later. */
+
+PHP_FUNCTION(bartlby_get_servicegroup);	/* For testing, remove later. */
+PHP_FUNCTION(bartlby_get_servicegroup_by_id);	/* For testing, remove later. */
+
+
 PHP_FUNCTION(bartlby_encode);
 PHP_FUNCTION(bartlby_decode);
 
 PHP_FUNCTION(bartlby_add_service);
+PHP_FUNCTION(bartlby_add_service_array);
 PHP_FUNCTION(bartlby_delete_service);
 PHP_FUNCTION(bartlby_modify_service);
 PHP_FUNCTION(bartlby_get_service_by_id);
 
+
+PHP_FUNCTION(bartlby_callback_test);
 
 PHP_FUNCTION(bartlby_add_worker);
 PHP_FUNCTION(bartlby_delete_worker);
@@ -97,21 +189,22 @@ PHP_FUNCTION(bartlby_modify_worker);
 PHP_FUNCTION(bartlby_get_worker_by_id);
 
 PHP_FUNCTION(bartlby_add_downtime);
-PHP_FUNCTION(bartlby_downtime_map);
+//PHP_FUNCTION(bartlby_downtime_map);
 PHP_FUNCTION(bartlby_modify_downtime);
 PHP_FUNCTION(bartlby_delete_downtime);
 
 PHP_FUNCTION(bartlby_reload);
-PHP_FUNCTION(bartlby_svc_map);
+//PHP_FUNCTION(bartlby_svc_map);
+//PHP_FUNCTION(bartlby_svc_map_test);
 PHP_FUNCTION(bartlby_shm_destroy);
 
 
 PHP_FUNCTION(bartlby_add_servergroup);
-PHP_FUNCTION(bartlby_servergroup_map);
+//PHP_FUNCTION(bartlby_servergroup_map);
 PHP_FUNCTION(bartlby_modify_servergroup);
 PHP_FUNCTION(bartlby_delete_servergroup);
 PHP_FUNCTION(bartlby_add_servicegroup);
-PHP_FUNCTION(bartlby_servicegroup_map);
+//PHP_FUNCTION(bartlby_servicegroup_map);
 PHP_FUNCTION(bartlby_modify_servicegroup);
 PHP_FUNCTION(bartlby_delete_servicegroup);
 PHP_FUNCTION(bartlby_toggle_servicegroup_notify);
@@ -125,6 +218,7 @@ PHP_FUNCTION(bartlby_set_servicegroup_id);
 
 
 PHP_FUNCTION(bartlby_toggle_service_notify);
+PHP_FUNCTION(bartlby_toggle_service_handled);
 PHP_FUNCTION(bartlby_toggle_server_notify);
 PHP_FUNCTION(bartlby_toggle_service_active);
 PHP_FUNCTION(bartlby_toggle_server_active);
@@ -146,28 +240,39 @@ PHP_FUNCTION(bartlby_set_worker_state);
 PHP_FUNCTION(bartlby_set_downtime_id);
 PHP_FUNCTION(bartlby_set_passive);
 
+	
+PHP_FUNCTION(bartlby_bulk_service_active);
+PHP_FUNCTION(bartlby_bulk_service_notify);
+PHP_FUNCTION(bartlby_bulk_force_services);
+PHP_FUNCTION(bartlby_service_set_interval);
+
+PHP_FUNCTION(bartlby_get_core_extension_info);
+
+PHP_FUNCTION(bartlby_new);
+PHP_FUNCTION(bartlby_close);
 
 
 
-/* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
+PHP_FUNCTION(bartlby_get_trap);
+PHP_FUNCTION(bartlby_add_trap);
+PHP_FUNCTION(bartlby_modify_trap);
+PHP_FUNCTION(bartlby_delete_trap);
+PHP_FUNCTION(bartlby_set_trap_id);
+PHP_FUNCTION(bartlby_get_trap_by_id);
 
-ZEND_BEGIN_MODULE_GLOBALS(bartlby)
-	long  global_value;
-	char *global_string;
-ZEND_END_MODULE_GLOBALS(bartlby)
-*/
 
-/* In every utility function you add that needs to use variables 
-   in php_bartlby_globals, call TSRMLS_FETCH(); after declaring other 
-   variables used by that function, or better yet, pass in TSRMLS_CC
-   after the last function argument and declare your utility function
-   with TSRMLS_DC after the last declared argument.  Always refer to
-   the globals in your function as BARTLBY_G(variable).  You are 
-   encouraged to rename these macros something shorter, see
-   examples in any other php module directory.
-*/
+PHP_FUNCTION(bartlby_cleanup_tests);
+PHP_FUNCTION(bartlby_get_object_by_id);
+
+//Notitification Log
+
+PHP_FUNCTION(bartlby_notification_log_at_index);
+
+PHP_METHOD(Bartlby, testFunc);
+
+
+
+
 
 #ifdef ZTS
 #define BARTLBY_G(v) TSRMG(bartlby_globals_id, zend_bartlby_globals *, v)
@@ -175,7 +280,64 @@ ZEND_END_MODULE_GLOBALS(bartlby)
 #define BARTLBY_G(v) (bartlby_globals.v)
 #endif
 
+ZEND_BEGIN_MODULE_GLOBALS(bartlby)
+	long  force_audit;
+ZEND_END_MODULE_GLOBALS(bartlby)
+
+
 #endif	/* PHP_BARTLBY_H */
+
+
+
+
+
+#define BARTLBY_OBJECT_GONE(zbartlby_resource, bres, id, type, msg) if(bartlby_mark_object_gone(zbartlby_resource, bres, id, type, msg) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_mark_object_gone() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+#define BARTLBY_OBJECT_AUDIT(zbartlby_resource, id, type, action) if(bartlby_object_audit(zbartlby_resource, id, type, action) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_object_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+
+#define BARTLBY_GENERIC_AUDIT(zbartlby_resource, id, type, logl) if(bartlby_generic_audit(zbartlby_resource, id, type, logl) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_generic_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			RETURN_BOOL(0); \
+																	}
+#define BARTLBY_GENERIC_AUDIT_INT(zbartlby_resource, id, type, logl) if(bartlby_generic_audit(zbartlby_resource, id, type, logl) < 0) { \
+																		php_error_docref(NULL TSRMLS_CC, E_ERROR, "bartlby_generic_audit() Callback failed - and force_audit is enabled via INI"); \
+															   			return -1; \
+																	}
+
+
+
+
+
+//FUNCTIONS INSIDE EXTENSION
+char * getConfigValue(char * key, char * fname);
+void xbartlby_encode(char * msg, int length);
+void xbartlby_decode(char * msg, int length);
+void * bartlby_get_sohandle(char * cfgfile);
+void * bartlby_get_shm(char * cfgfile);
+int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long id, int type, int msg);
+int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_type, char * logline);
+int btl_is_array(zval * ar, long service_id);
+static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals);
+
+
+//SHM HANDLE STUFF
+struct service * bartlby_SHM_ServiceMap(void *);
+struct btl_event * bartlby_SHM_EventMap(void * shm_addr);
+struct downtime * bartlby_SHM_DowntimeMap(void * shm_addr);
+struct shm_header * bartlby_SHM_GetHDR(void *);
+struct worker * bartlby_SHM_WorkerMap(void * shm_addr);
+struct server * bartlby_SHM_ServerMap(void * shm_addr);
+struct trap * bartlby_SHM_TrapMap(void * shm_addr);
+struct servicegroup * bartlby_SHM_ServiceGroupMap(void * shm_addr);
+struct servergroup * bartlby_SHM_ServerGroupMap(void * shm_addr);
+
+
 
 
 /*
@@ -186,6 +348,10 @@ ZEND_END_MODULE_GLOBALS(bartlby)
  * End:
  */
  
+#define MAX_GROUP_MEMBERS 512
+#define GROUP_MEMBER_STR_LENGTH 2048
+
+ 
 struct shm_counter {
 	long worker;
 	long services;
@@ -193,6 +359,7 @@ struct shm_counter {
 	long servers;	
 	long servergroups;
 	long servicegroups;
+	long traps;
 };
 
 struct perf_statistic {
@@ -216,13 +383,33 @@ struct sprocess {
 		
 };
 
-struct sched_threads {
+struct sched_worker {
 	int pid;
 	struct service * svc;
 	int start_time;
-	int its_over;
+	int  idle;
+	int shutdown;
+	struct tms timing;
+	int idx;
+
+
 } astt;
 
+struct notification_log_entry {
+	int notification_valid; //-1 invalid == end of list
+	long worker_id; //Worker id
+	long service_id; //Service_id
+	int state; //State
+	int aggregated; //Default -1 > 0 - this notification has already been aggregated
+	char trigger_name[512];
+	int type; // 0 if it was a normal notification, 1 = it was a escalation notification to the standby's
+	time_t time;
+	int aggregation_interval;
+	int received_via;
+};
+#define NOTIFICATION_LOG_MAX 512
+#define NOTIFICATION_VIA_LOCAL 1
+#define NOTIFICATION_VIA_UPSTREAM 2
 
 
 struct shm_header {
@@ -233,6 +420,7 @@ struct shm_header {
 	long srvcount;
 	long srvgroupcount;
 	long svcgroupcount;
+	long trapcount;
 	long current_running;
 	char  version[50];
 	int do_reload;
@@ -242,7 +430,12 @@ struct shm_header {
 	int sirene_mode;
 	struct perf_statistic pstat;
 	int cur_event_index;
-	
+	long checks_performed;
+	int checks_performed_time;
+	struct  sched_worker worker_threads[50];
+	struct notification_log_entry notification_log[NOTIFICATION_LOG_MAX];
+	long notification_log_current_top;	
+	time_t notification_log_aggregate_last_run;
 	
 };
 
@@ -258,19 +451,47 @@ struct server {
 	long server_flap_seconds;
 	int flap_count;
 	int last_notify_send;
+	
 	struct service * dead_marker;
 	int is_gone;
 	
-	struct servergroup * servergroups[200];
+	struct servergroup * servergroups[MAX_GROUP_MEMBERS];
 	long servergroup_counter;
-	long servergroup_place[200];
+	long servergroup_place[MAX_GROUP_MEMBERS];
 	
 	char server_ssh_keyfile[512];
-  char server_ssh_passphrase[512];
-  char server_ssh_username[512];
-  char enabled_triggers[512];
+	char server_ssh_passphrase[512];
+	char server_ssh_username[512];
+	
+	char enabled_triggers[512];
+	int default_service_type;
+	int orch_id;
+	char exec_plan[2048];
+	char web_hooks[1024];
+	char json_endpoint[256];
+	int web_hooks_level;
 } xxyz;
 
+
+struct trap {
+    long trap_id;
+    char trap_name[512];
+    char trap_catcher[512];
+    char trap_status_text[512];
+    char trap_status_ok[512];
+    char trap_status_warning[512];
+    char trap_status_critical[512];
+    long trap_service_id;
+    long service_shm_place;
+    int trap_fixed_status;
+    int trap_prio;
+    int trap_is_final;
+    int orch_id;
+    int is_gone;
+    int matched;
+    int trap_last_match;
+    char trap_last_data[2048];
+} zzk;
 
 
 struct service {
@@ -306,13 +527,14 @@ struct service {
 	long service_passive_timeout;
 	
 	int notify_last_state;
-
+	
 	long service_check_timeout;
 	
 	
 	
 	int service_ack_enabled;
 	int service_ack_current;
+	
 	
 	long service_retain;
 	long service_retain_current;
@@ -344,12 +566,21 @@ struct service {
 	int is_gone;
 	
 	
-	struct servicegroup * servicegroups[200];
+	struct servicegroup * servicegroups[MAX_GROUP_MEMBERS];
 	long servicegroup_counter;
-	long servicegroup_place[200];
+	long servicegroup_place[MAX_GROUP_MEMBERS];
 	
 	long fires_events;
+	
 	char enabled_triggers[512];
+
+	int handled;
+	int orch_id;
+	int last_orch_sync;
+
+	char usid[50];
+	int prio;
+	int notify_super_users;
 };
 
 struct servicegroup {
@@ -357,11 +588,13 @@ struct servicegroup {
 	char servicegroup_name[1024];
 	int servicegroup_notify;
 	int servicegroup_active;
-	char servicegroup_members[1024];
+	char servicegroup_members[GROUP_MEMBER_STR_LENGTH];
+	
 	int servicegroup_dead;
 	struct service * dead_marker;
-	char enabled_triggers[512];
 	
+	char enabled_triggers[512];
+	int orch_id;
 };
 
 struct servergroup {
@@ -369,17 +602,19 @@ struct servergroup {
 	char servergroup_name[1024];
 	int servergroup_notify;
 	int servergroup_active;
-	char servergroup_members[1024];
+	char servergroup_members[GROUP_MEMBER_STR_LENGTH];
 	int servergroup_dead;
 	struct service * dead_marker;
-	
 	char enabled_triggers[512];
-	
+	int orch_id;
 };
 
 
 struct service_sort {
 	struct service * svc;	
+};
+struct sched_worker_sort {
+	struct sched_worker * th;
 };
 
 
@@ -387,7 +622,7 @@ struct worker {
 	char name[2048];
 	char  mail[2048];
 	char  icq[2048];
-	char  services[2048];
+	
 	
 	long worker_id;
 	int active;
@@ -402,6 +637,20 @@ struct worker {
 	long escalation_limit;
 	long escalation_minutes;
 	int is_gone;
+
+	char  visible_services[2048];
+	char  visible_servers[2048];
+	char  selected_services[2048];
+	char  selected_servers[2048];
+	int  notification_aggregation_interval;
+	int is_super_user;
+
+	int orch_id;
+	
+	char api_pubkey[255];
+	char api_privkey[255];
+
+	int api_enabled;
 }sa;
 
 
@@ -414,6 +663,9 @@ struct downtime {
 	int service_id;
 	
 	int is_gone;
+
+	int orch_id;
+	
 }sb;
 
 struct btl_event {
@@ -456,4 +708,5 @@ typedef struct port_packet_struct{
 	
 	 
 } portier_packet;
+
 
