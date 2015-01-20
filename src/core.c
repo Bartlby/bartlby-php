@@ -508,3 +508,156 @@ PHP_FUNCTION(bartlby_lib_info) {
 	free(GetNameStr);
 		
 }
+
+
+PHP_FUNCTION(bartlby_get_object_by_id) {
+
+	zval **params[4];
+	zval type;
+	zval id;
+	zval act;
+	zval function_name;
+	zval log_line;
+	
+	zval *return_user_call;
+
+	zval *t;
+	zval *t2;
+	zval *t3;
+	zval *t4;
+	zval * zbartlby_resource;
+	zval * object_type;
+	zval * object_id;
+
+	bartlby_res * bres;
+	
+
+	struct shm_header * shm_hdr;
+	struct service * svcmap;
+	struct server * srvmap;	
+	struct worker * wrkmap;
+	struct downtime * dtmap;
+	struct btl_event * evntmap;
+	struct servergroup * srvgrpmap;
+	struct servicegroup * svcgrpmap;
+	struct trap * trapmap;
+
+	int x;
+	int use_idx=-1;
+	
+	int res;
+	
+	
+
+	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &object_type, &object_id)==FAILURE) {
+		WRONG_PARAM_COUNT;
+	}	
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
+	INIT_ZVAL(function_name);
+	INIT_ZVAL(id);
+	
+
+	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
+	svcmap=bartlby_SHM_ServiceMap(bres->bartlby_address);
+	wrkmap=bartlby_SHM_WorkerMap(bres->bartlby_address);
+	dtmap=bartlby_SHM_DowntimeMap(bres->bartlby_address);
+	srvmap=bartlby_SHM_ServerMap(bres->bartlby_address);
+	evntmap=bartlby_SHM_EventMap(bres->bartlby_address);
+	srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
+	svcgrpmap=bartlby_SHM_ServiceGroupMap(bres->bartlby_address);
+	trapmap=bartlby_SHM_TrapMap(bres->bartlby_address);
+	
+	
+	switch(Z_LVAL_P(object_type)) {
+		case BARTLBY_OBJECT_SERVICE:
+				for(x=0; x<shm_hdr->svccount; x++) {
+					if(svcmap[x].service_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_service", 1);
+		break;
+		case BARTLBY_OBJECT_SERVER:
+				for(x=0; x<shm_hdr->srvcount; x++) {
+					if(srvmap[x].server_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_server", 1);				
+		break;
+		case BARTLBY_OBJECT_WORKER:
+				for(x=0; x<shm_hdr->wrkcount; x++) {
+					if(wrkmap[x].worker_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_worker", 1);				
+		break;
+		case BARTLBY_OBJECT_DOWNTIME:
+				for(x=0; x<shm_hdr->dtcount; x++) {
+					if(dtmap[x].downtime_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_downtime", 1);				
+		break;		
+		case BARTLBY_OBJECT_TRAP:
+				for(x=0; x<shm_hdr->trapcount; x++) {
+					if(trapmap[x].trap_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_trap", 1);				
+		break;		
+		case BARTLBY_OBJECT_SERVERGROUP:
+				for(x=0; x<shm_hdr->srvgroupcount; x++) {
+					if(srvgrpmap[x].servergroup_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_servergroup", 1);				
+		break;	
+		case BARTLBY_OBJECT_SERVICEGROUP:
+				for(x=0; x<shm_hdr->svcgroupcount; x++) {
+					if(svcgrpmap[x].servicegroup_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_servicegroup", 1);
+		break;				
+	}
+
+
+	if(use_idx < 0) RETURN_FALSE;
+
+
+	
+	ZVAL_LONG(&id, use_idx);
+	
+	
+	params[0] = &zbartlby_resource;
+	t=&id;
+	params[1] = &t;
+	
+	
+	res=call_user_function_ex(NULL, NULL, &function_name, &return_user_call, 2, params, 0, NULL TSRMLS_CC);
+	
+	
+
+	RETVAL_ZVAL(return_user_call, 1,1);
+
+	
+
+	
+
+	
+
+}

@@ -20,6 +20,13 @@
 */
 #define BARTLBY_VERSION "1.5.0"
 
+#define BARTLBY_OBJECT_SERVICE 1
+#define BARTLBY_OBJECT_SERVER 2
+#define BARTLBY_OBJECT_DOWNTIME 3
+#define BARTLBY_OBJECT_WORKER 4
+#define BARTLBY_OBJECT_TRAP 5
+#define BARTLBY_OBJECT_SERVICEGROUP 6
+#define BARTLBY_OBJECT_SERVERGROUP 7
 
 
 #define BARTLBY_AUDIT_TYPE_SERVICE 1
@@ -255,6 +262,8 @@ PHP_FUNCTION(bartlby_get_trap_by_id);
 
 
 PHP_FUNCTION(bartlby_cleanup_tests);
+PHP_FUNCTION(bartlby_get_object_by_id);
+
 //Notitification Log
 
 PHP_FUNCTION(bartlby_notification_log_at_index);
