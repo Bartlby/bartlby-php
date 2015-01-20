@@ -1,5 +1,10 @@
+*.html
+*.txt
+tmp-php.ini
+Makefile
 config.h.in~
 co
+*.lo
 *.deb
 *.tgz
 Makefile.global
@@ -29,4 +34,5 @@ config.nice
 config.status
 libtool
 modules/
+bartlby.cfg
 .deps
