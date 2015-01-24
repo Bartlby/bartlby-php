@@ -152,7 +152,7 @@ PHP_FUNCTION(bartlby_set_passive) {
 		
 	svcmap[Z_LVAL_P(bartlby_service_id)].last_state = svcmap[Z_LVAL_P(bartlby_service_id)].current_state;
 	svcmap[Z_LVAL_P(bartlby_service_id)].current_state = Z_LVAL_P(bartlby_new_state);	
-	snprintf(svcmap[Z_LVAL_P(bartlby_service_id)].new_server_text, 2040, "%s",Z_STRVAL_P(bartlby_new_output)); 
+	snprintf(svcmap[Z_LVAL_P(bartlby_service_id)].current_output, 2040, "%s",Z_STRVAL_P(bartlby_new_output)); 
 	svcmap[Z_LVAL_P(bartlby_service_id)].last_check = time(NULL);	
 	svcmap[Z_LVAL_P(bartlby_service_id)].service_retain_current=0; //Reset Retain counter
 	//svcmap[Z_LVAL_P(bartlby_service_id)].notify_last_state=svcmap[Z_LVAL_P(bartlby_service_id)].current_state; //Reset Retain counter

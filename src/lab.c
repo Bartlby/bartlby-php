@@ -162,7 +162,7 @@ PHP_FUNCTION(bartlby_svc_map_test) {
 			
 		add_assoc_long(subarray, "client_port", srvmap[svcmap[x].srv_place].client_port);
 				
-		add_assoc_string(subarray, "new_server_text", svcmap[x].new_server_text, 1);
+		add_assoc_string(subarray, "current_output", svcmap[x].current_output, 1);
 		add_assoc_string(subarray, "service_name", svcmap[x].service_name, 1);
 		add_assoc_string(subarray, "server_name", srvmap[svcmap[x].srv_place].server_name, 1);
 		add_assoc_string(subarray, "client_ip", srvmap[svcmap[x].srv_place].client_ip, 1);
