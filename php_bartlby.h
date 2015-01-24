@@ -673,7 +673,7 @@ struct downtime {
 
 struct btl_event {
 	long evnt_id;
-	char evnt_message[1024];
+	char evnt_message[4096];
 	int evnt_time;
 		
 }eb;
