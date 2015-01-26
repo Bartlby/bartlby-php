@@ -175,7 +175,8 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_cleanup_tests, NULL)
 	PHP_FE(bartlby_in_array_test, NULL)
 	PHP_FE(bartlby_get_object_by_id, NULL)
-
+	PHP_FE(bartlby_get_thread_info, NULL)
+	PHP_FE(bartlby_get_thread_count, NULL)
 	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
 };

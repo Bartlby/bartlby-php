@@ -94,8 +94,6 @@ PHP_FUNCTION(bartlby_in_array_test) {
 	RETURN_LONG(-1);
 
 }
-
-
-
-
+		
+		
 

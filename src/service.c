@@ -74,7 +74,7 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_long(return_value, "current_state", svc.current_state);
 
 				
-		add_assoc_string(return_value, "new_server_text", svc.new_server_text);
+		add_assoc_string(return_value, "current_output", svc.current_output);
 		add_assoc_string(return_value, "service_name", svc.service_name);
 
 		add_assoc_string(return_value, "plugin", svc.plugin);
@@ -225,7 +225,7 @@ PHP_FUNCTION(bartlby_get_service) {
 		
 	add_assoc_long(return_value, "client_port", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_port);
 				
-	add_assoc_string(return_value, "new_server_text", svcmap[Z_LVAL_P(bartlby_service_id)].new_server_text);
+	add_assoc_string(return_value, "current_output", svcmap[Z_LVAL_P(bartlby_service_id)].current_output);
 	add_assoc_string(return_value, "service_name", svcmap[Z_LVAL_P(bartlby_service_id)].service_name);
 	add_assoc_string(return_value, "server_name", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].server_name);
 	add_assoc_string(return_value, "client_ip", srvmap[svcmap[Z_LVAL_P(bartlby_service_id)].srv_place].client_ip);

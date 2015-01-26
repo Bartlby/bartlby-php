@@ -265,7 +265,8 @@ PHP_FUNCTION(bartlby_notification_log_at_index);
 
 PHP_METHOD(Bartlby, testFunc);
 PHP_FUNCTION(bartlby_in_array_test);
-
+PHP_FUNCTION(bartlby_get_thread_info);
+PHP_FUNCTION(bartlby_get_thread_count);
 
 
 
@@ -386,6 +387,7 @@ struct sched_worker {
 	int shutdown;
 	struct tms timing;
 	int idx;
+	long svc_id;
 
 
 } astt;
@@ -431,6 +433,7 @@ struct shm_header {
 	struct notification_log_entry notification_log[NOTIFICATION_LOG_MAX];
 	long notification_log_current_top;	
 	time_t notification_log_aggregate_last_run;
+	int sched_workers_count;
 	
 };
 
@@ -495,7 +498,7 @@ struct service {
 	int last_state;
 	int current_state;
 	
-	char  new_server_text[2048];
+	char  current_output[2048];
 	char  service_name[2048];
 	
 	char  plugin[2048];
