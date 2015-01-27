@@ -388,6 +388,7 @@ struct sched_worker {
 	struct tms timing;
 	int idx;
 	long svc_id;
+	long memory_used;
 
 
 } astt;
