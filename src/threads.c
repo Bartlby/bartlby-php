@@ -88,6 +88,7 @@ PHP_FUNCTION(bartlby_get_thread_info) {
 	add_assoc_long(return_value, "service_id", shm_hdr->worker_threads[Z_LVAL_P(idx)].svc_id);
 	
 	add_assoc_long(return_value, "time_used", shm_hdr->worker_threads[Z_LVAL_P(idx)].timing.tms_utime);
+	add_assoc_long(return_value, "memory_used", shm_hdr->worker_threads[Z_LVAL_P(idx)].memory_used);
 	
 
 	
