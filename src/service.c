@@ -135,6 +135,10 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 		add_assoc_long(return_value, "prio",svc.prio);
 		add_assoc_long(return_value, "notify_super_users",svc.notify_super_users);
 		add_assoc_string(return_value, "usid",svc.usid, 1);
+
+
+		add_assoc_long(return_value, "script_enabled",svc.script_enabled);
+		add_assoc_string(return_value, "script",svc.script, 1);
 			
 	}
 	free(svc.srv); //gets allocated in the lib
@@ -303,8 +307,10 @@ PHP_FUNCTION(bartlby_get_service) {
 
 
 	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers, 1);
+	add_assoc_string(return_value, "script", svcmap[Z_LVAL_P(bartlby_service_id)].script, 1);
 	
 	add_assoc_long(return_value, "notify_last_state",svcmap[Z_LVAL_P(bartlby_service_id)].notify_last_state);
+	add_assoc_long(return_value, "script_enabled",svcmap[Z_LVAL_P(bartlby_service_id)].script_enabled);
 	
 		
 	//Downtime 060120
@@ -456,6 +462,8 @@ PHP_FUNCTION(bartlby_add_service) {
 	zval * usid;
 	zval * prio;
 	zval * notify_super_users;
+	zval * script;
+	zval * script_enabled;
 
 	zval ** temp_pp;
 	zval * options_array;
@@ -506,6 +514,8 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(prio, "prio", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 50);
 	GETARRAY_EL_FROM_HASH(notify_super_users, "notify_super_users", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(usid, "usid", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(script, "script", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(script_enabled, "script_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
@@ -514,6 +524,9 @@ PHP_FUNCTION(bartlby_add_service) {
 	convert_to_string(plugin_arguments);
 	convert_to_long(notify_enabled);
 	convert_to_long(orch_id);
+
+	convert_to_long(script_enabled);
+	convert_to_string(script);
 	
 	convert_to_long(check_interval);
 	convert_to_long(service_type);
@@ -586,7 +599,8 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc.handled=Z_LVAL_P(handled);
 	sprintf(svc.enabled_triggers, "%s", Z_STRVAL_P(enabled_triggers));
 	
-	
+	svc.script_enabled=Z_LVAL_P(script_enabled);
+	sprintf(svc.script, "%s", Z_STRVAL_P(script));
 	
 	LOAD_SYMBOL(AddService,bres->SOHandle, "AddService");
 	
@@ -650,6 +664,8 @@ PHP_FUNCTION(bartlby_modify_service) {
 	zval * prio;
 	zval * notify_super_users;
 	zval * usid;
+	zval * script;
+	zval * script_enabled;
 	zval ** temp_pp;
 	zval * options_array;	
 
@@ -697,7 +713,10 @@ PHP_FUNCTION(bartlby_modify_service) {
 	GETARRAY_EL_FROM_HASH(prio, "prio", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 50);
 	GETARRAY_EL_FROM_HASH(notify_super_users, "notify_super_users", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 1);
 	GETARRAY_EL_FROM_HASH(usid, "usid", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
-	
+
+	GETARRAY_EL_FROM_HASH(script, "script", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(script_enabled, "script_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+		
 
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -706,6 +725,9 @@ PHP_FUNCTION(bartlby_modify_service) {
 	convert_to_long(prio);
 	convert_to_long(notify_super_users);
 	convert_to_string(usid);
+
+	convert_to_string(script);
+	convert_to_long(script_enabled);
 	
 	convert_to_long(service_id);
 	convert_to_string(plugin);
@@ -787,6 +809,9 @@ PHP_FUNCTION(bartlby_modify_service) {
 	svc.handled=Z_LVAL_P(handled);
 	sprintf(svc.enabled_triggers, "%s", Z_STRVAL_P(enabled_triggers));
 	
+
+	svc.script_enabled=Z_LVAL_P(script_enabled);
+	sprintf(svc.script, "%s", Z_STRVAL_P(script));
 	
 	
 	LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");
