@@ -56,6 +56,8 @@ $worker_dummy = array(
 					"prio" => 100,
 					"notify_super_users" => 0,
 					"usid" => "unitusid",
+					"script" => "",
+					"script_enabled" => 0,
 					"orch_id" => 999
 				);
 				$server_dummy = array(
