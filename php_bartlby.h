@@ -711,3 +711,13 @@ typedef struct port_packet_struct{
 	 
 } portier_packet;
 
+int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_id, long action);
+
+#ifndef ZEND_FETCH_RESOURCE
+#define ZEND_FETCH_RESOURCE(o,t,z,i,ln,lb) if((o = (t)zend_fetch_resource(Z_RES_P(z),ln,lb)) == NULL) { RETURN_FALSE }
+#endif
+
+#ifndef ZEND_REGISTER_RESOURCE
+#define ZEND_REGISTER_RESOURCE(ret,o,l) RETURN_RES(zend_register_resource(o,l))
+#endif
+
