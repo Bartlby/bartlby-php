@@ -1,4 +1,12 @@
 <?
+$trigger_dummy = array(
+		"trigger_name" => "trigger_name",
+		"trigger_enabled" => 1,
+		"trigger_type" => 1,
+		"trigger_data" => "mail.sh",
+		"orch_id" => 999,
+		"trigger_execplan" => ""
+	);
 $worker_dummy = array(
 				"name" =>"worker_name",
 				"icq" => "1123123",

@@ -87,6 +87,7 @@
         BARTLBY_FIELD_LONG(servergroups) \
         BARTLBY_FIELD_LONG(servicegroups) \
         BARTLBY_FIELD_LONG(traps) \
+        BARTLBY_FIELD_LONG(triggers) \
 
 
 
@@ -142,6 +143,7 @@
 	BARTLBY_FIELD_LONG(srvgroupcount) \
 	BARTLBY_FIELD_LONG(svcgroupcount) \
 	BARTLBY_FIELD_LONG(trapcount) \
+	BARTLBY_FIELD_LONG(triggercount) \
 	BARTLBY_FIELD_LONG(current_running) \
 	BARTLBY_FIELD_CHAR_SIZE(version, 50) \
 	BARTLBY_FIELD_INT(do_reload) \
@@ -274,7 +276,22 @@
 	BARTLBY_FIELD_CHAR_SIZE(evnt_message, 4096) \
 	BARTLBY_FIELD_INT(evnt_time) \
 
+#define BARTLBY_TRIGGER_FIELDS \
+		BARTLBY_FIELD_LONG(trigger_id) \
+		BARTLBY_FIELD_LONG(trigger_count) \
+		BARTLBY_FIELD_CHAR_SIZE(trigger_name, 1024) \
+		BARTLBY_FIELD_INT(trigger_enabled) \
+		BARTLBY_FIELD_INT(trigger_type) \
+		BARTLBY_FIELD_CHAR_SIZE(trigger_data, 1024) \
+		BARTLBY_FIELD_CHAR_SIZE(trigger_execplan, 1024) \
+		BARTLBY_FIELD_CHAR_SIZE(trigger_full_path, 1024) \
+		BARTLBY_FIELD_INT(is_gone) \
+		BARTLBY_FIELD_INT(orch_id) \
+		
 	
+struct trigger {
+	BARTLBY_TRIGGER_FIELDS
+};	
 
 struct shm_counter {
 	BARTLBY_SHM_COUNTER_FIELDS

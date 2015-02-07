@@ -27,6 +27,7 @@
 #define BARTLBY_OBJECT_TRAP 5
 #define BARTLBY_OBJECT_SERVICEGROUP 6
 #define BARTLBY_OBJECT_SERVERGROUP 7
+#define BARTLBY_OBJECT_TRIGGER 8
 
 
 #define BARTLBY_AUDIT_TYPE_SERVICE 1
@@ -37,6 +38,7 @@
 #define BARTLBY_AUDIT_TYPE_DOWNTIME 6
 #define BARTLBY_AUDIT_TYPE_GENERIC 7
 #define BARTLBY_AUDIT_TYPE_TRAP 7
+#define BARTLBY_AUDIT_TYPE_TRIGGER 8
 
 
 #define BARTLBY_AUDIT_ACTION_ADD 1
@@ -52,6 +54,7 @@
 #define BARTLBY_SERVICEGROUP_GONE 5
 #define BARTLBY_SERVERGROUP_GONE 6
 #define BARTLBY_TRAP_GONE 7
+#define BARTLBY_TRIGGER_GONE 8
 
 
 #define BARTLBY_OBJECT_CHANGED 1
@@ -256,6 +259,16 @@ PHP_FUNCTION(bartlby_set_trap_id);
 PHP_FUNCTION(bartlby_get_trap_by_id);
 
 
+PHP_FUNCTION(bartlby_get_trigger);
+PHP_FUNCTION(bartlby_add_trigger);
+PHP_FUNCTION(bartlby_modify_trigger);
+PHP_FUNCTION(bartlby_delete_trigger);
+PHP_FUNCTION(bartlby_set_trigger_id);
+PHP_FUNCTION(bartlby_get_trigger_by_id);
+
+
+
+
 PHP_FUNCTION(bartlby_cleanup_tests);
 PHP_FUNCTION(bartlby_get_object_by_id);
 
@@ -332,7 +345,7 @@ struct server * bartlby_SHM_ServerMap(void * shm_addr);
 struct trap * bartlby_SHM_TrapMap(void * shm_addr);
 struct servicegroup * bartlby_SHM_ServiceGroupMap(void * shm_addr);
 struct servergroup * bartlby_SHM_ServerGroupMap(void * shm_addr);
-
+struct trigger * bartlby_SHM_TriggerMap(void * shm_addr);
 
 
 

@@ -60,7 +60,7 @@ PHP_FUNCTION(bartlby_check_shm_size) {
 	}
 	
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
-	my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup)+sizeof(struct trap)+sizeof(struct btl_event);
+	my_size=sizeof(struct shm_header)+ sizeof(struct server) + sizeof(struct worker)+sizeof(struct service)+sizeof(struct downtime)+sizeof(struct servergroup)+sizeof(struct servicegroup)+sizeof(struct trap)+sizeof(struct btl_event)+sizeof(struct trigger);
 	if(my_size != shm_hdr->size_of_structs) {	
 		RETURN_FALSE;
 	} else {
@@ -543,7 +543,8 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
 	struct trap * trapmap;
-
+	struct trigger * triggermap;
+	
 	int x;
 	int use_idx=-1;
 	
@@ -572,6 +573,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 	srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
 	svcgrpmap=bartlby_SHM_ServiceGroupMap(bres->bartlby_address);
 	trapmap=bartlby_SHM_TrapMap(bres->bartlby_address);
+	triggermap=bartlby_SHM_TriggerMap(bres->bartlby_address);
 	
 	
 	switch(Z_LVAL_P(object_type)) {
@@ -619,6 +621,15 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 					}	
 				}	
 		ZVAL_STRING(&function_name, "bartlby_get_trap");				
+		break;		
+		case BARTLBY_OBJECT_TRIGGER:
+				for(x=0; x<shm_hdr->triggercount; x++) {
+					if(triggermap[x].trigger_id == Z_LVAL_P(object_id)) {
+						use_idx=x;
+						break;
+					}	
+				}	
+		ZVAL_STRING(&function_name, "bartlby_get_trigger", 1);				
 		break;		
 		case BARTLBY_OBJECT_SERVERGROUP:
 				for(x=0; x<shm_hdr->srvgroupcount; x++) {

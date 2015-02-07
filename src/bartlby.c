@@ -177,6 +177,14 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_get_object_by_id, NULL)
 	PHP_FE(bartlby_get_thread_info, NULL)
 	PHP_FE(bartlby_get_thread_count, NULL)
+
+	PHP_FE(bartlby_get_trigger, NULL)
+	PHP_FE(bartlby_add_trigger, NULL)
+	PHP_FE(bartlby_modify_trigger, NULL)
+	PHP_FE(bartlby_delete_trigger, NULL)
+	PHP_FE(bartlby_set_trigger_id, NULL)
+	PHP_FE(bartlby_get_trigger_by_id, NULL)
+	
 	
 	{NULL, NULL, NULL}	/* Must be the last line in bartlby_functions[] */
 };
@@ -333,6 +341,7 @@ PHP_MINIT_FUNCTION(bartlby)
 	REGISTER_LONG_CONSTANT("BARTLBY_OBJECT_TRAP", BARTLBY_OBJECT_TRAP, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("BARTLBY_OBJECT_SERVERGROUP", BARTLBY_OBJECT_SERVERGROUP, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("BARTLBY_OBJECT_SERVICEGROUP", BARTLBY_OBJECT_SERVICEGROUP, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("BARTLBY_OBJECT_TRIGGER", BARTLBY_OBJECT_TRIGGER, CONST_CS | CONST_PERSISTENT);
 
 	
 	return SUCCESS;
