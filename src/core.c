@@ -629,7 +629,7 @@ PHP_FUNCTION(bartlby_get_object_by_id) {
 						break;
 					}	
 				}	
-		ZVAL_STRING(&function_name, "bartlby_get_trigger", 1);				
+		ZVAL_STRING(&function_name, "bartlby_get_trigger");				
 		break;		
 		case BARTLBY_OBJECT_SERVERGROUP:
 				for(x=0; x<shm_hdr->srvgroupcount; x++) {
