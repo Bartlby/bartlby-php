@@ -3,6 +3,11 @@ ini_set("bartlby.force_audit", 1);
 //testing 1231
 $cfg = "/opt/bartlby/etc/bartlby.cfg";
 $r = bartlby_new($cfg);
+
+$s = bartlby_get_object_by_id($r, BARTLBY_OBJECT_TRIGGER, 2);
+var_dump($s);
+exit;
+
 $s = bartlby_get_service_by_id($r, 1);
 var_dump($s);
 exit;

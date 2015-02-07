@@ -166,6 +166,7 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 	struct servergroup * srvgrpmap;
 	struct servicegroup * svcgrpmap;
 	struct trap * trapmap;
+	struct trigger * triggermap;
 	char * tmpstr;
 	
 	int audit_type=0;
@@ -183,6 +184,7 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 	srvgrpmap=bartlby_SHM_ServerGroupMap(bres->bartlby_address);
 	svcgrpmap=bartlby_SHM_ServiceGroupMap(bres->bartlby_address);
 	trapmap=bartlby_SHM_TrapMap(bres->bartlby_address);
+	triggermap=bartlby_SHM_TriggerMap(bres->bartlby_address);
 	
 
 
@@ -246,7 +248,14 @@ int bartlby_mark_object_gone(zval * zbartlby_resource, bartlby_res * bres, long 
 				}	
 				audit_type=BARTLBY_AUDIT_TYPE_TRAP;
 			break;
-			
+			case BARTLBY_TRIGGER_GONE:
+				for(x=0; x<shm_hdr->triggercount; x++) {
+					if(triggermap[x].trigger_id == id) {
+						triggermap[x].is_gone = msg;
+					}	
+				}	
+				audit_type=BARTLBY_AUDIT_TYPE_TRIGGER;
+			break;
 				
 //		}
 	}
