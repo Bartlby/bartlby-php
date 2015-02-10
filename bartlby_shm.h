@@ -121,13 +121,14 @@
         BARTLBY_FIELD_LONG(memory_used) \
         
 
+//FIXME REMOVE trigger_name
 #define BARTLBY_NOTIFICATION_LOG_ENTRY_FIELDS \
 	BARTLBY_FIELD_INT(notification_valid) \
 	BARTLBY_FIELD_LONG(worker_id) \
 	BARTLBY_FIELD_LONG(service_id) \
 	BARTLBY_FIELD_INT(state) \
 	BARTLBY_FIELD_INT(aggregated) \
-	BARTLBY_FIELD_CHAR_SIZE(trigger_name, 512) \
+	BARTLBY_FIELD_LONG(trigger_id) \
 	BARTLBY_FIELD_INT(type) \
 	BARTLBY_FIELD_TIMET(time) \
 	BARTLBY_FIELD_INT(aggregation_interval) \
