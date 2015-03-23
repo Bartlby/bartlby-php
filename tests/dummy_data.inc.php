@@ -9,7 +9,7 @@ $trigger_dummy = array(
 	);
 $worker_dummy = array(
 				"name" =>"worker_name",
-				"icq" => "1123123",
+				"mobilenr" => "+4312344444999",
 				"mail" => "unit@test.com",
 				"services" => "",
 				"notify_levels" => "",
