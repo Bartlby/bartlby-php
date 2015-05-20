@@ -19,6 +19,11 @@ if(!is_string(bartlby_config("/opt/bartlby/etc/bartlby.cfg", "pidfile_dir"))) {
 }
 $lib=bartlby_lib_info($r);
 
+$service_id = bartlby_add_service($r, $service_dummy);
+bartlby_reload($r);
+sleep(2);
+
+
 
 
 //bartlby_encode
