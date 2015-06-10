@@ -536,7 +536,7 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(baseline_enabled, "baseline_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
 
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(plugin);
 	convert_to_string(service_name);

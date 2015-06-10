@@ -370,7 +370,7 @@ PHP_FUNCTION(bartlby_get_worker_by_id) {
 			RETURN_FALSE;
 		}
 		add_assoc_string(return_value, "mail", svc.mail);
-		add_assoc_string(return_value, "icq", svc.icq);
+		add_assoc_string(return_value, "mobilenr", svc.mobilenr);
 		add_assoc_string(return_value, "notify_plan", svc.notify_plan);
 		add_assoc_string(return_value, "selected_services", svc.selected_services);
 		add_assoc_string(return_value, "selected_servers", svc.selected_servers);
@@ -434,7 +434,7 @@ PHP_FUNCTION(bartlby_get_worker) {
 		
 		
 	add_assoc_string(return_value, "mail", wrkmap[Z_LVAL_P(bartlby_worker_id)].mail);
-	add_assoc_string(return_value, "icq", wrkmap[Z_LVAL_P(bartlby_worker_id)].icq);
+	add_assoc_string(return_value, "mobilenr", wrkmap[Z_LVAL_P(bartlby_worker_id)].mobilenr);
 	add_assoc_string(return_value, "notify_plan", wrkmap[Z_LVAL_P(bartlby_worker_id)].notify_plan);
 	add_assoc_string(return_value, "visible_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].visible_services);
 	add_assoc_string(return_value, "selected_services", wrkmap[Z_LVAL_P(bartlby_worker_id)].selected_services);
