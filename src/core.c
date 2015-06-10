@@ -222,7 +222,7 @@ PHP_FUNCTION(bartlby_notification_log_at_index) {
 		add_assoc_long(return_value, "time", shm_hdr->notification_log[Z_LVAL_P(idx)].time);
 		add_assoc_long(return_value, "aggregation_interval", shm_hdr->notification_log[Z_LVAL_P(idx)].aggregation_interval);
 		add_assoc_long(return_value, "received_via", shm_hdr->notification_log[Z_LVAL_P(idx)].received_via);
-		add_assoc_string(return_value, "trigger_name", shm_hdr->notification_log[Z_LVAL_P(idx)].trigger_name);
+		add_assoc_long(return_value, "trigger_id", shm_hdr->notification_log[Z_LVAL_P(idx)].trigger_id);
 		
 
 }

@@ -142,6 +142,9 @@ PHP_FUNCTION(bartlby_get_service_by_id) {
 
 		add_assoc_long(return_value, "script_enabled",svc.script_enabled);
 		add_assoc_string(return_value, "script",svc.script);
+
+		add_assoc_long(return_value, "baseline_enabled",svc.baseline_enabled);
+		add_assoc_string(return_value, "baseline",svc.baseline);
 			
 	}
 	free(svc.srv); //gets allocated in the lib
@@ -314,9 +317,11 @@ PHP_FUNCTION(bartlby_get_service) {
 
 	add_assoc_string(return_value, "enabled_triggers", svcmap[Z_LVAL_P(bartlby_service_id)].enabled_triggers);
 	add_assoc_string(return_value, "script", svcmap[Z_LVAL_P(bartlby_service_id)].script);
+	add_assoc_string(return_value, "baseline", svcmap[Z_LVAL_P(bartlby_service_id)].baseline);
 	
 	add_assoc_long(return_value, "notify_last_state",svcmap[Z_LVAL_P(bartlby_service_id)].notify_last_state);
 	add_assoc_long(return_value, "script_enabled",svcmap[Z_LVAL_P(bartlby_service_id)].script_enabled);
+	add_assoc_long(return_value, "baseline_enabled",svcmap[Z_LVAL_P(bartlby_service_id)].baseline_enabled);
 	
 		
 	//Downtime 060120
@@ -469,6 +474,8 @@ PHP_FUNCTION(bartlby_add_service) {
 	zval * notify_super_users;
 	zval * script;
 	zval * script_enabled;
+	zval * baseline;
+	zval * baseline_enabled;
 
 	zval ** temp_pp;
 	zval * options_array;
@@ -524,7 +531,12 @@ PHP_FUNCTION(bartlby_add_service) {
 	GETARRAY_EL_FROM_HASH(script, "script", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(script_enabled, "script_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
+	GETARRAY_EL_FROM_HASH(baseline, "baseline", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(baseline_enabled, "baseline_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+	
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(plugin);
 	convert_to_string(service_name);
@@ -534,6 +546,10 @@ PHP_FUNCTION(bartlby_add_service) {
 
 	convert_to_long(script_enabled);
 	convert_to_string(script);
+
+	convert_to_long(baseline_enabled);
+	convert_to_string(baseline);
+
 	
 	convert_to_long(check_interval);
 	convert_to_long(service_type);
@@ -609,6 +625,10 @@ PHP_FUNCTION(bartlby_add_service) {
 	svc.script_enabled=Z_LVAL_P(script_enabled);
 	sprintf(svc.script, "%s", Z_STRVAL_P(script));
 	
+	svc.baseline_enabled=Z_LVAL_P(baseline_enabled);
+	sprintf(svc.baseline, "%s", Z_STRVAL_P(baseline));
+	
+
 	LOAD_SYMBOL(AddService,bres->SOHandle, "AddService");
 	
 	rtc=AddService(&svc, bres->cfgfile);
@@ -677,6 +697,10 @@ PHP_FUNCTION(bartlby_modify_service) {
 	zval * usid;
 	zval * script;
 	zval * script_enabled;
+	
+	zval * baseline;
+	zval * baseline_enabled;
+
 	zval ** temp_pp;
 	zval * options_array;	
 
@@ -731,7 +755,10 @@ PHP_FUNCTION(bartlby_modify_service) {
 
 	GETARRAY_EL_FROM_HASH(script, "script", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
 	GETARRAY_EL_FROM_HASH(script_enabled, "script_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
-		
+	
+	GETARRAY_EL_FROM_HASH(baseline, "baseline", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_STRING, "");
+	GETARRAY_EL_FROM_HASH(baseline_enabled, "baseline_enabled", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG, 0);
+			
 
 
 	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
@@ -744,6 +771,9 @@ PHP_FUNCTION(bartlby_modify_service) {
 	convert_to_string(script);
 	convert_to_long(script_enabled);
 	
+	convert_to_string(baseline);
+	convert_to_long(baseline_enabled);
+
 	convert_to_long(service_id);
 	convert_to_string(plugin);
 	convert_to_string(service_name);
@@ -827,6 +857,9 @@ PHP_FUNCTION(bartlby_modify_service) {
 
 	svc.script_enabled=Z_LVAL_P(script_enabled);
 	sprintf(svc.script, "%s", Z_STRVAL_P(script));
+	
+	svc.baseline_enabled=Z_LVAL_P(baseline_enabled);
+	sprintf(svc.baseline, "%s", Z_STRVAL_P(baseline));
 	
 	
 	LOAD_SYMBOL(UpdateService,bres->SOHandle, "UpdateService");

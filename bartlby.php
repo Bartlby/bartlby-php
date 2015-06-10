@@ -101,7 +101,7 @@ echo "bartlby_get_worker()\n";
 $a=bartlby_get_worker($cfgfile, 1);
 var_dump($a);
 
-//svc->mail, svc->icq, svc->services, svc->notify_levels, svc->active, svc->name
+
 echo "bartlby_add_worker()\n";
 $add=bartlby_add_worker($cfgfile, "mail@host.at", "89352629", "|38|", "|39|", 1, "helo", "pass");
 

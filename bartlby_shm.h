@@ -4,6 +4,22 @@
 #define EVENT_QUEUE_MAX 128
 
 
+//SOME SHARED CONSTANTS
+#define NOTIFICATION_TYPE_SIRENE  -1
+#define NOTIFICATION_TYPE_NORMAL 0
+#define NOTIFICATION_TYPE_RENOTIFY 2
+#define NOTIFICATION_TYPE_ESCALATION 1
+#define NOTIFICATION_TYPE_AGGREGATE 3
+
+#define TRIGGER_TYPE_LOCAL 1
+#define TRIGGER_TYPE_WEBHOOKS 2
+#define TRIGGER_TYPE_LUA 3
+#define TRIGGER_TYPE_SMTP 4
+//SOME SHARED CONSTANTS
+
+
+
+
 #define BARTLBY_FIELD_LONG(name) long name;
 #define BARTLBY_FIELD_LONG_SIZE(name, size) long name[size];
 #define BARTLBY_FIELD_INT(name) int name;
@@ -76,6 +92,8 @@
         BARTLBY_FIELD_INT(notify_super_users) \
         BARTLBY_FIELD_CHAR_SIZE(script, 2048) \
         BARTLBY_FIELD_INT(script_enabled) \
+        BARTLBY_FIELD_CHAR_SIZE(baseline, 2048) \
+        BARTLBY_FIELD_INT(baseline_enabled) \
 
     
 
@@ -121,13 +139,14 @@
         BARTLBY_FIELD_LONG(memory_used) \
         
 
+//FIXME REMOVE trigger_name
 #define BARTLBY_NOTIFICATION_LOG_ENTRY_FIELDS \
 	BARTLBY_FIELD_INT(notification_valid) \
 	BARTLBY_FIELD_LONG(worker_id) \
 	BARTLBY_FIELD_LONG(service_id) \
 	BARTLBY_FIELD_INT(state) \
 	BARTLBY_FIELD_INT(aggregated) \
-	BARTLBY_FIELD_CHAR_SIZE(trigger_name, 512) \
+	BARTLBY_FIELD_LONG(trigger_id) \
 	BARTLBY_FIELD_INT(type) \
 	BARTLBY_FIELD_TIMET(time) \
 	BARTLBY_FIELD_INT(aggregation_interval) \
@@ -236,7 +255,7 @@
 #define BARTLBY_WORKER_FIELDS \
 	BARTLBY_FIELD_CHAR_SIZE(name, 2048) \
 	BARTLBY_FIELD_CHAR_SIZE(mail, 2048) \
-	BARTLBY_FIELD_CHAR_SIZE(icq, 2048) \
+	BARTLBY_FIELD_CHAR_SIZE(mobilenr, 2048) \
 	BARTLBY_FIELD_LONG(worker_id) \
 	BARTLBY_FIELD_INT(active) \
 	BARTLBY_FIELD_CHAR_SIZE(notify_plan, 2048) \
