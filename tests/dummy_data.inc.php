@@ -66,6 +66,8 @@ $worker_dummy = array(
 					"usid" => "unitusid",
 					"script" => "",
 					"script_enabled" => 0,
+					"baseline" => "{}",
+					"baseline_enabled" => 0,
 					"orch_id" => 999
 				);
 				$server_dummy = array(
