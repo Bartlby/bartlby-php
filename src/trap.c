@@ -45,11 +45,15 @@ PHP_FUNCTION(bartlby_get_trap) {
 	zval * bartlby_trap_id;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_trap_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_trap_id)		
+	ZEND_PARSE_PARAMETERS_END();
+
+
 	convert_to_long(bartlby_trap_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	if (array_init(return_value) == FAILURE) {
@@ -65,13 +69,13 @@ PHP_FUNCTION(bartlby_get_trap) {
 	}
 
 	add_assoc_long(return_value, "trap_id", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_id);
-	add_assoc_string(return_value, "trap_name", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_name,1);
-	add_assoc_string(return_value, "trap_catcher", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_catcher,1);
-	add_assoc_string(return_value, "trap_status_text", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_text,1);
-	add_assoc_string(return_value, "trap_status_ok", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_ok,1);
-	add_assoc_string(return_value, "trap_status_warning", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_warning,1);
-	add_assoc_string(return_value, "trap_status_critical", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_critical,1);
-	add_assoc_string(return_value, "trap_last_data", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_last_data,1);
+	add_assoc_string(return_value, "trap_name", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_name);
+	add_assoc_string(return_value, "trap_catcher", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_catcher);
+	add_assoc_string(return_value, "trap_status_text", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_text);
+	add_assoc_string(return_value, "trap_status_ok", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_ok);
+	add_assoc_string(return_value, "trap_status_warning", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_warning);
+	add_assoc_string(return_value, "trap_status_critical", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_status_critical);
+	add_assoc_string(return_value, "trap_last_data", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_last_data);
 	add_assoc_long(return_value, "trap_service_id", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_service_id);
 	add_assoc_long(return_value, "trap_fixed_status", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_fixed_status);
 	add_assoc_long(return_value, "trap_prio", trapmap[Z_LVAL_P(bartlby_trap_id)].trap_prio);
@@ -97,12 +101,15 @@ PHP_FUNCTION(bartlby_get_trap_by_id) {
 	
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&trap_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(trap_id)		
+	ZEND_PARSE_PARAMETERS_END();
+
 	
 	convert_to_long(trap_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 
@@ -116,13 +123,13 @@ PHP_FUNCTION(bartlby_get_trap_by_id) {
 			RETURN_FALSE;
 		}
 			add_assoc_long(return_value, "trap_id", svc.trap_id);
-			add_assoc_string(return_value, "trap_name", svc.trap_name,1);
-			add_assoc_string(return_value, "trap_catcher", svc.trap_catcher,1);
-			add_assoc_string(return_value, "trap_status_text", svc.trap_status_text,1);
-			add_assoc_string(return_value, "trap_status_ok", svc.trap_status_ok,1);
-			add_assoc_string(return_value, "trap_status_warning", svc.trap_status_warning,1);
-			add_assoc_string(return_value, "trap_status_critical", svc.trap_status_critical,1);
-			add_assoc_string(return_value, "trap_last_data", svc.trap_last_data,1);
+			add_assoc_string(return_value, "trap_name", svc.trap_name);
+			add_assoc_string(return_value, "trap_catcher", svc.trap_catcher);
+			add_assoc_string(return_value, "trap_status_text", svc.trap_status_text);
+			add_assoc_string(return_value, "trap_status_ok", svc.trap_status_ok);
+			add_assoc_string(return_value, "trap_status_warning", svc.trap_status_warning);
+			add_assoc_string(return_value, "trap_status_critical", svc.trap_status_critical);
+			add_assoc_string(return_value, "trap_last_data", svc.trap_last_data);
 			add_assoc_long(return_value, "trap_service_id", svc.trap_service_id);
 			add_assoc_long(return_value, "trap_fixed_status", svc.trap_fixed_status);
 			add_assoc_long(return_value, "trap_prio", svc.trap_prio);
@@ -162,9 +169,11 @@ PHP_FUNCTION(bartlby_add_trap) {
 	struct trap svc;
 	bartlby_res * bres;
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END();
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -186,7 +195,7 @@ PHP_FUNCTION(bartlby_add_trap) {
 	
 
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(trap_name);
 	convert_to_string(trap_catcher);
@@ -261,9 +270,15 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	
 	
 	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&trap_id, &options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+	
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(trap_id)		
+		Z_PARAM_ARRAY(options_array)
+	ZEND_PARSE_PARAMETERS_END();
+
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -284,7 +299,7 @@ PHP_FUNCTION(bartlby_modify_trap) {
 	
 	
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(trap_name);
 	convert_to_string(trap_catcher);
@@ -348,11 +363,14 @@ PHP_FUNCTION(bartlby_delete_trap) {
 	struct trap svc;
 	bartlby_res * bres;
 
-	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&trap_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+		
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(trap_id)		
+	ZEND_PARSE_PARAMETERS_END();
+
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	convert_to_long(trap_id);
@@ -383,10 +401,14 @@ PHP_FUNCTION(bartlby_set_trap_id) {
 	bartlby_res * bres;
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(from)
+		Z_PARAM_ZVAL(to)		
+	ZEND_PARSE_PARAMETERS_END();
+
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(from);
 	convert_to_long(to);
 	

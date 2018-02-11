@@ -173,6 +173,7 @@ zend_function_entry bartlby_functions[] = {
 	PHP_FE(bartlby_set_trap_id, NULL)
 	PHP_FE(bartlby_get_trap_by_id, NULL)
 	PHP_FE(bartlby_cleanup_tests, NULL)
+	PHP_FE(bartlby_in_array_test, NULL)
 	PHP_FE(bartlby_get_object_by_id, NULL)
 	PHP_FE(bartlby_get_thread_info, NULL)
 	PHP_FE(bartlby_get_thread_count, NULL)
@@ -240,25 +241,55 @@ static void php_bartlby_init_globals(zend_bartlby_globals *bartlby_globals)
 
 
 
+PHP_FUNCTION(bartlby_new) {
+	bartlby_res * res;
+	
+	zval * bartlby_config;
+	
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_ZVAL(bartlby_config)
+	ZEND_PARSE_PARAMETERS_END(); 	
+
+
+	//FIXME return NULL if SHM or DL error
+		convert_to_string(bartlby_config);
+	  res = emalloc(sizeof(bartlby_res));
+	  res->cfgfile = estrndup(Z_STRVAL_P(bartlby_config), strlen(Z_STRVAL_P(bartlby_config)));
+	  res->SOHandle=bartlby_get_sohandle(Z_STRVAL_P(bartlby_config));
+	  res->bartlby_address=bartlby_get_shm(Z_STRVAL_P(bartlby_config));
+	  
+  if(res->bartlby_address == NULL || res->SOHandle == NULL) {
+  	RETURN_FALSE;
+  }
+  
+  ZEND_REGISTER_RESOURCE(return_value, res, le_bartlby);
+  	
+}
+
 
 PHP_FUNCTION(bartlby_close)
 {
 	
 		//FIXME check resource type BARTLBY
     zval *zbartlby;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby) == FAILURE) {
-        RETURN_FALSE;
-    }
+    
+    ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby)
+	ZEND_PARSE_PARAMETERS_END(); 	
 
-    zend_list_delete(Z_LVAL_P(zbartlby));
+
+
+
+    zend_list_close(Z_RES_P(zbartlby));
     RETURN_TRUE;
 }
 
 
 
-static void bartlby_res_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
+static void bartlby_res_dtor(zend_resource *rsrc TSRMLS_DC)
 {
     bartlby_res *res = (bartlby_res*)rsrc->ptr;
+    
     if (res) {
     	//FIXME
     	//shmdt
@@ -365,6 +396,7 @@ PHP_MINFO_FUNCTION(bartlby)
 	php_info_print_table_start();
 	php_info_print_table_row(2, "bartlby support", "enabled");
 	php_info_print_table_row(2, "php-ext version", BARTLBY_VERSION);
+	php_info_print_table_row(2, "bartlby-php for", PHP_VERSION);
 	php_info_print_table_end();
 	DISPLAY_INI_ENTRIES();
 

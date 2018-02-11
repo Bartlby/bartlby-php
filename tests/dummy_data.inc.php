@@ -140,10 +140,10 @@ $worker_dummy = array(
 
 
 function bartlby_generic_audit($res, $type,  $id, $line) {
-		
 		return true;
 	}
 	function bartlby_object_audit($res, $type, $id, $action) {
+		
 		return true;
 	}
 ?>

@@ -42,12 +42,15 @@ PHP_FUNCTION(bartlby_get_servergroup_by_id) {
 	
 	bartlby_res * bres;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&servergroup_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(servergroup_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	convert_to_long(servergroup_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 
@@ -61,13 +64,13 @@ PHP_FUNCTION(bartlby_get_servergroup_by_id) {
 			RETURN_FALSE;
 		}
 		add_assoc_long(return_value, "servergroup_id", svc.servergroup_id);
-		add_assoc_string(return_value, "servergroup_name", svc.servergroup_name,1);
+		add_assoc_string(return_value, "servergroup_name", svc.servergroup_name);
 		add_assoc_long(return_value, "servergroup_active", svc.servergroup_active);
 		add_assoc_long(return_value, "servergroup_notify", svc.servergroup_notify);
-		add_assoc_string(return_value, "servergroup_members", svc.servergroup_members, 1);
+		add_assoc_string(return_value, "servergroup_members", svc.servergroup_members);
 		add_assoc_long(return_value, "servergroup_dead", svc.servergroup_dead);
 		add_assoc_long(return_value, "orch_id", svc.orch_id);
-		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers,1);
+		add_assoc_string(return_value, "enabled_triggers", svc.enabled_triggers);
 	}
 		
 }
@@ -87,11 +90,15 @@ PHP_FUNCTION(bartlby_get_servergroup) {
 	zval * bartlby_servergroup_id;
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &bartlby_servergroup_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}	
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_servergroup_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	convert_to_long(bartlby_servergroup_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	if (array_init(return_value) == FAILURE) {
@@ -108,13 +115,13 @@ PHP_FUNCTION(bartlby_get_servergroup) {
 	}
 
 	add_assoc_long(return_value, "servergroup_id", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_id);
-	add_assoc_string(return_value, "servergroup_name", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_name,1);
+	add_assoc_string(return_value, "servergroup_name", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_name);
 	add_assoc_long(return_value, "servergroup_active", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_active);
 	add_assoc_long(return_value, "servergroup_notify", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_notify);
-	add_assoc_string(return_value, "servergroup_members", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_members, 1);
+	add_assoc_string(return_value, "servergroup_members", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_members);
 	add_assoc_long(return_value, "servergroup_dead", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].servergroup_dead);
 	add_assoc_long(return_value, "orch_id", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].orch_id);
-	add_assoc_string(return_value, "enabled_triggers", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].enabled_triggers,1);
+	add_assoc_string(return_value, "enabled_triggers", srvgrpmap[Z_LVAL_P(bartlby_servergroup_id)].enabled_triggers);
 	add_assoc_long(return_value, "shm_place", Z_LVAL_P(bartlby_servergroup_id));
 	current_time=time(NULL);
 	is_down=0;
@@ -132,7 +139,7 @@ PHP_FUNCTION(bartlby_get_servergroup) {
 		add_assoc_long(return_value, "is_downtime", 1);
 		add_assoc_long(return_value, "downtime_from", dtmap[y].downtime_from);
 		add_assoc_long(return_value, "downtime_to", dtmap[y].downtime_to);
-		add_assoc_string(return_value, "downtime_notice", dtmap[y].downtime_notice, 1);
+		add_assoc_string(return_value, "downtime_notice", dtmap[y].downtime_notice);
 		add_assoc_long(return_value, "downtime_service", dtmap[y].service_id);
 		add_assoc_long(return_value, "downtime_type", dtmap[y].downtime_type);
 	} else {
@@ -164,9 +171,12 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	struct servergroup svc;
 	bartlby_res * bres;
 	
-	if(ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+	
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -182,7 +192,7 @@ PHP_FUNCTION(bartlby_add_servergroup) {
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_string(servergroup_name);
 	convert_to_string(enabled_triggers);
 	convert_to_string(servergroup_members);
@@ -236,9 +246,13 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	
 	
 	
-	if(ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&servergroup_id, &options_array) == FAILURE) {
-		WRONG_PARAM_COUNT;	
-	}
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(servergroup_id)
+		Z_PARAM_ARRAY(options_array)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	if(Z_TYPE_P(options_array) != IS_ARRAY) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "SECOND parameter needs to be array object");
@@ -254,7 +268,7 @@ PHP_FUNCTION(bartlby_modify_servergroup) {
 	GETARRAY_EL_FROM_HASH(orch_id, "orch_id", temp_pp, options_array,BARTLBY_FIELD_REQUIRED,BARTLBY_DEFAULT_LONG,0);
 	
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(servergroup_members);
 	convert_to_string(enabled_triggers);
@@ -306,10 +320,13 @@ PHP_FUNCTION(bartlby_delete_servergroup) {
 	bartlby_res * bres;
 
 	
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&servergroup_id)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(servergroup_id)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	convert_to_long(servergroup_id);
@@ -340,10 +357,14 @@ PHP_FUNCTION(bartlby_set_servergroup_id) {
 	bartlby_res * bres;
 	
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(from)		
+		Z_PARAM_ZVAL(to)
+	ZEND_PARSE_PARAMETERS_END(); 
+
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(from);
 	convert_to_long(to);
 	
@@ -369,12 +390,17 @@ PHP_FUNCTION(bartlby_toggle_servergroup_notify) {
 	int (*UpdateServerGroup)(struct servergroup *, char *);
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_servergroup_id)
+		Z_PARAM_ZVAL(do_writeback)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
+
 	convert_to_long(bartlby_servergroup_id);
 	convert_to_long(do_writeback);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	if (array_init(return_value) == FAILURE) {
@@ -417,12 +443,16 @@ PHP_FUNCTION(bartlby_toggle_servergroup_active) {
 	int (*UpdateServerGroup)(struct servergroup *, char *);
 	bartlby_res * bres;
 	
-	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource, &bartlby_servergroup_id, &do_writeback)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(3,3)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(bartlby_servergroup_id)
+		Z_PARAM_ZVAL(do_writeback)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	convert_to_long(bartlby_servergroup_id);
 	convert_to_long(do_writeback);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	if (array_init(return_value) == FAILURE) {

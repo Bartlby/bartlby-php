@@ -41,15 +41,15 @@ PHP_FUNCTION(bartlby_event_tick) {
 	bartlby_res * bres;
 		
 	
-	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zbartlby_resource)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	ZEND_PARSE_PARAMETERS_START(1,1)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+	ZEND_PARSE_PARAMETERS_END(); 
 	
 	
 	if (array_init(return_value) == FAILURE) {
 		RETURN_FALSE;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	shm_hdr=bartlby_SHM_GetHDR(bres->bartlby_address);
 	idx=shm_hdr->cur_event_index;
 	RETURN_LONG(idx);
@@ -69,12 +69,14 @@ PHP_FUNCTION(bartlby_event_fetch) {
 
 
 
-	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource, &event_index)==FAILURE) {
-		WRONG_PARAM_COUNT;
-	}
+	ZEND_PARSE_PARAMETERS_START(2,2)
+		Z_PARAM_RESOURCE(zbartlby_resource)
+		Z_PARAM_ZVAL(event_index)		
+	ZEND_PARSE_PARAMETERS_END(); 
+
 	
 	convert_to_long(event_index);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 	if (array_init(return_value) == FAILURE) {
@@ -88,7 +90,7 @@ PHP_FUNCTION(bartlby_event_fetch) {
 	evntmap=bartlby_SHM_EventMap(bres->bartlby_address);
 	
 	if(Z_LVAL_P(event_index) < EVENT_QUEUE_MAX) {
-		add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message, 1);
+		add_assoc_string(return_value, "message", evntmap[Z_LVAL_P(event_index)].evnt_message);
 		add_assoc_long(return_value, "id", evntmap[Z_LVAL_P(event_index)].evnt_id);
 		add_assoc_long(return_value, "time", evntmap[Z_LVAL_P(event_index)].evnt_time);
 	} else {

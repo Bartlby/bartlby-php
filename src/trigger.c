@@ -49,7 +49,7 @@ PHP_FUNCTION(bartlby_get_trigger) {
 		WRONG_PARAM_COUNT;
 	}	
 	convert_to_long(bartlby_trigger_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 
 	
 	if (array_init(return_value) == FAILURE) {
@@ -67,13 +67,13 @@ PHP_FUNCTION(bartlby_get_trigger) {
 
 	add_assoc_long(return_value, "trigger_id", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_id);
 	add_assoc_long(return_value, "trigger_count", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_count);
-	add_assoc_string(return_value, "trigger_name", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_name,1);
+	add_assoc_string(return_value, "trigger_name", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_name);
 	add_assoc_long(return_value, "trigger_enabled", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_enabled);
 	add_assoc_long(return_value, "trigger_type", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_type);
 
-	add_assoc_string(return_value, "trigger_data", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_data,1);
-	add_assoc_string(return_value, "trigger_execplan", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_execplan,1);
-	add_assoc_string(return_value, "trigger_full_path", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_full_path,1);
+	add_assoc_string(return_value, "trigger_data", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_data);
+	add_assoc_string(return_value, "trigger_execplan", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_execplan);
+	add_assoc_string(return_value, "trigger_full_path", triggermap[Z_LVAL_P(bartlby_trigger_id)].trigger_full_path);
 
 	add_assoc_long(return_value, "orch_id", triggermap[Z_LVAL_P(bartlby_trigger_id)].orch_id);
 	add_assoc_long(return_value, "is_gone", triggermap[Z_LVAL_P(bartlby_trigger_id)].is_gone);
@@ -99,7 +99,7 @@ PHP_FUNCTION(bartlby_get_trigger_by_id) {
 	}
 	
 	convert_to_long(trigger_id);
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 
 
@@ -114,13 +114,13 @@ PHP_FUNCTION(bartlby_get_trigger_by_id) {
 		}
 				add_assoc_long(return_value, "trigger_id", svc.trigger_id);
 				add_assoc_long(return_value, "trigger_count", svc.trigger_count);
-				add_assoc_string(return_value, "trigger_name", svc.trigger_name,1);
+				add_assoc_string(return_value, "trigger_name", svc.trigger_name);
 				add_assoc_long(return_value, "trigger_enabled", svc.trigger_enabled);
 				add_assoc_long(return_value, "trigger_type", svc.trigger_type);
 
-				add_assoc_string(return_value, "trigger_data", svc.trigger_data,1);
-				add_assoc_string(return_value, "trigger_execplan", svc.trigger_execplan,1);
-				add_assoc_string(return_value, "trigger_full_path", svc.trigger_full_path,1);
+				add_assoc_string(return_value, "trigger_data", svc.trigger_data);
+				add_assoc_string(return_value, "trigger_execplan", svc.trigger_execplan);
+				add_assoc_string(return_value, "trigger_full_path", svc.trigger_full_path);
 
 				add_assoc_long(return_value, "orch_id", svc.orch_id);
 				add_assoc_long(return_value, "is_gone", svc.is_gone);
@@ -172,7 +172,7 @@ PHP_FUNCTION(bartlby_add_trigger) {
 	
 
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(trigger_name);
 	convert_to_string(trigger_data);
@@ -250,7 +250,7 @@ PHP_FUNCTION(bartlby_modify_trigger) {
 	
 	
 	
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	convert_to_string(trigger_name);
 	convert_to_string(trigger_data);
@@ -304,7 +304,7 @@ PHP_FUNCTION(bartlby_delete_trigger) {
 	if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz", &zbartlby_resource,&trigger_id)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	
 	
 	convert_to_long(trigger_id);
@@ -338,7 +338,7 @@ PHP_FUNCTION(bartlby_set_trigger_id) {
 	if (ZEND_NUM_ARGS() != 3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rzz", &zbartlby_resource,&from, &to)==FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
-	ZEND_FETCH_RESOURCE(bres, bartlby_res*, &zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
+	ZEND_FETCH_RESOURCE(bres, bartlby_res*, zbartlby_resource, -1, BARTLBY_RES_NAME, le_bartlby);
 	convert_to_long(from);
 	convert_to_long(to);
 	

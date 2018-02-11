@@ -99,15 +99,27 @@ int btl_is_array(zval * ar, long service_id) {
     HashPosition pointer;
     int array_count;
     char * string_key;
-    int str_key_len;
     long num_key;
+    zval * val;
+
+    zend_string *key;
     	
     if(Z_TYPE_P(ar) != IS_ARRAY) {
     	return 1;
     }
 	
 	arr_hash = Z_ARRVAL_P(ar);
-    array_count = zend_hash_num_elements(arr_hash);
+	ZEND_HASH_FOREACH_KEY_VAL(arr_hash, num_key, key, val) {
+		if(Z_TYPE_P(val) == IS_STRING) {
+			
+		} else if(Z_TYPE_P(val) == IS_LONG) {
+                	if(Z_LVAL_P(val) == service_id) {
+                        	return 1;
+                	}
+		}
+
+	} ZEND_HASH_FOREACH_END();
+/*
     for(zend_hash_internal_pointer_reset_ex(arr_hash, &pointer); zend_hash_get_current_data_ex(arr_hash, (void**) &data, &pointer) == SUCCESS; zend_hash_move_forward_ex(arr_hash, &pointer)) {
 		//convert_to_long(*data); FIXME
         if(Z_TYPE_PP(data) == IS_STRING) {
@@ -121,6 +133,7 @@ int btl_is_array(zval * ar, long service_id) {
 
             	
     }
+*/
     return -1;
 }
 

@@ -39,14 +39,14 @@ extern int le_bartlby;
 
 int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_type, char * logline) {
 	
-	zval **params[4];
+	zval params[5];
 	zval type;
 	zval id;
 	zval act;
 	zval function_name;
 	zval log_line;
 	
-	zval *return_user_call;
+	zval return_user_call;
 
 	zval *t;
 	zval *t2;
@@ -57,33 +57,23 @@ int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_t
 	TSRMLS_FETCH();
 
 	int res;
-	INIT_ZVAL(type);
-	INIT_ZVAL(id);
-	INIT_ZVAL(function_name);
-	INIT_ZVAL(act);
-	INIT_ZVAL(log_line);
+	
+	ZVAL_COPY_VALUE(&params[0], bartlby_resource);
+	ZVAL_LONG(&params[1], audit_type);
+	ZVAL_LONG(&params[2], object_id);
+	ZVAL_STRING(&params[3], logline);
+	ZVAL_STRING(&function_name, "bartlby_generic_audit");
 
-
-	ZVAL_LONG(&type, audit_type);
-	ZVAL_LONG(&id, object_id);
-	ZVAL_STRING(&log_line, logline, 0);
-	ZVAL_STRING(&function_name, "bartlby_generic_audit", 0);
-
-	
-	
-	params[0] = &bartlby_resource;
-	
-	t=&type;
-	params[1] = &t;
-	t2=&id;
-	params[2] = &t2;
-	t3=&log_line;
-	params[3] = &t3;
-	
 	
 	
 	res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 4, params, 1, NULL TSRMLS_CC);
-	if (res == SUCCESS && return_user_call != NULL && zval_is_true(return_user_call)) {
+	
+	zval_ptr_dtor(&function_name);
+	zval_ptr_dtor(&params[1]);
+	zval_ptr_dtor(&params[2]);
+	zval_ptr_dtor(&params[3]);
+
+	if (res == SUCCESS && &return_user_call != NULL && zval_is_true(&return_user_call)) {
 		return 0;
 	} else {
 		if((int)BARTLBY_G(force_audit) == 1) {
@@ -96,8 +86,7 @@ int bartlby_generic_audit(zval * bartlby_resource,  long object_id, long audit_t
 }
 
 int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_id, long action) {
-	
-	zval **params[4];
+	zval params[5];
 	zval type;
 	zval id;
 	zval act;
@@ -105,40 +94,28 @@ int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_
 
         TSRMLS_FETCH();
 	
-	zval *return_user_call;
+	zval return_user_call;
 
-	zval *t;
-	zval *t2;
-	zval *t3;
-	zval *t4;
 	
 	int res;
-	INIT_ZVAL(type);
-	INIT_ZVAL(id);
-	INIT_ZVAL(function_name);
-	INIT_ZVAL(act);
 
 
-	ZVAL_LONG(&type, audit_type);
-	ZVAL_LONG(&id, object_id);
-	ZVAL_LONG(&act, action);
-	ZVAL_STRING(&function_name, "bartlby_object_audit", 0);
+	ZVAL_COPY_VALUE(&params[0], bartlby_resource);
+        ZVAL_LONG(&params[1], audit_type);
+        ZVAL_LONG(&params[2], object_id);
+        ZVAL_LONG(&params[3], action);
+        ZVAL_STRING(&function_name, "bartlby_object_audit");
 
-	
-	
-	params[0] = &bartlby_resource;
-	
-	t=&type;
-	params[1] = &t;
-	t2=&id;
-	params[2] = &t2;
-	t3=&act;
-	params[3] = &t3;
-	
-	
-	
-	res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 4, params, 1, NULL TSRMLS_CC);
-	if (res == SUCCESS && return_user_call != NULL && zval_is_true(return_user_call)) {
+
+
+        res=call_user_function_ex(EG(function_table), NULL, &function_name, &return_user_call, 4, params, 1, NULL TSRMLS_CC);
+
+        zval_ptr_dtor(&function_name);
+        zval_ptr_dtor(&params[1]);
+        zval_ptr_dtor(&params[2]);
+        zval_ptr_dtor(&params[3]);	
+
+	if (res == SUCCESS && &return_user_call != NULL && zval_is_true(&return_user_call)) {
 		return 0;
 	} else {
 		if((int)BARTLBY_G(force_audit) == 1) {

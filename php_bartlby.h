@@ -116,20 +116,15 @@ typedef struct _bartlby_res {
 #define BARTLBY_FIELD_OPTIONAL 0
 
 #define GETARRAY_EL_FROM_HASH(target, element,temp,  array, required, def_type, def_value) \
-if(SUCCESS == zend_hash_find(Z_ARRVAL_P(array), element, strlen(element) + 1, (void**) &temp)) { \
-	target = *temp; \
-}  else { \
-	target = NULL; \
-} \
+target = zend_hash_str_find(Z_ARRVAL_P(array), element, strlen(element)); \
 if(required == 1) { \
 	if(target == NULL) { \
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Element %s is required\n", element); \
 		RETURN_BOOL(0); \
 	} \
 	if(Z_TYPE_P(target) == IS_NULL) {\
-		MAKE_STD_ZVAL(target); \
 		if(def_type == BARTLBY_DEFAULT_STRING) { \
-			ZVAL_STRING(target, (char*)def_value, 1); \
+			ZVAL_STRING(target, (char*)def_value); \
 		} \
 		if(def_type == BARTLBY_DEFAULT_LONG) { \
 			ZVAL_LONG(target, (long)def_value);\
@@ -282,7 +277,7 @@ PHP_FUNCTION(bartlby_get_object_by_id);
 PHP_FUNCTION(bartlby_notification_log_at_index);
 
 PHP_METHOD(Bartlby, testFunc);
-
+PHP_FUNCTION(bartlby_in_array_test);
 PHP_FUNCTION(bartlby_get_thread_info);
 PHP_FUNCTION(bartlby_get_thread_count);
 
@@ -357,4 +352,13 @@ struct trigger * bartlby_SHM_TriggerMap(void * shm_addr);
 #include "bartlby_shm.h"
 
 
+int bartlby_object_audit(zval * bartlby_resource,  long audit_type, long object_id, long action);
+
+#ifndef ZEND_FETCH_RESOURCE
+#define ZEND_FETCH_RESOURCE(o,t,z,i,ln,lb) if((o = (t)zend_fetch_resource(Z_RES_P(z),ln,lb)) == NULL) { RETURN_FALSE }
+#endif
+
+#ifndef ZEND_REGISTER_RESOURCE
+#define ZEND_REGISTER_RESOURCE(ret,o,l) RETURN_RES(zend_register_resource(o,l))
+#endif
 
